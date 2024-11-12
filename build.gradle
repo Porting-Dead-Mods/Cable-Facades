@@ -145,6 +145,8 @@ dependencies {
 
     implementation fg.deobf("curse.maven:pipez-443900:5550816")
     implementation fg.deobf("curse.maven:thermal-dynamics-227443:5372747")
+    runtimeOnly fg.deobf("curse.maven:cofh-core-69162:5374122")
+    runtimeOnly fg.deobf("curse.maven:thermal-foundation-222880:5443583")
     implementation fg.deobf("curse.maven:mekanism-268560:5662583")
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
