@@ -1,6 +1,7 @@
 package com.portingdeadmods.cable_facades;
 
 import com.mojang.logging.LogUtils;
+import com.portingdeadmods.cable_facades.networking.ModMessages;
 import com.portingdeadmods.cable_facades.registries.CFBlocks;
 import com.portingdeadmods.cable_facades.registries.CFCreativeTabs;
 import com.portingdeadmods.cable_facades.registries.CFItems;
@@ -12,10 +13,8 @@ import org.slf4j.Logger;
 
 @Mod(CFMain.MODID)
 public class CFMain {
-
     public static final String MODID = "cable_facades";
-    private static final Logger LOGGER = LogUtils.getLogger();
-
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public CFMain() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -25,6 +24,7 @@ public class CFMain {
         CFCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);
+        ModMessages.register();
 
         //ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFConfig.SPEC);
     }
