@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.portingdeadmods.cable_facades.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "cable_facades.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
