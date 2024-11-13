@@ -18,9 +18,6 @@ public class CFCreativeTabs {
         for (RegistryObject<Item> item : CFItems.ITEMS.getEntries()){
             output.accept(item.get().getDefaultInstance());
         }
-        for (RegistryObject<Block> block : CFBlocks.BLOCKS.getEntries()){
-            output.accept(block.get().asItem().getDefaultInstance());
-        }
     }).build());
 
 }

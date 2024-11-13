@@ -3,6 +3,7 @@ package com.portingdeadmods.cable_facades.content.recipes;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.registries.CFRecipes;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -15,6 +16,7 @@ import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import org.jetbrains.annotations.NotNull;
 
 public class FacadeCraftingRecipe extends CustomRecipe {
     public FacadeCraftingRecipe(ResourceLocation p_252125_, CraftingBookCategory p_249010_) {
@@ -64,7 +66,7 @@ public class FacadeCraftingRecipe extends CustomRecipe {
     }
 
     @Override
-    public RecipeSerializer<?> getSerializer() {
-        return CFMain.FACADE.get();
+    public @NotNull RecipeSerializer<?> getSerializer() {
+        return CFRecipes.FACADE.get();
     }
 }

@@ -2,9 +2,13 @@ package com.portingdeadmods.cable_facades.events;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.registries.CFItemTags;
+import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.utils.TranslucentRenderTypeBuffer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
@@ -27,9 +31,11 @@ public final class CFClientEvents {
     public static void render(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             Minecraft mc = Minecraft.getInstance();
+            LocalPlayer player = mc.player;
 
             for (Map.Entry<BlockPos, Block> entry : CAMOUFLAGED_BLOCKS.entrySet()) {
                 BlockPos blockPos = entry.getKey();
+                Block block = entry.getValue();
                 ClientLevel level = mc.level;
                 BlockState framedBlock = level.getBlockState(blockPos);
                 Vec3 vec3 = event.getCamera().getPosition();
@@ -42,10 +48,15 @@ public final class CFClientEvents {
                 poseStack.pushPose();
                 {
                     poseStack.translate((double) blockPos.getX() - d0, (double) blockPos.getY() - d1, (double) blockPos.getZ() - d2);
-                    Block value = entry.getValue();
-                    BlockState state = getState(value, framedBlock);
-                    for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
-                        mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, mc.renderBuffers().bufferSource().getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
+                    BlockState state = getState(block, framedBlock);
+                    if (!player.getMainHandItem().is(CFItems.WRENCH.get())) {
+                        for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
+                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, mc.renderBuffers().bufferSource().getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
+                        }
+                    } else {
+                        for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
+                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, new TranslucentRenderTypeBuffer(mc.renderBuffers().bufferSource(), 120).getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
+                        }
                     }
                 }
                 poseStack.popPose();

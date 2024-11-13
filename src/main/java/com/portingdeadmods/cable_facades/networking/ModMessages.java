@@ -26,7 +26,7 @@ public class ModMessages {
 
         INSTANCE = net;
 
-        net.messageBuilder(CamouflagedBlocksS2CPacket.class, id(), NetworkDirection.PLAY_TO_SERVER)
+        net.messageBuilder(CamouflagedBlocksS2CPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .decoder(CamouflagedBlocksS2CPacket::new)
                 .encoder(CamouflagedBlocksS2CPacket::toBytes)
                 .consumerMainThread(CamouflagedBlocksS2CPacket::handle)

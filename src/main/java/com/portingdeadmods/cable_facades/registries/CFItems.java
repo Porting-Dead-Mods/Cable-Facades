@@ -14,5 +14,5 @@ public class CFItems {
 
     public static final RegistryObject<FacadeItem> FACADE = ITEMS.register("facade", () -> new FacadeItem(new Item.Properties()));
 
-    public static final RegistryObject<WrenchItem> WRENCH = ITEMS.register("wrench", () -> new WrenchItem(new Item.Properties()));
+    public static final RegistryObject<WrenchItem> WRENCH = ITEMS.register("facade_wrench", () -> new WrenchItem(new Item.Properties()));
 }
