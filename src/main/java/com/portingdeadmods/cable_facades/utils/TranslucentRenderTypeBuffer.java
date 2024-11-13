@@ -42,11 +42,11 @@ public class TranslucentRenderTypeBuffer implements MultiBufferSource {
 
     @Override
     public @NotNull VertexConsumer getBuffer(@NotNull RenderType type) {
-        if (alpha < 255 && MAKE_TRANSPARENT.contains(type.toString()) && type instanceof RenderType.CompositeRenderType composite && composite.state.textureState instanceof RenderStateShard.TextureStateShard textureState) {
-            ResourceLocation texture = textureState.texture.orElse(InventoryMenu.BLOCK_ATLAS);
-            type = RenderType.entityTranslucentCull(texture);
-        }
+//        if (alpha < 255 && MAKE_TRANSPARENT.contains(type.toString()) && type instanceof RenderType.CompositeRenderType composite && composite.state.textureState instanceof RenderStateShard.TextureStateShard textureState) {
+//            ResourceLocation texture = textureState.texture.orElse(InventoryMenu.BLOCK_ATLAS);
+//            type = RenderType.entityTranslucentCull(texture);
+//        }
 
-        return new TintedVertexBuilder(inner.getBuffer(type), red, green, blue, alpha);
+        return new TintedVertexBuilder(inner.getBuffer(RenderType.translucent()), red, green, blue, alpha);
     }
 }
