@@ -1,12 +1,15 @@
 package com.portingdeadmods.cable_facades.events;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.networking.CamouflagedBlocksS2CPacket;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -45,7 +48,12 @@ public class CFEvents {
                 CableFacadeSavedData savedData = CableFacadeSavedData.get(serverLevel);
                 Block facadeBlock = savedData.getCamouflagedBlocks().get(pos);
                 savedData.remove(pos);
-                ItemHandlerHelper.giveItemToPlayer(player, new ItemStack(facadeBlock));
+                ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
+                CompoundTag nbtData = new CompoundTag();
+                nbtData.putString("facade_block",BuiltInRegistries.BLOCK.getKey(facadeBlock).toString());
+                facadeStack.setTag(nbtData);
+
+                ItemHandlerHelper.giveItemToPlayer(player, facadeStack);
             } else {
                 CFClientEvents.CAMOUFLAGED_BLOCKS.remove(pos);
             }

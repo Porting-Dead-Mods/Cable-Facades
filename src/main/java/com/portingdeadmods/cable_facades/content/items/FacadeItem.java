@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades.content.items;
 
+import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.CFClientEvents;
 import net.minecraft.core.BlockPos;
@@ -28,10 +29,18 @@ public class FacadeItem extends Item {
             CompoundTag tag = itemStack.getTag();
             BlockPos pos = p_41427_.getClickedPos();
             Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
+            String targetBlock = BuiltInRegistries.BLOCK.getKey(p_41427_.getLevel().getBlockState(p_41427_.getClickedPos()).getBlock()).toString();
+            if(!CFConfig.blocks.contains(targetBlock)) {
+                return InteractionResult.FAIL;
+            }
+
             if (p_41427_.getLevel() instanceof ServerLevel serverLevel) {
                 CableFacadeSavedData.get(serverLevel).put(pos, block);
             } else {
                 CFClientEvents.CAMOUFLAGED_BLOCKS.put(pos, block);
+            }
+            if(!p_41427_.getPlayer().isCreative()) {
+                itemStack.shrink(1);
             }
             return InteractionResult.SUCCESS;
         }
