@@ -1,6 +1,8 @@
 package com.portingdeadmods.cable_facades.content.recipes;
 
+import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
+import com.portingdeadmods.cable_facades.registries.CFItems;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -45,12 +47,15 @@ public class FacadeCraftingRecipe extends CustomRecipe {
             ItemStack item = craftingContainer.getItem(i);
             if (item.getItem() instanceof BlockItem blockItem) {
                 facadeBlock = blockItem.getBlock();
-            } else {
-                itemStack = item.copyWithCount(1);
+            } else if (item.getItem() instanceof FacadeItem) {
+                itemStack = CFItems.FACADE.get().getDefaultInstance();
             }
         }
-        itemStack.getOrCreateTag().putString(FacadeItem.FACADE_BLOCK, BuiltInRegistries.BLOCK.getKey(facadeBlock).toString());
-        return itemStack;
+        if (!itemStack.isEmpty()) {
+            itemStack.getOrCreateTag().putString(FacadeItem.FACADE_BLOCK, BuiltInRegistries.BLOCK.getKey(facadeBlock).toString());
+            return itemStack;
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override
@@ -60,6 +65,6 @@ public class FacadeCraftingRecipe extends CustomRecipe {
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return null;
+        return CFMain.FACADE.get();
     }
 }
