@@ -29,8 +29,21 @@ public class FacadeItem extends Item {
             CompoundTag tag = itemStack.getTag();
             BlockPos pos = p_41427_.getClickedPos();
             Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
-            String targetBlock = BuiltInRegistries.BLOCK.getKey(p_41427_.getLevel().getBlockState(p_41427_.getClickedPos()).getBlock()).toString();
-            if(!CFConfig.blocks.contains(targetBlock)) {
+            Block targetBlock = p_41427_.getLevel().getBlockState(pos).getBlock();
+
+            if (!CFConfig.isBlockAllowed(targetBlock)) {
+                return InteractionResult.FAIL;
+            }
+
+            if (targetBlock == block) {
+                return InteractionResult.FAIL;
+            }
+
+            boolean isAlreadyCamouflaged = p_41427_.getLevel() instanceof ServerLevel serverLevel
+                    ? CableFacadeSavedData.get(serverLevel).contains(pos)
+                    : CFClientEvents.CAMOUFLAGED_BLOCKS.containsKey(pos);
+
+            if (isAlreadyCamouflaged) {
                 return InteractionResult.FAIL;
             }
 
@@ -39,9 +52,11 @@ public class FacadeItem extends Item {
             } else {
                 CFClientEvents.CAMOUFLAGED_BLOCKS.put(pos, block);
             }
-            if(!p_41427_.getPlayer().isCreative()) {
+
+            if (!p_41427_.getPlayer().isCreative() && CFConfig.consumeFacade) {
                 itemStack.shrink(1);
             }
+
             return InteractionResult.SUCCESS;
         }
         return super.useOn(p_41427_);
