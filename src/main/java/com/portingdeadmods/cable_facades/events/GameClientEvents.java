@@ -47,17 +47,21 @@ public final class GameClientEvents {
                 BlockState framedBlock = level.getBlockState(blockPos);
                 PoseStack poseStack = event.getPoseStack();
                 poseStack.pushPose();
+
+                ModelData modelData = mc.getBlockRenderer().getBlockModel(framedBlock).getModelData(level, blockPos, framedBlock, ModelData.EMPTY);
+
+
                 {
                     poseStack.translate(blockPos.getX() - cameraPos.x(), blockPos.getY() - cameraPos.y(), blockPos.getZ() - cameraPos.z());
                     BlockState state = getState(block, framedBlock);
                     MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
                     if (mc.player.getMainHandItem().is(CFItemTags.WRENCHES)) {
                         for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
-                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, new TranslucentRenderTypeBuffer(mc.renderBuffers().bufferSource(), 120).getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
+                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, new TranslucentRenderTypeBuffer(mc.renderBuffers().bufferSource(), 120).getBuffer(type), true, mc.level.random, modelData, type);
                         }
                     } else {
                         for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
-                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, bufferSource.getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
+                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, bufferSource.getBuffer(type), true, mc.level.random, modelData, type);
                         }
                     }
                     bufferSource.endBatch();
