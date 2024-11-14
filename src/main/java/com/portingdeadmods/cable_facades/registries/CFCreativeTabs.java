@@ -13,10 +13,13 @@ public class CFCreativeTabs {
 
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CFMain.MODID);
 
-    public static final RegistryObject<CreativeModeTab> CF_TAB = CREATIVE_MODE_TABS.register("cf_tab", () -> CreativeModeTab.builder().withTabsBefore(CreativeModeTabs.COMBAT).icon(() -> CFItems.WRENCH.get().getDefaultInstance()).title(Component.literal("Cable Facades")).displayItems((parameters, output) -> {
-        for (RegistryObject<Item> item : CFItems.ITEMS.getEntries()){
-            output.accept(item.get().getDefaultInstance());
-        }
-    }).build());
+    public static final RegistryObject<CreativeModeTab> CF_TAB = CREATIVE_MODE_TABS.register("cf_tab", () -> CreativeModeTab.builder()
+            .icon(() -> CFItems.WRENCH.get().getDefaultInstance())
+            .title(Component.literal("Cable Facades"))
+            .displayItems((parameters, output) -> {
+                for (RegistryObject<Item> item : CFItems.ITEMS.getEntries()) {
+                    output.accept(item.get().getDefaultInstance());
+                }
+            }).build());
 
 }

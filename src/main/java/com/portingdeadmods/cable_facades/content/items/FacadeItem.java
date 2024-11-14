@@ -3,10 +3,9 @@ package com.portingdeadmods.cable_facades.content.items;
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.CFClientEvents;
+import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.rendeer.ClientStuff;
-import com.portingdeadmods.cable_facades.rendeer.FacadeItemRenderer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -16,16 +15,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ComplexItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.function.Consumer;
@@ -56,7 +50,7 @@ public class FacadeItem extends Item {
 
             boolean isAlreadyCamouflaged = p_41427_.getLevel() instanceof ServerLevel serverLevel
                     ? CableFacadeSavedData.get(serverLevel).contains(pos)
-                    : CFClientEvents.CAMOUFLAGED_BLOCKS.containsKey(pos);
+                    : GameClientEvents.CAMOUFLAGED_BLOCKS.containsKey(pos);
 
             if (isAlreadyCamouflaged) {
                 return InteractionResult.FAIL;
@@ -66,7 +60,7 @@ public class FacadeItem extends Item {
                 CableFacadeSavedData savedData = CableFacadeSavedData.get(serverLevel);
                 savedData.put(pos, block);
             } else {
-                CFClientEvents.CAMOUFLAGED_BLOCKS.put(pos, block);
+                GameClientEvents.CAMOUFLAGED_BLOCKS.put(pos, block);
             }
 
             if (!p_41427_.getPlayer().isCreative() && CFConfig.consumeFacade) {
