@@ -15,6 +15,7 @@ import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
 import org.jetbrains.annotations.NotNull;
 
 public class FacadeCraftingRecipe extends CustomRecipe {
@@ -48,6 +49,9 @@ public class FacadeCraftingRecipe extends CustomRecipe {
             ItemStack item = craftingContainer.getItem(i);
             if (item.getItem() instanceof BlockItem blockItem) {
                 facadeBlock = blockItem.getBlock();
+                if(facadeBlock.defaultBlockState().getRenderShape() == RenderShape.ENTITYBLOCK_ANIMATED){
+                    return ItemStack.EMPTY;
+                }
             } else if (item.getItem() instanceof FacadeItem) {
                 itemStack = CFItems.FACADE.get().getDefaultInstance();
             }
