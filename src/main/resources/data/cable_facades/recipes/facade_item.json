@@ -1,20 +1,23 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    " # ",
-    "#/#",
-    " # "
+    "D #",
+    " W ",
+    "# D"
   ],
   "key": {
     "#": {
-      "item": "minecraft:oak_planks"
+      "tag": "forge:dyes/black"
     },
-    "/": {
-      "item": "minecraft:stick"
+    "D": {
+      "tag": "forge:dyes/yellow"
+    },
+    "W": {
+      "tag": "minecraft:wool"
     }
   },
   "result": {
     "item": "cable_facades:facade",
-    "count": 4
+    "count": 16
   }
 }

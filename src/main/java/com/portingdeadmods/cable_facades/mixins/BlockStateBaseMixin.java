@@ -1,27 +1,21 @@
 package com.portingdeadmods.cable_facades.mixins;
 
-import com.google.common.collect.ImmutableMap;
-import com.mojang.serialization.MapCodec;
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
 import com.portingdeadmods.cable_facades.networking.RemoveCamoPacket;
-import com.portingdeadmods.cable_facades.registries.CFItemTags;
-import com.portingdeadmods.cable_facades.registries.CFItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Containers;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateHolder;
-import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.EntityCollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -45,8 +39,11 @@ public abstract class BlockStateBaseMixin {
             if (!blockState.is(block)) {
                 CFMain.LOGGER.debug("removing camo block");
                 if (level instanceof ServerLevel serverLevel) {
-                    CableFacadeSavedData.get(serverLevel).remove(blockPos);
+                    CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
+                    Block blockInData = data.getCamouflagedBlocks().get(blockPos);
+                    data.remove(blockPos);
                     ModMessages.sendToClients(new RemoveCamoPacket(blockPos));
+                    Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(blockInData));
                 }
             }
         }

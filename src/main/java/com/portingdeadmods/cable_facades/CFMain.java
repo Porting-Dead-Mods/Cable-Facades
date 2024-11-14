@@ -5,6 +5,9 @@ import com.portingdeadmods.cable_facades.networking.ModMessages;
 import com.portingdeadmods.cable_facades.registries.CFCreativeTabs;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
+import de.maxhenkel.pipez.corelib.tag.ItemTag;
+import net.minecraft.tags.ItemTags;
+import net.minecraftforge.common.Tags;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -26,6 +29,7 @@ public class CFMain {
         ModMessages.register();
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFConfig.SPEC);
+
     }
 
 }
