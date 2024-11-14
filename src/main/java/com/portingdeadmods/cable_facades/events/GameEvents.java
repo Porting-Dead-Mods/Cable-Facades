@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -56,7 +57,7 @@ public final class GameEvents {
                 facadeStack.setTag(nbtData);
 
                 if (!player.isCreative()) {
-                    ItemHandlerHelper.giveItemToPlayer(player, facadeStack);
+                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 } else {
                     level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
                             SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);

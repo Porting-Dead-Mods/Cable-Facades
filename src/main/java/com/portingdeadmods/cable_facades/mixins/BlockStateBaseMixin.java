@@ -6,7 +6,11 @@ import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
 import com.portingdeadmods.cable_facades.networking.RemoveCamoPacket;
+import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
@@ -34,16 +38,18 @@ public abstract class BlockStateBaseMixin {
     )
     private void onRemove(Level level, BlockPos blockPos, BlockState blockState, boolean isMoving, CallbackInfo ci) {
         Block block = getBlock();
-        if (CFConfig.isBlockAllowed(block)) {
-            CFMain.LOGGER.debug("pipe block");
+        if (CFConfig.isBlockAllowed(block) && FacadeUtils.hasFacade(level, blockPos)) {
             if (!blockState.is(block)) {
-                CFMain.LOGGER.debug("removing camo block");
                 if (level instanceof ServerLevel serverLevel) {
                     CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
-                    Block blockInData = data.getCamouflagedBlocks().get(blockPos);
+                    ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
+                    CompoundTag nbtData = new CompoundTag();
+                    Block camoBlock = data.getCamouflagedBlocks().get(blockPos);
+                    nbtData.putString("facade_block", BuiltInRegistries.BLOCK.getKey(camoBlock).toString());
+                    facadeStack.setTag(nbtData);
                     data.remove(blockPos);
                     ModMessages.sendToClients(new RemoveCamoPacket(blockPos));
-                    Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(blockInData));
+                    Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
                 }
             }
         }

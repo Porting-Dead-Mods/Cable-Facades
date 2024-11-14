@@ -47,7 +47,6 @@ public final class GameClientEvents {
                 BlockState framedBlock = level.getBlockState(blockPos);
                 PoseStack poseStack = event.getPoseStack();
                 poseStack.pushPose();
-
                 ModelData modelData = mc.getBlockRenderer().getBlockModel(framedBlock).getModelData(level, blockPos, framedBlock, ModelData.EMPTY);
 
 
