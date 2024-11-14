@@ -4,19 +4,25 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.rendeer.ClientStuff;
 import com.portingdeadmods.cable_facades.rendeer.FacadeItemRenderer;
 import com.portingdeadmods.cable_facades.utils.TranslucentRenderTypeBuffer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -69,23 +75,10 @@ public final class CFClientEvents {
         }
     }
 
-    private static FacadeItemRenderer facadeRenderer;
-
-    public static FacadeItemRenderer getFacadeRenderer() {
-        if (facadeRenderer == null) {
-            facadeRenderer = new FacadeItemRenderer(
-                    Minecraft.getInstance().getBlockRenderer(),
-                    Minecraft.getInstance().getEntityModels()
-            );
-        }
-        return facadeRenderer;
-    }
-
     @SubscribeEvent
-    public static void init(RegisterClientReloadListenersEvent event) {
-        getFacadeRenderer();
+    public static void init(final FMLClientSetupEvent event) {
+        event.enqueueWork(ClientStuff::init);
     }
-
 
     private static BlockState getState(Block block, BlockState framedBlock) {
         return block != null ? block.defaultBlockState() : framedBlock;
