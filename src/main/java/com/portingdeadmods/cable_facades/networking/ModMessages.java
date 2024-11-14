@@ -8,7 +8,7 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
-public class ModMessages {
+public final class ModMessages {
     private static SimpleChannel INSTANCE;
 
     private static int packetId = 0;
@@ -30,6 +30,12 @@ public class ModMessages {
                 .decoder(CamouflagedBlocksS2CPacket::new)
                 .encoder(CamouflagedBlocksS2CPacket::toBytes)
                 .consumerMainThread(CamouflagedBlocksS2CPacket::handle)
+                .add();
+
+        net.messageBuilder(RemoveCamoPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(RemoveCamoPacket::new)
+                .encoder(RemoveCamoPacket::toBytes)
+                .consumerMainThread(RemoveCamoPacket::handle)
                 .add();
     }
 

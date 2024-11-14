@@ -1,7 +1,6 @@
 package com.portingdeadmods.cable_facades.events;
 
 import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.client.renderer.item.FacadeIconDecorator;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ModelEvent;
@@ -10,8 +9,6 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class CFClientEvents {
-    private static final FacadeIconDecorator DECORATOR = new FacadeIconDecorator();
-
     @SubscribeEvent
     public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
         event.register(new ResourceLocation(CFMain.MODID, "item/facade_outline"));

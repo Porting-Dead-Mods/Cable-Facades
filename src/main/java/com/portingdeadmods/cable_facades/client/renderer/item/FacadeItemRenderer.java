@@ -1,13 +1,11 @@
-package com.portingdeadmods.cable_facades.rendeer;
+package com.portingdeadmods.cable_facades.client.renderer.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -16,7 +14,6 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.event.ModelEvent;
 
 public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
     public FacadeItemRenderer() {

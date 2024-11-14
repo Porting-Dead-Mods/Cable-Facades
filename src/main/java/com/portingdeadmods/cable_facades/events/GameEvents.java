@@ -12,6 +12,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -42,7 +44,7 @@ public final class GameEvents {
         BlockPos pos = event.getPos();
 
         if (player.isShiftKeyDown()
-                && player.getMainHandItem().getTags().toList().contains(CFItemTags.WRENCHES)
+                && player.getMainHandItem().is(CFItemTags.WRENCHES)
                 && FacadeUtils.hasFacade(level, pos)) {
             if (level instanceof ServerLevel serverLevel) {
                 CableFacadeSavedData savedData = CableFacadeSavedData.get(serverLevel);
@@ -53,7 +55,12 @@ public final class GameEvents {
                 nbtData.putString("facade_block",BuiltInRegistries.BLOCK.getKey(facadeBlock).toString());
                 facadeStack.setTag(nbtData);
 
-                ItemHandlerHelper.giveItemToPlayer(player, facadeStack);
+                if (!player.isCreative()) {
+                    ItemHandlerHelper.giveItemToPlayer(player, facadeStack);
+                } else {
+                    level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
+                            SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                }
             } else {
                 GameClientEvents.CAMOUFLAGED_BLOCKS.remove(pos);
             }

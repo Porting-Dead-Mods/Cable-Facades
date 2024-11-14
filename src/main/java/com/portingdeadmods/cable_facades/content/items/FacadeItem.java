@@ -2,10 +2,9 @@ package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
-import com.portingdeadmods.cable_facades.events.CFClientEvents;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
-import com.portingdeadmods.cable_facades.rendeer.ClientStuff;
+import com.portingdeadmods.cable_facades.client.renderer.item.FacadeItemRenderer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -19,13 +18,13 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.function.Consumer;
 
 public class FacadeItem extends Item {
     public static final String FACADE_BLOCK = "facade_block";
+    public static final FacadeItemRenderer FACADE_ITEM_RENDERER = new FacadeItemRenderer();
 
     public FacadeItem(Properties p_41383_) {
         super(p_41383_);
@@ -88,7 +87,7 @@ public class FacadeItem extends Item {
         consumer.accept(new IClientItemExtensions() {
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return ClientStuff.FACADE_ITEM_RENDERER;
+                return FACADE_ITEM_RENDERER;
             }
         });
     }
