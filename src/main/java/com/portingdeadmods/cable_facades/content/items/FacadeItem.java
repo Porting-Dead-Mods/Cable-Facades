@@ -3,17 +3,24 @@ package com.portingdeadmods.cable_facades.content.items;
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.CFClientEvents;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ComplexItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+
+import java.util.function.Consumer;
 
 public class FacadeItem extends Item {
     public static final String FACADE_BLOCK = "facade_block";
@@ -60,5 +67,26 @@ public class FacadeItem extends Item {
             return InteractionResult.SUCCESS;
         }
         return super.useOn(p_41427_);
+    }
+
+    @Override
+    public Component getName(ItemStack p_41458_) {
+        if (p_41458_.hasTag()) {
+            CompoundTag tag = p_41458_.getTag();
+            Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
+            BlockItem blockItem = (BlockItem) block.asItem();
+            return Component.literal("Facade - " + blockItem.getDescription().getString());
+        }
+        return Component.literal("Facade - Empty");
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return CFClientEvents.getFacadeRenderer();
+            }
+        });
     }
 }

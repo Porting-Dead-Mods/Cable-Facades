@@ -150,9 +150,10 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:thermal-foundation-222880:5443583")
     implementation fg.deobf("curse.maven:mekanism-268560:5662583")
     runtimeOnly fg.deobf("curse.maven:fusion-connected-textures-854949:5129294")
+    runtimeOnly fg.deobf("curse.maven:applied-energistics-2-223794:5641282")
     runtimeOnly fg.deobf("curse.maven:connected-glass-383129:5656978")
     runtimeOnly fg.deobf("curse.maven:supermartijn642s-core-lib-454372:5668859")
-    runtimeOnly fg.deobf("curse.maven:applied-energistics-2-223794:5641282")
+    runtimeOnly fg.deobf("curse.maven:jei-238222:5846810")
 
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'

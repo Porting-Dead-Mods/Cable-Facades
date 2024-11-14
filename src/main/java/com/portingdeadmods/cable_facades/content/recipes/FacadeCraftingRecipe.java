@@ -1,6 +1,5 @@
 package com.portingdeadmods.cable_facades.content.recipes;
 
-import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
