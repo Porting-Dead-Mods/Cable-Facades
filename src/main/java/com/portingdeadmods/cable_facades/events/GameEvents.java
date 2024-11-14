@@ -23,7 +23,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.items.ItemHandlerHelper;
 
 @Mod.EventBusSubscriber(modid = CFMain.MODID)
-public class CFEvents {
+public final class GameEvents {
     @SubscribeEvent
     public static void onJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
@@ -55,7 +55,7 @@ public class CFEvents {
 
                 ItemHandlerHelper.giveItemToPlayer(player, facadeStack);
             } else {
-                CFClientEvents.CAMOUFLAGED_BLOCKS.remove(pos);
+                GameClientEvents.CAMOUFLAGED_BLOCKS.remove(pos);
             }
             player.swing(event.getHand());
             event.setCanceled(true);

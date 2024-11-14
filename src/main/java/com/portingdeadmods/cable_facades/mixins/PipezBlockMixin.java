@@ -1,6 +1,6 @@
 package com.portingdeadmods.cable_facades.mixins;
 
-import com.portingdeadmods.cable_facades.events.CFClientEvents;
+import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import de.maxhenkel.pipez.blocks.PipeBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
@@ -21,7 +21,7 @@ public class PipezBlockMixin {
     @Inject(method = "onRemove", at = @At("HEAD"), cancellable = true)
     private void onRemoveBlock(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving, CallbackInfo ci) {
         if (!state.is(newState.getBlock())) {
-            CFClientEvents.CAMOUFLAGED_BLOCKS.remove(pos);
+            GameClientEvents.CAMOUFLAGED_BLOCKS.remove(pos);
         }
     }
 
@@ -31,7 +31,7 @@ public class PipezBlockMixin {
             cancellable = true
     )
     private void getBlockShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
-        Block block = CFClientEvents.CAMOUFLAGED_BLOCKS.get(pos);
+        Block block = GameClientEvents.CAMOUFLAGED_BLOCKS.get(pos);
         if (block != null) {
             cir.setReturnValue(Shapes.or(block.defaultBlockState().getShape(worldIn, pos, context), cir.getReturnValue()));
         }
@@ -43,7 +43,7 @@ public class PipezBlockMixin {
             cancellable = true
     )
     private void getCollisionBlockShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
-        Block block = CFClientEvents.CAMOUFLAGED_BLOCKS.get(pos);
+        Block block = GameClientEvents.CAMOUFLAGED_BLOCKS.get(pos);
         if (block != null) {
             cir.setReturnValue(Shapes.or(block.defaultBlockState().getShape(worldIn, pos, context), cir.getReturnValue()));
         }
