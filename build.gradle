@@ -153,7 +153,6 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:applied-energistics-2-223794:5641282")
     runtimeOnly fg.deobf("curse.maven:connected-glass-383129:5656978")
     runtimeOnly fg.deobf("curse.maven:supermartijn642s-core-lib-454372:5668859")
-    runtimeOnly fg.deobf("curse.maven:jei-238222:5846810")
     runtimeOnly fg.deobf("curse.maven:xnet-260912:5712546")
     runtimeOnly fg.deobf("curse.maven:mcjtylib-233105:5613231")
     runtimeOnly fg.deobf("curse.maven:rftools-base-326041:5613272")
@@ -161,6 +160,10 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:cyclops-core-232758:5583765")
     runtimeOnly fg.deobf("curse.maven:common-capabilities-247007:5650234")
 
+    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+
+    runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
