@@ -17,11 +17,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 
 public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
-    private final BlockRenderDispatcher blockRenderer;
 
     public FacadeItemRenderer(BlockRenderDispatcher blockRenderer, EntityModelSet entityModelSet) {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), entityModelSet);
-        this.blockRenderer = blockRenderer;
     }
 
     @Override
@@ -31,7 +29,6 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
             if (tag.contains(FacadeItem.FACADE_BLOCK)) {
                 ResourceLocation blockId = new ResourceLocation(tag.getString(FacadeItem.FACADE_BLOCK));
                 Block block = BuiltInRegistries.BLOCK.get(blockId);
-
                 ItemStack blockStack = new ItemStack(block.asItem());
 
                 poseStack.pushPose();
@@ -52,7 +49,6 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.pushPose();
         var model = Minecraft.getInstance().getModelManager().getModel(
                 new ResourceLocation(CFMain.MODID, "item/facade"));
-
         Minecraft.getInstance().getItemRenderer().renderModelLists(
                 model,
                 stack,
