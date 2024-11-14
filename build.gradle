@@ -145,15 +145,21 @@ dependencies {
     // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}")
 
     implementation fg.deobf("curse.maven:pipez-443900:5550816")
-    implementation fg.deobf("curse.maven:thermal-dynamics-227443:5372747")
+    runtimeOnly fg.deobf("curse.maven:thermal-dynamics-227443:5372747")
     runtimeOnly fg.deobf("curse.maven:cofh-core-69162:5374122")
     runtimeOnly fg.deobf("curse.maven:thermal-foundation-222880:5443583")
-    implementation fg.deobf("curse.maven:mekanism-268560:5662583")
+    runtimeOnly fg.deobf("curse.maven:mekanism-268560:5662583")
     runtimeOnly fg.deobf("curse.maven:fusion-connected-textures-854949:5129294")
     runtimeOnly fg.deobf("curse.maven:applied-energistics-2-223794:5641282")
     runtimeOnly fg.deobf("curse.maven:connected-glass-383129:5656978")
     runtimeOnly fg.deobf("curse.maven:supermartijn642s-core-lib-454372:5668859")
     runtimeOnly fg.deobf("curse.maven:jei-238222:5846810")
+    runtimeOnly fg.deobf("curse.maven:xnet-260912:5712546")
+    runtimeOnly fg.deobf("curse.maven:mcjtylib-233105:5613231")
+    runtimeOnly fg.deobf("curse.maven:rftools-base-326041:5613272")
+    runtimeOnly fg.deobf("curse.maven:integrated-dynamics-236307:5890856")
+    runtimeOnly fg.deobf("curse.maven:cyclops-core-232758:5583765")
+    runtimeOnly fg.deobf("curse.maven:common-capabilities-247007:5650234")
 
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'

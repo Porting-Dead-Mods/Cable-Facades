@@ -54,7 +54,7 @@ public final class CFClientEvents {
 
             List<Map.Entry<BlockPos, Block>> sortedBlocks = CAMOUFLAGED_BLOCKS.entrySet().stream()
                     .sorted(Comparator.comparingDouble(entry -> entry.getKey().distSqr(cameraBlockPos)))
-                    .collect(Collectors.toList());
+                    .toList();
 
             for (Map.Entry<BlockPos, Block> entry : sortedBlocks) {
                 BlockPos blockPos = entry.getKey();
@@ -70,9 +70,17 @@ public final class CFClientEvents {
 
                     MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
 
-                    for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
-                        mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, bufferSource.getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
+
+                    if(mc.player.getMainHandItem().getTags().anyMatch(itemTag -> itemTag.equals(CFItemTags.WRENCHES))){
+                        for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state,mc.level.random,ModelData.EMPTY)){
+                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, new TranslucentRenderTypeBuffer(mc.renderBuffers().bufferSource(), 120).getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
+                        }
+                    }else{
+                        for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
+                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, bufferSource.getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
+                        }
                     }
+
 
                     bufferSource.endBatch();
                 }
