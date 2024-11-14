@@ -3,6 +3,7 @@ package com.portingdeadmods.cable_facades.content.items;
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.CFClientEvents;
+import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.rendeer.ClientStuff;
 import com.portingdeadmods.cable_facades.rendeer.FacadeItemRenderer;
 import net.minecraft.client.Minecraft;
@@ -41,7 +42,7 @@ public class FacadeItem extends Item {
             Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
             Block targetBlock = p_41427_.getLevel().getBlockState(pos).getBlock();
 
-            if (!CFConfig.isBlockAllowed(targetBlock)) {
+            if (!CFConfig.isBlockAllowed(targetBlock) && p_41427_.getLevel().getBlockState(pos).getTags().noneMatch(blockTag -> blockTag.equals(CFItemTags.SUPPORTS_FACADE))){
                 return InteractionResult.FAIL;
             }
 
