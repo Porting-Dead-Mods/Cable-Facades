@@ -12,6 +12,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.OutlineBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.item.ItemProperties;
@@ -32,7 +34,10 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Mod.EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT)
 public final class CFClientEvents {
@@ -43,37 +48,41 @@ public final class CFClientEvents {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             Minecraft mc = Minecraft.getInstance();
             LocalPlayer player = mc.player;
+            Vec3 cameraPos = event.getCamera().getPosition();
 
-            for (Map.Entry<BlockPos, Block> entry : CAMOUFLAGED_BLOCKS.entrySet()) {
+            BlockPos cameraBlockPos = new BlockPos((int) cameraPos.x(), (int) cameraPos.y(), (int) cameraPos.z());
+
+            List<Map.Entry<BlockPos, Block>> sortedBlocks = CAMOUFLAGED_BLOCKS.entrySet().stream()
+                    .sorted(Comparator.comparingDouble(entry -> entry.getKey().distSqr(cameraBlockPos)))
+                    .collect(Collectors.toList());
+
+            for (Map.Entry<BlockPos, Block> entry : sortedBlocks) {
                 BlockPos blockPos = entry.getKey();
                 Block block = entry.getValue();
                 ClientLevel level = mc.level;
                 BlockState framedBlock = level.getBlockState(blockPos);
-                Vec3 vec3 = event.getCamera().getPosition();
-                double d0 = vec3.x();
-                double d1 = vec3.y();
-                double d2 = vec3.z();
 
                 PoseStack poseStack = event.getPoseStack();
-
                 poseStack.pushPose();
                 {
-                    poseStack.translate((double) blockPos.getX() - d0, (double) blockPos.getY() - d1, (double) blockPos.getZ() - d2);
+                    poseStack.translate(blockPos.getX() - cameraPos.x(), blockPos.getY() - cameraPos.y(), blockPos.getZ() - cameraPos.z());
                     BlockState state = getState(block, framedBlock);
-                    if (!player.getMainHandItem().is(CFItems.WRENCH.get())) {
-                        for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
-                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, mc.renderBuffers().bufferSource().getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
-                        }
-                    } else {
-                        for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
-                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, new TranslucentRenderTypeBuffer(mc.renderBuffers().bufferSource(), 120).getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
-                        }
+
+                    MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+
+                    for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
+                        mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, bufferSource.getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
                     }
+
+                    bufferSource.endBatch();
                 }
                 poseStack.popPose();
             }
         }
     }
+
+
+
 
     @SubscribeEvent
     public static void init(final FMLClientSetupEvent event) {
