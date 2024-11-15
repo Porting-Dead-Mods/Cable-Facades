@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SculkSensorBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -97,17 +98,14 @@ public abstract class BlockStateBaseMixin {
         }
     }
 
-    @Inject(
-            method = "getLightBlock",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void getLightBlock(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Integer> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
-            if (camoBlock != null) {
-                cir.setReturnValue(camoBlock.defaultBlockState().getLightBlock(blockGetter, blockPos));
-            }
+    @Inject(method = "isSolidRender", at = @At("HEAD"), cancellable = true)
+    private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
+        Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
+        if (camoBlock != null) {
+            BlockState camoState = camoBlock.defaultBlockState();
+            boolean result = camoState.canOcclude() && Block.isShapeFullBlock(camoState.getOcclusionShape(blockGetter, blockPos));
+            System.out.println("isSolidRender: " + result +" for block: " + camoBlock + " so the result was changed for block: " + getBlock());
+            cir.setReturnValue(result);
         }
     }
 }

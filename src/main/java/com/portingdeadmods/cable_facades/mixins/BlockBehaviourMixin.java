@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BlockBehaviour.class)
 public abstract class BlockBehaviourMixin {
-
+    /*
     @Inject(
             method = "getLightBlock",
             at = @At("HEAD"),
@@ -22,15 +22,14 @@ public abstract class BlockBehaviourMixin {
     private void getLightBlock(BlockState state, BlockGetter level, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
         Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(pos);
         if (camoBlock != null) {
-            BlockState camoState = camoBlock.defaultBlockState();
-            if (camoState.isSolidRender(level, pos)) {
-                System.out.println("Solid");
-                cir.setReturnValue(level.getMaxLightLevel());
-            } else {
-                System.out.println("Not Solid");
-                cir.setReturnValue(camoState.propagatesSkylightDown(level, pos) ? 0 : 1);
+            BlockState facadeState = camoBlock.defaultBlockState();
+            cir.setReturnValue(facadeState.getLightBlock(level, pos));
             }
         }
+
+     */
     }
-}
+
+
+
 
