@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "cable_facades.refmap.json",
   "mixins": [
+    "BlockBehaviourMixin",
     "BlockStateBaseMixin"
   ],
   "client": [

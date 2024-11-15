@@ -42,9 +42,9 @@ public abstract class BlockStateBaseMixin {
             if (!blockState.is(block)) {
                 if (level instanceof ServerLevel serverLevel) {
                     CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
+                    Block camoBlock = data.getCamouflagedBlocks().get(blockPos);
                     ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
                     CompoundTag nbtData = new CompoundTag();
-                    Block camoBlock = data.getCamouflagedBlocks().get(blockPos);
                     nbtData.putString("facade_block", BuiltInRegistries.BLOCK.getKey(camoBlock).toString());
                     facadeStack.setTag(nbtData);
                     data.remove(blockPos);
@@ -93,6 +93,20 @@ public abstract class BlockStateBaseMixin {
             Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
             if (camoBlock != null) {
                 cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, blockPos));
+            }
+        }
+    }
+
+    @Inject(
+            method = "getLightBlock",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void getLightBlock(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Integer> cir) {
+        if (CFConfig.isBlockAllowed(getBlock())) {
+            Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
+            if (camoBlock != null) {
+                cir.setReturnValue(camoBlock.defaultBlockState().getLightBlock(blockGetter, blockPos));
             }
         }
     }

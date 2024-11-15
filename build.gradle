@@ -152,7 +152,8 @@ dependencies {
     // compileOnly fg.deobf("mezz.jei:jei-${mc_version}-forge-api:${jei_version}")
     // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}")
 
-    implementation fg.deobf("curse.maven:pipez-443900:5550816")
+    //runtimeOnly fg.deobf("curse.maven:mixinbooster-980731:5146058")
+    runtimeOnly fg.deobf("curse.maven:pipez-443900:5550816")
     runtimeOnly fg.deobf("curse.maven:thermal-dynamics-227443:5372747")
     runtimeOnly fg.deobf("curse.maven:cofh-core-69162:5374122")
     runtimeOnly fg.deobf("curse.maven:thermal-foundation-222880:5443583")
