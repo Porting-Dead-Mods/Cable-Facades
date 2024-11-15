@@ -22,15 +22,17 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import javax.annotation.Nullable;
+
 @Mixin(BlockBehaviour.BlockStateBase.class)
 public abstract class BlockStateBaseMixin {
+
     @Shadow public abstract Block getBlock();
 
     @Inject(
@@ -106,6 +108,42 @@ public abstract class BlockStateBaseMixin {
             boolean result = camoState.canOcclude() && Block.isShapeFullBlock(camoState.getOcclusionShape(blockGetter, blockPos));
             System.out.println("isSolidRender: " + result +" for block: " + camoBlock + " so the result was changed for block: " + getBlock());
             cir.setReturnValue(result);
+        }
+    }
+
+    @Unique
+    private static final ThreadLocal<Boolean> RECURSION_GUARD = ThreadLocal.withInitial(() -> false);
+
+    @Inject(
+            method = "getLightBlock(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)I",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void getLightBlock(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Integer> cir) {
+        if (RECURSION_GUARD.get()) return;
+
+        try {
+            RECURSION_GUARD.set(true);
+
+            Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
+            if (camoBlock != null) {
+                BlockState camoBlockState = camoBlock.defaultBlockState();
+                cir.setReturnValue(camoBlockState.getLightBlock(blockGetter, blockPos));
+            }
+        } finally {
+            RECURSION_GUARD.set(false);
+        }
+    }
+
+    @Inject(
+            method = "propagatesSkylightDown(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Z",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void propagatesSkylightDown(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
+        Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
+        if (camoBlock != null) {
+            cir.setReturnValue(camoBlock.defaultBlockState().propagatesSkylightDown(blockGetter, blockPos));
         }
     }
 }
