@@ -60,6 +60,11 @@ public class CFConfig {
     }
 
     public static boolean isBlockAllowed(Block targetBlock) {
+
+        if (exactBlocks == null || blockPatterns == null) {
+            return false; // Config has not been initialized, block access
+        }
+
         if (exactBlocks.contains(targetBlock)) {
             return true;
         }
