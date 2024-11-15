@@ -99,6 +99,7 @@ public abstract class BlockStateBaseMixin {
             }
         }
     }
+    /*
 
     @Inject(method = "isSolidRender", at = @At("HEAD"), cancellable = true)
     private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
@@ -146,4 +147,5 @@ public abstract class BlockStateBaseMixin {
             cir.setReturnValue(camoBlock.defaultBlockState().propagatesSkylightDown(blockGetter, blockPos));
         }
     }
+     */
 }

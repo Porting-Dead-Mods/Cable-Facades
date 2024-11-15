@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BlockBehaviour.class)
 public abstract class BlockBehaviourMixin {
+    /*
     @Inject(
             method = "getLightBlock",
             at = @At("HEAD"),
@@ -25,6 +26,7 @@ public abstract class BlockBehaviourMixin {
             cir.setReturnValue(facadeState.getLightBlock(level, pos));
             }
         }
+     */
     }
 
 
