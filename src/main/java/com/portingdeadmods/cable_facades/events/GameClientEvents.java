@@ -1,16 +1,28 @@
 package com.portingdeadmods.cable_facades.events;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
+import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.TranslucentRenderTypeBuffer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import net.minecraft.CrashReport;
+import net.minecraft.CrashReportCategory;
+import net.minecraft.ReportedException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -20,6 +32,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -44,26 +57,39 @@ public final class GameClientEvents {
                 BlockState framedBlock = level.getBlockState(blockPos);
                 PoseStack poseStack = event.getPoseStack();
                 poseStack.pushPose();
-                ModelData modelData = mc.getBlockRenderer().getBlockModel(framedBlock).getModelData(level, blockPos, framedBlock, ModelData.EMPTY);
-
-
                 {
                     poseStack.translate(blockPos.getX() - cameraPos.x(), blockPos.getY() - cameraPos.y(), blockPos.getZ() - cameraPos.z());
                     BlockState state = getState(block, framedBlock);
                     MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
                     if (mc.player.getMainHandItem().is(CFItemTags.WRENCHES)) {
                         for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
-                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, new TranslucentRenderTypeBuffer(mc.renderBuffers().bufferSource(), 120).getBuffer(type), true, mc.level.random, modelData, type);
+                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, new TranslucentRenderTypeBuffer(mc.renderBuffers().bufferSource(), 120).getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
                         }
                     } else {
                         for (RenderType type : mc.getBlockRenderer().getBlockModel(state).getRenderTypes(state, mc.level.random, ModelData.EMPTY)) {
-                            mc.getBlockRenderer().renderBatched(state, blockPos, mc.level, poseStack, bufferSource.getBuffer(type), true, mc.level.random, modelData, type);
+                            renderBatched(mc.getBlockRenderer(), state, blockPos, mc.level, poseStack, bufferSource.getBuffer(type), true, mc.level.random, ModelData.EMPTY, type);
                         }
                     }
                     bufferSource.endBatch();
                 }
                 poseStack.popPose();
             }
+        }
+    }
+
+    private static void renderBatched(BlockRenderDispatcher blockRenderDispatcher, BlockState p_234356_, BlockPos p_234357_, BlockAndTintGetter p_234358_, PoseStack p_234359_, VertexConsumer p_234360_, boolean p_234361_, RandomSource p_234362_, ModelData modelData, RenderType renderType) {
+        try {
+            RenderShape rendershape = p_234356_.getRenderShape();
+            if (rendershape == RenderShape.MODEL) {
+                BakedModel blockModel = blockRenderDispatcher.getBlockModel(p_234356_);
+                blockRenderDispatcher.getModelRenderer().tesselateBlock(p_234358_, blockModel, p_234356_, p_234357_, p_234359_, p_234360_, p_234361_, p_234362_, p_234356_.getSeed(p_234357_), OverlayTexture.NO_OVERLAY, blockModel.getModelData(p_234358_, p_234357_, p_234356_, ModelData.EMPTY), renderType);
+            }
+
+        } catch (Throwable throwable) {
+            CrashReport crashreport = CrashReport.forThrowable(throwable, "Tesselating block in world");
+            CrashReportCategory crashreportcategory = crashreport.addCategory("Block being tesselated");
+            CrashReportCategory.populateBlockDetails(crashreportcategory, p_234358_, p_234357_, p_234356_);
+            throw new ReportedException(crashreport);
         }
     }
 
