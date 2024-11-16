@@ -3,7 +3,6 @@ package com.portingdeadmods.cable_facades.events;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.client.renderer.item.FacadeItemRenderer;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.utils.TranslucentRenderTypeBuffer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -38,7 +37,6 @@ import java.util.Map;
 @Mod.EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT)
 public final class GameClientEvents {
     public static Map<BlockPos, @Nullable Block> CAMOUFLAGED_BLOCKS = new Object2ObjectOpenHashMap<>();
-    public static final FacadeItemRenderer FACADE_ITEM_RENDERER = new FacadeItemRenderer();
 
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
