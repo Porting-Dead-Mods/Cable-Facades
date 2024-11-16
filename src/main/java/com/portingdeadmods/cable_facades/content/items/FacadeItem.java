@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.function.Consumer;
@@ -68,6 +69,10 @@ public class FacadeItem extends Item {
 
             Level level = p_41427_.getLevel();
             level.getLightEngine().checkBlock(pos);
+
+            BlockState state = level.getBlockState(pos);
+            level.sendBlockUpdated(pos, state, state, 3);
+            level.updateNeighborsAt(pos, state.getBlock());
 
             return InteractionResult.SUCCESS;
         }
