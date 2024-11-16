@@ -66,6 +66,7 @@ public final class GameEvents {
             }
             player.swing(event.getHand());
 
+            level.getLightEngine().checkBlock(pos);
             event.setCanceled(true);
         }
 
