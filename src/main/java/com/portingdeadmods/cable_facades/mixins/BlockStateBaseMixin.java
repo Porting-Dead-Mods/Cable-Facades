@@ -2,6 +2,7 @@ package com.portingdeadmods.cable_facades.mixins;
 
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
+import com.portingdeadmods.cable_facades.events.ClientCamoManager;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
 import com.portingdeadmods.cable_facades.networking.RemoveCamoPacket;
 import com.portingdeadmods.cable_facades.registries.CFItems;
@@ -21,6 +22,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -30,6 +32,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class BlockStateBaseMixin {
 
     @Shadow public abstract Block getBlock();
+
+    @Unique
+    private static final ThreadLocal<Boolean> RECURSION_GUARD = ThreadLocal.withInitial(() -> false);
 
     @Inject(
             method = "onRemove",
@@ -73,7 +78,7 @@ public abstract class BlockStateBaseMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void getShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext, CallbackInfoReturnable<VoxelShape> cir) {
+    private void getShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext,CallbackInfoReturnable<VoxelShape> cir) {
         if (CFConfig.isBlockAllowed(getBlock())) {
             Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
             if (camoBlock != null) {
@@ -95,24 +100,24 @@ public abstract class BlockStateBaseMixin {
             }
         }
     }
-    /*
 
-    @Inject(method = "isSolidRender", at = @At("HEAD"), cancellable = true)
+    @Inject(
+            method = "isSolidRender",
+            at = @At("HEAD"),
+            cancellable = true
+    )
     private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
-        Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
-        if (camoBlock != null) {
-            BlockState camoState = camoBlock.defaultBlockState();
-            boolean result = camoState.canOcclude() && Block.isShapeFullBlock(camoState.getOcclusionShape(blockGetter, blockPos));
-            System.out.println("isSolidRender: " + result +" for block: " + camoBlock + " so the result was changed for block: " + getBlock());
-            cir.setReturnValue(result);
+        if (CFConfig.isBlockAllowed(getBlock())) {
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+            if (camoBlock != null) {
+                BlockState camoState = camoBlock.defaultBlockState();
+                cir.setReturnValue(camoState.canOcclude() && camoState.isSolidRender(blockGetter, blockPos));
+            }
         }
     }
 
-    @Unique
-    private static final ThreadLocal<Boolean> RECURSION_GUARD = ThreadLocal.withInitial(() -> false);
-
     @Inject(
-            method = "getLightBlock(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)I",
+            method = "getLightBlock",
             at = @At("HEAD"),
             cancellable = true
     )
@@ -121,11 +126,12 @@ public abstract class BlockStateBaseMixin {
 
         try {
             RECURSION_GUARD.set(true);
-
-            Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
-            if (camoBlock != null) {
-                BlockState camoBlockState = camoBlock.defaultBlockState();
-                cir.setReturnValue(camoBlockState.getLightBlock(blockGetter, blockPos));
+            if (CFConfig.isBlockAllowed(getBlock())) {
+                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (camoBlock != null) {
+                    BlockState camoState = camoBlock.defaultBlockState();
+                    cir.setReturnValue(camoState.getLightBlock(blockGetter, blockPos));
+                }
             }
         } finally {
             RECURSION_GUARD.set(false);
@@ -133,15 +139,32 @@ public abstract class BlockStateBaseMixin {
     }
 
     @Inject(
-            method = "propagatesSkylightDown(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Z",
+            method = "propagatesSkylightDown",
             at = @At("HEAD"),
             cancellable = true
     )
     private void propagatesSkylightDown(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
-        Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
-        if (camoBlock != null) {
-            cir.setReturnValue(camoBlock.defaultBlockState().propagatesSkylightDown(blockGetter, blockPos));
+        if (CFConfig.isBlockAllowed(getBlock())) {
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+            if (camoBlock != null) {
+                BlockState camoState = camoBlock.defaultBlockState();
+                cir.setReturnValue(camoState.propagatesSkylightDown(blockGetter, blockPos));
+            }
         }
     }
-     */
+
+    @Inject(
+            method = "canOcclude",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void canOcclude(CallbackInfoReturnable<Boolean> cir) {
+        Block block = getBlock();
+        if (CFConfig.isBlockAllowed(block)) {
+            Block camoBlock = FacadeUtils.getFacade(null, null);
+            if (camoBlock != null) {
+                cir.setReturnValue(camoBlock.defaultBlockState().canOcclude());
+            }
+        }
+    }
 }
