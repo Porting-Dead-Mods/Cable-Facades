@@ -33,20 +33,15 @@ public class TranslucentRenderTypeBuffer implements MultiBufferSource {
         this.inner = inner;
         // alpha is a direct fade from 0 to 255
         this.alpha = Mth.clamp(alpha, 0, 0xFF);
-        // RGB based on temperature, fades from 0xB06020 tint to 0xFFFFFF
-        int temperature = Mth.clamp(0, 0, 0xFF);
-        this.red = 0xFF - (temperature * (0xFF - 0xB0) / 0xFF);
-        this.green = 0xFF - (temperature * (0xFF - 0x60) / 0xFF);
-        this.blue = 0xFF - (temperature * (0xFF - 0x20) / 0xFF);
+        // RGB based on temp, fades from 0xB06020 tint to 0xFFFFFF
+        int temp = Mth.clamp(0, 0, 0xFF);
+        this.red = 0xFF - (temp * (0xFF - 0xB0) / 0xFF);
+        this.green = 0xFF - (temp * (0xFF - 0x60) / 0xFF);
+        this.blue = 0xFF - (temp * (0xFF - 0x20) / 0xFF);
     }
 
     @Override
     public @NotNull VertexConsumer getBuffer(@NotNull RenderType type) {
-//        if (alpha < 255 && MAKE_TRANSPARENT.contains(type.toString()) && type instanceof RenderType.CompositeRenderType composite && composite.state.textureState instanceof RenderStateShard.TextureStateShard textureState) {
-//            ResourceLocation texture = textureState.texture.orElse(InventoryMenu.BLOCK_ATLAS);
-//            type = RenderType.entityTranslucentCull(texture);
-//        }
-
         return new TintedVertexBuilder(inner.getBuffer(RenderType.translucent()), red, green, blue, alpha);
     }
 }
