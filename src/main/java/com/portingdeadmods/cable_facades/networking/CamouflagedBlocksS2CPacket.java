@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades.networking;
 
+import com.portingdeadmods.cable_facades.events.ClientCamoManager;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
@@ -37,7 +38,7 @@ public class CamouflagedBlocksS2CPacket {
     public boolean handle(Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
-            GameClientEvents.CAMOUFLAGED_BLOCKS = new Object2ObjectOpenHashMap<>(this.camouflagedBlocks);
+            ClientCamoManager.CAMOUFLAGED_BLOCKS = new Object2ObjectOpenHashMap<>(this.camouflagedBlocks);
         });
         return true;
     }

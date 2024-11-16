@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades.networking;
 
+import com.portingdeadmods.cable_facades.events.ClientCamoManager;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -24,6 +25,6 @@ public class RemoveCamoPacket {
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> GameClientEvents.CAMOUFLAGED_BLOCKS.remove(this.camoPos));
+        context.enqueueWork(() -> ClientCamoManager.CAMOUFLAGED_BLOCKS.remove(this.camoPos));
     }
 }

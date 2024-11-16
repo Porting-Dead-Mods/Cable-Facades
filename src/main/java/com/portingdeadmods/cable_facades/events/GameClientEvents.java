@@ -36,7 +36,6 @@ import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT)
 public final class GameClientEvents {
-    public static Map<BlockPos, @Nullable Block> CAMOUFLAGED_BLOCKS = new Object2ObjectOpenHashMap<>();
 
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
@@ -44,7 +43,7 @@ public final class GameClientEvents {
             Minecraft mc = Minecraft.getInstance();
             Vec3 cameraPos = event.getCamera().getPosition();
             BlockPos cameraBlockPos = new BlockPos((int) cameraPos.x(), (int) cameraPos.y(), (int) cameraPos.z());
-            List<Map.Entry<BlockPos, Block>> sortedBlocks = CAMOUFLAGED_BLOCKS.entrySet().stream()
+            List<Map.Entry<BlockPos, Block>> sortedBlocks = ClientCamoManager.CAMOUFLAGED_BLOCKS.entrySet().stream()
                     .sorted(Comparator.comparingDouble(entry -> entry.getKey().distToCenterSqr(event.getCamera().getPosition())))
                     .toList();
             for (Map.Entry<BlockPos, Block> entry : sortedBlocks) {

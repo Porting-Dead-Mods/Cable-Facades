@@ -2,6 +2,7 @@ package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
+import com.portingdeadmods.cable_facades.events.ClientCamoManager;
 import com.portingdeadmods.cable_facades.events.ClientStuff;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
@@ -47,7 +48,7 @@ public class FacadeItem extends Item {
 
             boolean isAlreadyCamouflaged = p_41427_.getLevel() instanceof ServerLevel serverLevel
                     ? CableFacadeSavedData.get(serverLevel).contains(pos)
-                    : GameClientEvents.CAMOUFLAGED_BLOCKS.containsKey(pos);
+                    : ClientCamoManager.CAMOUFLAGED_BLOCKS.containsKey(pos);
 
             if (isAlreadyCamouflaged) {
                 return InteractionResult.FAIL;
@@ -57,7 +58,7 @@ public class FacadeItem extends Item {
                 CableFacadeSavedData savedData = CableFacadeSavedData.get(serverLevel);
                 savedData.put(pos, block);
             } else {
-                GameClientEvents.CAMOUFLAGED_BLOCKS.put(pos, block);
+                ClientCamoManager.CAMOUFLAGED_BLOCKS.put(pos, block);
             }
 
             if (!p_41427_.getPlayer().isCreative() && CFConfig.consumeFacade) {

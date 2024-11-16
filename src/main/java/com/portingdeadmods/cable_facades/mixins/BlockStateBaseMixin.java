@@ -2,7 +2,6 @@ package com.portingdeadmods.cable_facades.mixins;
 
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
-import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
 import com.portingdeadmods.cable_facades.networking.RemoveCamoPacket;
 import com.portingdeadmods.cable_facades.registries.CFItems;
@@ -20,7 +19,8 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -61,7 +61,7 @@ public abstract class BlockStateBaseMixin {
     )
     private void getCollisionShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext, CallbackInfoReturnable<VoxelShape> cir) {
         if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
             if (camoBlock != null) {
                 cir.setReturnValue(camoBlock.defaultBlockState().getCollisionShape(blockGetter, blockPos, collisionContext));
             }
@@ -75,7 +75,7 @@ public abstract class BlockStateBaseMixin {
     )
     private void getShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext, CallbackInfoReturnable<VoxelShape> cir) {
         if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
             if (camoBlock != null) {
                 cir.setReturnValue(camoBlock.defaultBlockState().getShape(blockGetter, blockPos, collisionContext));
             }
@@ -89,7 +89,7 @@ public abstract class BlockStateBaseMixin {
     )
     private void getOcclusionShape(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<VoxelShape> cir) {
         if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = GameClientEvents.CAMOUFLAGED_BLOCKS.get(blockPos);
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
             if (camoBlock != null) {
                 cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, blockPos));
             }
