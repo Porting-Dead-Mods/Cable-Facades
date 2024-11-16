@@ -17,34 +17,32 @@ public abstract class BlockStateMixin implements IForgeBlockState {
 
     @Override
     public BlockState getAppearance(BlockAndTintGetter level, BlockPos pos, Direction side, @Nullable BlockState queryState, @Nullable BlockPos queryPos) {
-        Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
-        if (camoBlock != null) {
-            BlockState camoState = getCamoState(camoBlock);
-            return camoState.getBlock().getAppearance(camoState, level, pos, side, queryState, queryPos);
+        if (ClientCamoManager.CAMOUFLAGED_BLOCKS.containsKey(pos)) {
+            Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
+            if (camoBlock != null) {
+                BlockState camoState = camoBlock.defaultBlockState();
+                return camoState.getBlock().getAppearance(camoState, level, pos, side, queryState, queryPos);
+            }
         }
-
-        BlockState self = cable_facades$self();
-        return self.getBlock().getAppearance(self, level, pos, side, queryState, queryPos);
+        return cable_facades$self().getBlock().getAppearance(cable_facades$self(), level, pos, side, queryState, queryPos);
     }
+
 
     @Override
     public int getLightEmission(BlockGetter level, BlockPos pos) {
-        Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
-        if (camoBlock != null) {
-            return getCamoState(camoBlock).getLightEmission();
-        }
 
-        BlockState self = cable_facades$self();
-        return self.getBlock().getLightEmission(self, level, pos);
+        if (ClientCamoManager.CAMOUFLAGED_BLOCKS.containsKey(pos)) {
+            Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
+            if (camoBlock != null) {
+                BlockState camoState = camoBlock.defaultBlockState();
+                return camoState.getLightEmission();
+            }
+        }
+        return cable_facades$self().getBlock().getLightEmission(cable_facades$self(), level, pos);
     }
 
     @Unique
     private BlockState cable_facades$self() {
         return (BlockState) (Object) this;
-    }
-
-    @Unique
-    private static BlockState getCamoState(Block block) {
-        return block.defaultBlockState();
     }
 }
