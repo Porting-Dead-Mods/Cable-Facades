@@ -2,12 +2,10 @@ package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
+import com.portingdeadmods.cable_facades.events.CFClientEvents;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
-import com.portingdeadmods.cable_facades.client.renderer.item.FacadeItemRenderer;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -18,19 +16,14 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.fml.DistExecutor;
 
 import java.util.function.Consumer;
 
 public class FacadeItem extends Item {
     public static final String FACADE_BLOCK = "facade_block";
-    public static final FacadeItemRenderer FACADE_ITEM_RENDERER = new FacadeItemRenderer();
 
     public FacadeItem(Properties p_41383_) {
         super(p_41383_);
@@ -92,8 +85,8 @@ public class FacadeItem extends Item {
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return FACADE_ITEM_RENDERER;
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return GameClientEvents.FACADE_ITEM_RENDERER;
             }
         });
     }

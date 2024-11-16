@@ -3,8 +3,8 @@ package com.portingdeadmods.cable_facades.events;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.client.renderer.item.FacadeItemRenderer;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
-import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.TranslucentRenderTypeBuffer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.CrashReport;
@@ -12,7 +12,6 @@ import net.minecraft.CrashReportCategory;
 import net.minecraft.ReportedException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
@@ -27,13 +26,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.model.IDynamicBakedModel;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +38,7 @@ import java.util.Map;
 @Mod.EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT)
 public final class GameClientEvents {
     public static Map<BlockPos, @Nullable Block> CAMOUFLAGED_BLOCKS = new Object2ObjectOpenHashMap<>();
+    public static final FacadeItemRenderer FACADE_ITEM_RENDERER = new FacadeItemRenderer();
 
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
