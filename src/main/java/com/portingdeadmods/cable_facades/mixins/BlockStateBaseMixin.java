@@ -121,20 +121,15 @@ public abstract class BlockStateBaseMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void getLightBlock(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Integer> cir) {
-        if (RECURSION_GUARD.get()) return;
-
-        try {
-            RECURSION_GUARD.set(true);
-            if (CFConfig.isBlockAllowed(getBlock())) {
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    BlockState camoState = camoBlock.defaultBlockState();
-                    cir.setReturnValue(camoState.getLightBlock(blockGetter, blockPos));
-                }
+    private void getLightBlock(BlockGetter level, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
+        Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
+        if (camoBlock != null) {
+            BlockState camoState = camoBlock.defaultBlockState();
+            if (camoState.isSolidRender(level, pos)) {
+                cir.setReturnValue(level.getMaxLightLevel());
+            } else {
+                cir.setReturnValue(camoState.propagatesSkylightDown(level, pos) ? 0 : 1);
             }
-        } finally {
-            RECURSION_GUARD.set(false);
         }
     }
 
@@ -143,13 +138,11 @@ public abstract class BlockStateBaseMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void propagatesSkylightDown(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-            if (camoBlock != null) {
-                BlockState camoState = camoBlock.defaultBlockState();
-                cir.setReturnValue(camoState.propagatesSkylightDown(blockGetter, blockPos));
-            }
+    private void propagatesSkylightDown(BlockGetter level, BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+        Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
+        if (camoBlock != null) {
+            BlockState camoState = camoBlock.defaultBlockState();
+            cir.setReturnValue(camoBlock.propagatesSkylightDown(camoState, level, pos));
         }
     }
 
