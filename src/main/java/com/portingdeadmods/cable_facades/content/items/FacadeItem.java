@@ -39,7 +39,7 @@ public class FacadeItem extends Item {
             Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
             Block targetBlock = p_41427_.getLevel().getBlockState(pos).getBlock();
 
-            if (!CFConfig.isBlockAllowed(targetBlock) && p_41427_.getLevel().getBlockState(pos).getTags().noneMatch(blockTag -> blockTag.equals(CFItemTags.SUPPORTS_FACADE))){
+            if (!CFConfig.isBlockAllowed(targetBlock) && !p_41427_.getLevel().getBlockState(pos).is(CFItemTags.SUPPORTS_FACADE)){
                 return InteractionResult.FAIL;
             }
 
