@@ -30,6 +30,23 @@ When holding a wrench:
 
 1.21 coming soon!
 
+## Pre-Supported Mods
+* Computer Craft
+* Create
+* Cyclic
+* Elemental Craft
+* Embers
+* GregTechCEu Modern
+* LaserIO
+* Mekanism
+* Mekanism Extras
+* Pipez
+* Pneumatic Craft Repressurized
+* Powah
+* Pretty Pipes
+* Pretty Pipes Fluids
+* Thermal Series
+
 ## Dependencies
 None! Cable Facades is a standalone mod
 
