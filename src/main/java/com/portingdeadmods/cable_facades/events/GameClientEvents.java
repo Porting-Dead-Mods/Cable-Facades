@@ -44,15 +44,12 @@ public final class GameClientEvents {
         }
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc == null || mc.level == null || mc.player == null) {
+        if (mc.level == null || mc.player == null) {
             return;
         }
 
         ClientLevel level = mc.level;
         Vec3 cameraPos = event.getCamera().getPosition();
-        if (cameraPos == null) {
-            return;
-        }
 
         Frustum frustum = event.getFrustum();
 
@@ -62,26 +59,25 @@ public final class GameClientEvents {
 
         List<Map.Entry<BlockPos, Block>> sortedBlocks = ClientCamoManager.CAMOUFLAGED_BLOCKS.entrySet().stream()
                 .filter(entry -> {
+                    if (entry == null) return false;
                     BlockPos pos = entry.getKey();
                     if (pos == null) return false;
                     AABB boundingBox = new AABB(pos);
                     return frustum.isVisible(boundingBox);
                 })
-                .sorted(Comparator.comparingDouble(entry ->
-                        entry.getKey().distToCenterSqr(cameraPos)))
+                .sorted(Comparator.comparingDouble(entry -> {
+                    BlockPos pos = entry.getKey();
+                    return pos != null ? pos.distToCenterSqr(cameraPos) : Double.MAX_VALUE;
+                }))
                 .toList();
 
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-        if (bufferSource == null) {
-            return;
-        }
 
         PoseStack poseStack = event.getPoseStack();
-        if (poseStack == null) {
-            return;
-        }
 
         for (Map.Entry<BlockPos, Block> entry : sortedBlocks) {
+            if (entry == null) continue;
+
             BlockPos blockPos = entry.getKey();
             Block block = entry.getValue();
             if (blockPos == null || block == null) {
@@ -89,32 +85,33 @@ public final class GameClientEvents {
             }
 
             BlockState framedBlock = level.getBlockState(blockPos);
-            if (framedBlock == null) {
-                continue;
-            }
 
             poseStack.pushPose();
             try {
-                poseStack.translate(
+                Vec3 renderPos = new Vec3(
                         blockPos.getX() - cameraPos.x(),
                         blockPos.getY() - cameraPos.y(),
                         blockPos.getZ() - cameraPos.z()
                 );
 
+                poseStack.translate(renderPos.x(), renderPos.y(), renderPos.z());
+
                 BlockState state = getState(block, framedBlock);
-                if (state == null) {
+                if (state.getRenderShape() != RenderShape.MODEL) {
                     continue;
                 }
 
-                BakedModel blockModel = mc.getBlockRenderer().getBlockModel(state);
-                if (blockModel == null) {
-                    continue;
-                }
+                BlockRenderDispatcher blockRenderer = mc.getBlockRenderer();
+
+                BakedModel blockModel = blockRenderer.getBlockModel(state);
 
                 ModelData modelData = blockModel.getModelData(level, blockPos, state, ModelData.EMPTY);
                 boolean isHoldingWrench = mc.player.getMainHandItem().is(CFItemTags.WRENCHES);
 
-                for (RenderType type : blockModel.getRenderTypes(state, level.random, modelData)) {
+                List<RenderType> renderTypes = blockModel.getRenderTypes(state, level.random, modelData).asList();
+                if (renderTypes == null || renderTypes.isEmpty()) continue;
+
+                for (RenderType type : renderTypes) {
                     if (type == null) continue;
 
                     TranslucentRenderTypeBuffer translucentBuffer = new TranslucentRenderTypeBuffer(
@@ -123,20 +120,24 @@ public final class GameClientEvents {
                     );
 
                     VertexConsumer vertexConsumer = translucentBuffer.getBuffer(type);
-                    if (vertexConsumer == null) continue;
 
-                    renderBatched(
-                            mc.getBlockRenderer(),
-                            state,
-                            blockPos,
-                            level,
-                            poseStack,
-                            vertexConsumer,
-                            true,
-                            level.random,
-                            modelData,
-                            type
-                    );
+                    try {
+                        renderBatched(
+                                blockRenderer,
+                                state,
+                                blockPos,
+                                level,
+                                poseStack,
+                                vertexConsumer,
+                                true,
+                                level.random,
+                                modelData,
+                                type
+                        );
+                    } catch (Exception e) {
+                        CFMain.LOGGER.error("Error rendering block at " + blockPos + ": " + e.getMessage());
+                        continue;
+                    }
                 }
 
                 bufferSource.endBatch();
@@ -165,26 +166,26 @@ public final class GameClientEvents {
         }
 
         try {
-            RenderShape rendershape = state.getRenderShape();
-            if (rendershape == RenderShape.MODEL) {
-                BakedModel blockModel = blockRenderDispatcher.getBlockModel(state);
-                if (blockModel != null) {
-                    blockRenderDispatcher.getModelRenderer().tesselateBlock(
-                            level,
-                            blockModel,
-                            state,
-                            pos,
-                            poseStack,
-                            vertexConsumer,
-                            checkSides,
-                            random,
-                            state.getSeed(pos),
-                            OverlayTexture.NO_OVERLAY,
-                            modelData,
-                            renderType
-                    );
-                }
+            if (state.getRenderShape() != RenderShape.MODEL) {
+                return;
             }
+
+            BakedModel blockModel = blockRenderDispatcher.getBlockModel(state);
+
+            blockRenderDispatcher.getModelRenderer().tesselateBlock(
+                    level,
+                    blockModel,
+                    state,
+                    pos,
+                    poseStack,
+                    vertexConsumer,
+                    checkSides,
+                    random,
+                    state.getSeed(pos),
+                    OverlayTexture.NO_OVERLAY,
+                    modelData,
+                    renderType
+            );
         } catch (Throwable throwable) {
             CrashReport crashreport = CrashReport.forThrowable(throwable, "Tesselating block in world");
             CrashReportCategory crashreportcategory = crashreport.addCategory("Block being tesselated");

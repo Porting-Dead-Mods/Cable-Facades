@@ -13,9 +13,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Created 16/11/2024 by SuperMartijn642
- */
 @Mixin(Block.class)
 public abstract class BlockMixin {
 
@@ -23,31 +20,62 @@ public abstract class BlockMixin {
     private static final BlockPos FACADE_CHECK_MARKER = new BlockPos(0, 0, 0);
 
     @ModifyVariable(
-        method = "shouldRenderFace(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;)Z",
-        at = @At("INVOKE_ASSIGN"),
-        ordinal = 1
+            method = "shouldRenderFace(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;)Z",
+            at = @At("INVOKE_ASSIGN"),
+            ordinal = 1
     )
-    private static BlockState useFacadeAsNeighbor(BlockState neighbor, BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos){
-        if(sidePos == FACADE_CHECK_MARKER){
-            Block facade = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos.relative(side));
-            if(facade != null)
-                return facade.defaultBlockState();
+    private static BlockState useFacadeAsNeighbor(BlockState neighbor, BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos) {
+
+        if (pos == null || side == null || sidePos == null) {
+            return neighbor;
+        }
+
+        if (sidePos.equals(FACADE_CHECK_MARKER)) {
+            BlockPos relativePos = pos.relative(side);
+            if (ClientCamoManager.CAMOUFLAGED_BLOCKS != null) {
+                Block facade = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(relativePos);
+                if (facade != null) {
+                    BlockState facadeState = facade.defaultBlockState();
+                    return facadeState;
+                }
+            }
         }
         return neighbor;
     }
 
     @Inject(
-        method = "shouldRenderFace(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;)Z",
-        at = @At("RETURN"),
-        cancellable = true
+            method = "shouldRenderFace(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;)Z",
+            at = @At("RETURN"),
+            cancellable = true
     )
-    private static void checkFacadeOcclusion(BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos, CallbackInfoReturnable<Boolean> ci){
-        if(pos == FACADE_CHECK_MARKER || !ci.getReturnValue())
+    private static void checkFacadeOcclusion(BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos, CallbackInfoReturnable<Boolean> ci) {
+        if (state == null || level == null || pos == null || side == null || sidePos == null || ci == null) {
             return;
+        }
 
-        // Check whether the facade to the side hides the face
-        Block facade = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(sidePos);
-        if(facade != null)
-            ci.setReturnValue(Block.shouldRenderFace(state, level, pos, side, FACADE_CHECK_MARKER));
+        if (pos.equals(FACADE_CHECK_MARKER) || !ci.getReturnValue()) {
+            return;
+        }
+
+        try {
+            if (ClientCamoManager.CAMOUFLAGED_BLOCKS != null) {
+                Block facade = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(sidePos);
+                if (facade != null) {
+                    boolean shouldRender = safeCheckFaceRendering(state, level, pos, side);
+                    ci.setReturnValue(shouldRender);
+                }
+            }
+        } catch (Exception e) {
+            ci.setReturnValue(ci.getReturnValue());
+        }
+    }
+
+    @Unique
+    private static boolean safeCheckFaceRendering(BlockState state, BlockGetter level, BlockPos pos, Direction side) {
+        try {
+            return Block.shouldRenderFace(state, level, pos, side, FACADE_CHECK_MARKER);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return true;
+        }
     }
 }
