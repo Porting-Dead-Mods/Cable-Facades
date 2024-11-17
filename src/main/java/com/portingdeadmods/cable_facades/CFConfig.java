@@ -8,25 +8,25 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Mod.EventBusSubscriber(modid = CFMain.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class CFConfig {
-    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
+    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> BLOCK_STRINGS = BUILDER.comment("List of blocks that are allowed to be covered. Supports '*' as a wildcard.")
             .defineListAllowEmpty("blocks", List.of("pipez:*_pipe","mekanism:*_cable","mekanism:*_conductor","mekanism:*_pipe","mekanism:*_tube","mekanism:*_transporter","mekanism_extras:*_cable","mekanism_extras:*_conductor","mekanism_extras:*_pipe","mekanism_extras:*_tube","mekanism_extras:*_transporter","thermal:*_duct","thermal:*_duct_windowed","computercraft:cable","powah:energy_cable_*","create:fluid_pipe","pneumaticcraft:*_tube","ppfluids:fluid_pipe","prettypipes:pipe","laserio:laser_*","cyclic:*_pipe","embers:*_pipe","embers:item_extractor","elementalcraft:elementpipe*","gtceu:*wire","gtceu:*pipe"), CFConfig::validateBlockName);
-
     private static final ForgeConfigSpec.BooleanValue CONSUME_FACADE = BUILDER.comment("Whether the facade should be consumed when placed.")
             .define("consumeFacade", true);
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
-    public static Set<Block> exactBlocks;
-    public static List<Pattern> blockPatterns;
+
+    /**
+     * Cache results for blocks in this map to avoid repeatedly matching strings
+     */
+    private static final Map<Block,Boolean> allowedBlocks = new HashMap<>();
+    private static final List<Pattern> blockPatterns = new ArrayList<>();
     public static boolean consumeFacade;
 
     private static boolean validateBlockName(final Object obj) {
@@ -43,8 +43,8 @@ public class CFConfig {
     static void onLoad(final ModConfigEvent event) {
         consumeFacade = CONSUME_FACADE.get();
 
-        exactBlocks = new HashSet<>();
-        blockPatterns = new ArrayList<>();
+        allowedBlocks.clear();
+        blockPatterns.clear();
 
         for (String blockName : BLOCK_STRINGS.get()) {
             if (blockName.contains("*")) {
@@ -53,32 +53,31 @@ public class CFConfig {
             } else {
                 Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(blockName));
                 if (block != null) {
-                    exactBlocks.add(block);
+                    allowedBlocks.put(block, true);
                 }
             }
         }
     }
 
     public static boolean isBlockAllowed(Block targetBlock) {
-
-        if (exactBlocks == null || blockPatterns == null) {
-            return false; // Config has not been initialized, block access
+        // Check if the block is already in the cache
+        Boolean cached = allowedBlocks.get(targetBlock);
+        if (cached != null) {
+            return cached;
         }
 
-        if (exactBlocks.contains(targetBlock)) {
-            return true;
-        }
-
+        // If the block is not in the cache, check if it matches any of the patterns
         ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(targetBlock);
         if (blockId != null) {
             String blockIdString = blockId.toString();
             for (Pattern pattern : blockPatterns) {
                 if (pattern.matcher(blockIdString).matches()) {
+                    allowedBlocks.put(targetBlock, true);
                     return true;
                 }
             }
         }
-
+        allowedBlocks.put(targetBlock, false);
         return false;
     }
 }
