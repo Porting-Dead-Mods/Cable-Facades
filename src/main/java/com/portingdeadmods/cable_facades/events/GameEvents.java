@@ -72,7 +72,7 @@ public final class GameEvents {
                 nbtData.putString("facade_block", BuiltInRegistries.BLOCK.getKey(camoBlock).toString());
                 facadeStack.setTag(nbtData);
                 data.remove(pos);
-                ModMessages.sendToClients(new CamouflagedBlocksS2CPacket(data.getCamouflagedBlocks()));
+                ModMessages.sendToClients(new SyncFacadedBlocksS2C(data.getCamouflagedBlocks()));
                 Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 event.setCanceled(true);
             }
