@@ -74,6 +74,13 @@ public final class GameEvents {
                 data.remove(pos);
                 ModMessages.sendToClients(new SyncFacadedBlocksS2C(data.getCamouflagedBlocks()));
                 Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+
+                BlockState state2 = level.getBlockState(pos);
+                level.sendBlockUpdated(pos, state2, state2, 3);
+                level.updateNeighborsAt(pos, state2.getBlock());
+                // Update self and surrounding
+                level.getLightEngine().checkBlock(pos);
+
                 event.setCanceled(true);
             }
         }
@@ -100,10 +107,10 @@ public final class GameEvents {
             }
             player.swing(event.getHand());
 
-            level.getLightEngine().checkBlock(pos);
             BlockState state = level.getBlockState(pos);
             level.sendBlockUpdated(pos, state, state, 3);
             level.updateNeighborsAt(pos, state.getBlock());
+            level.getLightEngine().checkBlock(pos);
             event.setCanceled(true);
 
         }
