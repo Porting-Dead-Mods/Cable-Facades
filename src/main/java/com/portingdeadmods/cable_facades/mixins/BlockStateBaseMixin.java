@@ -1,6 +1,5 @@
 package com.portingdeadmods.cable_facades.mixins;
 
-import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.ClientCamoManager;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
@@ -33,16 +32,13 @@ public abstract class BlockStateBaseMixin {
 
     @Shadow public abstract Block getBlock();
 
-    @Unique
-    private static final ThreadLocal<Boolean> RECURSION_GUARD = ThreadLocal.withInitial(() -> false);
-
     @Inject(
             method = "onRemove",
             at = @At("HEAD")
     )
     private void onRemove(Level level, BlockPos blockPos, BlockState blockState, boolean isMoving, CallbackInfo ci) {
         Block block = getBlock();
-        if (CFConfig.isBlockAllowed(block) && FacadeUtils.hasFacade(level, blockPos)) {
+        if (FacadeUtils.hasFacade(level, blockPos)) {
             if (!blockState.is(block)) {
                 if (level instanceof ServerLevel serverLevel) {
                     CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
@@ -65,11 +61,9 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void getCollisionShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext, CallbackInfoReturnable<VoxelShape> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-            if (camoBlock != null) {
-                cir.setReturnValue(camoBlock.defaultBlockState().getCollisionShape(blockGetter, blockPos, collisionContext));
-            }
+        Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+        if (camoBlock != null) {
+            cir.setReturnValue(camoBlock.defaultBlockState().getCollisionShape(blockGetter, blockPos, collisionContext));
         }
     }
 
@@ -78,12 +72,10 @@ public abstract class BlockStateBaseMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void getShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext,CallbackInfoReturnable<VoxelShape> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-            if (camoBlock != null) {
-                cir.setReturnValue(camoBlock.defaultBlockState().getShape(blockGetter, blockPos, collisionContext));
-            }
+    private void getShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext, CallbackInfoReturnable<VoxelShape> cir) {
+        Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+        if (camoBlock != null) {
+            cir.setReturnValue(camoBlock.defaultBlockState().getShape(blockGetter, blockPos, collisionContext));
         }
     }
 
@@ -93,11 +85,9 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void getOcclusionShape(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<VoxelShape> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-            if (camoBlock != null) {
-                cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, blockPos));
-            }
+        Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+        if (camoBlock != null) {
+            cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, blockPos));
         }
     }
 
@@ -107,12 +97,10 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-            if (camoBlock != null) {
-                BlockState camoState = camoBlock.defaultBlockState();
-                cir.setReturnValue(camoState.canOcclude() && camoState.isSolidRender(blockGetter, blockPos));
-            }
+        Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+        if (camoBlock != null) {
+            BlockState camoState = camoBlock.defaultBlockState();
+            cir.setReturnValue(camoState.canOcclude() && camoState.isSolidRender(blockGetter, blockPos));
         }
     }
 
@@ -146,18 +134,17 @@ public abstract class BlockStateBaseMixin {
         }
     }
 
+    /*
     @Inject(
             method = "canOcclude",
             at = @At("HEAD"),
             cancellable = true
     )
     private void canOcclude(CallbackInfoReturnable<Boolean> cir) {
-        Block block = getBlock();
-        if (CFConfig.isBlockAllowed(block)) {
-            Block camoBlock = FacadeUtils.getFacade(null, null);
-            if (camoBlock != null) {
-                cir.setReturnValue(camoBlock.defaultBlockState().canOcclude());
-            }
+        Block camoBlock = FacadeUtils.getFacade(null, null);
+        if (camoBlock != null) {
+            cir.setReturnValue(camoBlock.defaultBlockState().canOcclude());
         }
     }
+     */
 }

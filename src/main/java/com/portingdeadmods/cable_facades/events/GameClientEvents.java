@@ -39,7 +39,7 @@ public final class GameClientEvents {
 
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
             return;
         }
 
@@ -114,12 +114,14 @@ public final class GameClientEvents {
                 for (RenderType type : renderTypes) {
                     if (type == null) continue;
 
+                    RenderType renderType = RenderType.translucent();
                     TranslucentRenderTypeBuffer translucentBuffer = new TranslucentRenderTypeBuffer(
                             bufferSource,
                             isHoldingWrench ? 120 : 255
                     );
 
-                    VertexConsumer vertexConsumer = translucentBuffer.getBuffer(type);
+                    VertexConsumer vertexConsumer = translucentBuffer.getBuffer(renderType);
+
 
                     try {
                         renderBatched(
