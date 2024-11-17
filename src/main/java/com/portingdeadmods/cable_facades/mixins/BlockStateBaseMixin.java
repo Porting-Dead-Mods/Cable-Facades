@@ -13,12 +13,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -27,10 +29,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Map;
+
 @Mixin(BlockBehaviour.BlockStateBase.class)
 public abstract class BlockStateBaseMixin {
 
-    @Shadow public abstract Block getBlock();
+    @Shadow
+    public abstract Block getBlock();
 
     @Unique
     private static final ThreadLocal<Boolean> RECURSION_GUARD = ThreadLocal.withInitial(() -> false);
@@ -44,13 +49,13 @@ public abstract class BlockStateBaseMixin {
             if (!blockState.is(getBlock())) {
                 if (level instanceof ServerLevel serverLevel) {
                     CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
-                    Block camoBlock = data.getCamouflagedBlocks().get(blockPos);
+                    Block camoBlock = data.getFacade(blockPos);
                     if (camoBlock != null) {
                         ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
                         CompoundTag nbtData = new CompoundTag();
                         nbtData.putString("facade_block", BuiltInRegistries.BLOCK.getKey(camoBlock).toString());
                         facadeStack.setTag(nbtData);
-                        data.remove(blockPos);
+                        data.removeFacade(blockPos);
                         ModMessages.sendToClients(new RemoveFacadePacket(blockPos));
                         Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
                     }
@@ -83,7 +88,7 @@ public abstract class BlockStateBaseMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void getShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext,CallbackInfoReturnable<VoxelShape> cir) {
+    private void getShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext, CallbackInfoReturnable<VoxelShape> cir) {
         if (!RECURSION_GUARD.get()) {
             try {
                 RECURSION_GUARD.set(true);

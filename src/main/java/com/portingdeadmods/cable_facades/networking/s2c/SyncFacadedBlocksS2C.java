@@ -5,24 +5,22 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public record SyncFacadedBlocksS2C(Object2ObjectOpenHashMap<BlockPos, Block> facadedBlocks) {
-    public SyncFacadedBlocksS2C(Object2ObjectOpenHashMap<BlockPos, Block> facadedBlocks) {
-        this.facadedBlocks = facadedBlocks;
-    }
-
+public record SyncFacadedBlocksS2C(Map<BlockPos, Block> facadedBlocks) {
     public SyncFacadedBlocksS2C(FriendlyByteBuf buf) {
         this(getFacades(buf));
     }
 
-    private static Object2ObjectOpenHashMap<BlockPos, Block> getFacades(FriendlyByteBuf buf) {
+    private static Map<BlockPos, Block> getFacades(FriendlyByteBuf buf) {
         int size = buf.readInt();
-        Object2ObjectOpenHashMap<BlockPos, Block> facades = new Object2ObjectOpenHashMap<>(size);
+        Map<BlockPos, Block> facades = new HashMap<>(size);
         for (int i = 0; i < size; i++) {
             facades.put(buf.readBlockPos(), BuiltInRegistries.BLOCK.get(buf.readResourceLocation()));
         }
@@ -37,9 +35,8 @@ public record SyncFacadedBlocksS2C(Object2ObjectOpenHashMap<BlockPos, Block> fac
         }
     }
 
-    public boolean handle(Supplier<NetworkEvent.Context> supplier) {
+    public void handle(Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> ClientCamoManager.CAMOUFLAGED_BLOCKS = new Object2ObjectOpenHashMap<>(this.facadedBlocks));
-        return true;
+        context.enqueueWork(() -> ClientCamoManager.CAMOUFLAGED_BLOCKS = this.facadedBlocks);
     }
 }

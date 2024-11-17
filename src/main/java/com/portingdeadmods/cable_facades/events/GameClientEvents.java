@@ -16,6 +16,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -23,8 +24,10 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -37,20 +40,20 @@ public final class GameClientEvents {
      * A copy of {@link RenderType#translucent()}, but with a variable alpha value
      */
     private static final RenderType FACADE_RENDER_TYPE = new RenderType(
-        CFMain.MODID + ":facades",
-        DefaultVertexFormat.BLOCK,
-        VertexFormat.Mode.QUADS,
-        131072,
-        true,
-        true,
-        () -> {
-            RenderType.translucent().setupRenderState();
-            RenderSystem.setShaderColor(1, 1, 1, facadeTransparency);
-        },
-        () -> {
-            RenderType.translucent().clearRenderState();
-            RenderSystem.setShaderColor(1, 1, 1, 1);
-        }
+            CFMain.MODID + ":facades",
+            DefaultVertexFormat.BLOCK,
+            VertexFormat.Mode.QUADS,
+            131072,
+            true,
+            true,
+            () -> {
+                RenderType.translucent().setupRenderState();
+                RenderSystem.setShaderColor(1, 1, 1, facadeTransparency);
+            },
+            () -> {
+                RenderType.translucent().clearRenderState();
+                RenderSystem.setShaderColor(1, 1, 1, 1);
+            }
     ) {
     };
     private static final RandomSource RANDOM = RandomSource.create();
@@ -65,13 +68,15 @@ public final class GameClientEvents {
         if (mc.level == null || mc.player == null) {
             return;
         }
-        if (ClientCamoManager.CAMOUFLAGED_BLOCKS.isEmpty()) {
+
+        Map<BlockPos, @Nullable Block> chunkFacades = ClientCamoManager.CAMOUFLAGED_BLOCKS;
+        if (chunkFacades == null || chunkFacades.isEmpty()) {
             return;
         }
 
         // Capture all facades which are actually visible
         Frustum frustum = event.getFrustum();
-        List<Map.Entry<BlockPos, Block>> visibleFacades = ClientCamoManager.CAMOUFLAGED_BLOCKS.entrySet().stream()
+        List<Map.Entry<BlockPos, Block>> visibleFacades = chunkFacades.entrySet().stream()
                 .filter(entry -> {
                     if (entry == null) return false;
                     BlockPos pos = entry.getKey();

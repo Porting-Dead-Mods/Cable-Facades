@@ -1,98 +1,117 @@
 package com.portingdeadmods.cable_facades.data;
 
 import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.portingdeadmods.cable_facades.CFMain;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
+import com.portingdeadmods.cable_facades.data.helper.LevelFacadeMap;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
+/**
+ * This saved data saves all facades based on chunks.
+ * In future versions this system will be replaced with chunk data attachments.
+ * <br>
+ * Internally it uses a hashmap that maps {@link ChunkPos} to {@link ChunkFacadeMap}
+ * <br>
+ * {@link ChunkFacadeMap} maps individual {@link BlockPos}itions to {@link Block}
+ */
 public class CableFacadeSavedData extends SavedData {
-    public static final String ID = "framify_framed_block_saved_data";
-    public static final Codec<Block> BLOCK_CODEC = ResourceLocation.CODEC.xmap(BuiltInRegistries.BLOCK::get, BuiltInRegistries.BLOCK::getKey);
-    public static final Codec<Map<String, Block>> CODEC = Codec.unboundedMap(
-            Codec.STRING,
-            BLOCK_CODEC
-    );
+    public static final String ID = "cable_facades_saved_data";
 
-    private final Object2ObjectOpenHashMap<BlockPos, Block> camouflagedBlocks;
+    private final LevelFacadeMap levelFacadeMap;
+    private final ServerLevel serverLevel;
 
-    public CableFacadeSavedData(Object2ObjectOpenHashMap<BlockPos, Block> framedBlocks) {
-        this.camouflagedBlocks = framedBlocks;
+    public CableFacadeSavedData(LevelFacadeMap levelFacadeMap, ServerLevel serverLevel) {
+        this.levelFacadeMap = levelFacadeMap;
+        this.serverLevel = serverLevel;
     }
 
-    public CableFacadeSavedData() {
-        this.camouflagedBlocks = new Object2ObjectOpenHashMap<>();
+    public CableFacadeSavedData(ServerLevel serverLevel) {
+        this(new LevelFacadeMap(), serverLevel);
     }
 
-    public void put(BlockPos blockPos, Block block) {
-        this.camouflagedBlocks.put(blockPos, block);
+    public LevelFacadeMap getLevelFacadeMap() {
+        return this.levelFacadeMap;
+    }
+
+    public @NotNull ChunkFacadeMap getOrCreateFacadeMapForChunk(ChunkPos chunkPos) {
+        ChunkFacadeMap map = getFacadeMapForChunk(chunkPos);
+        if (map == null) {
+            map = new ChunkFacadeMap();
+            this.levelFacadeMap.getChunkFacadeMaps().put(chunkPos, map);
+            setDirty();
+        }
+        return map;
+    }
+
+    public @Nullable ChunkFacadeMap getFacadeMapForChunk(ChunkPos chunkPos) {
+        return this.levelFacadeMap.getChunkFacadeMaps().get(chunkPos);
+    }
+
+    public @NotNull ChunkFacadeMap getOrCreateFacadeMapForPos(BlockPos blockPos) {
+        ChunkPos chunkPos = this.serverLevel.getChunk(blockPos).getPos();
+        return getOrCreateFacadeMapForChunk(chunkPos);
+    }
+
+    public @Nullable ChunkFacadeMap getFacadeMapForPos(BlockPos blockPos) {
+        ChunkPos chunkPos = this.serverLevel.getChunk(blockPos).getPos();
+        return getFacadeMapForChunk(chunkPos);
+    }
+
+    public void addFacade(BlockPos blockPos, Block block) {
+        getOrCreateFacadeMapForPos(blockPos).getChunkMap().put(blockPos, block);
         setDirty();
     }
 
-    public void remove(BlockPos blockPos) {
-        this.camouflagedBlocks.remove(blockPos);
+    public void removeFacade(BlockPos blockPos) {
+        getOrCreateFacadeMapForPos(blockPos).getChunkMap().remove(blockPos);
         setDirty();
     }
 
-    public boolean contains(BlockPos blockPos) {
-        return this.camouflagedBlocks.containsKey(blockPos) && this.camouflagedBlocks.get(blockPos) != null;
+    public boolean isEmpty() {
+        return this.levelFacadeMap.getChunkFacadeMaps().isEmpty();
     }
 
-    public Object2ObjectOpenHashMap<BlockPos, Block> getCamouflagedBlocks() {
-        return camouflagedBlocks;
+    public @Nullable Block getFacade(BlockPos blockPos) {
+        ChunkFacadeMap facadeMapForPos = getFacadeMapForPos(blockPos);
+        if (facadeMapForPos != null) {
+            return facadeMapForPos.getChunkMap().get(blockPos);
+        }
+        return null;
     }
 
     @Override
     public @NotNull CompoundTag save(CompoundTag compoundTag) {
-        DataResult<Tag> tagDataResult = CODEC.encodeStart(NbtOps.INSTANCE, blocksToString());
+        DataResult<Tag> tagDataResult = LevelFacadeMap.CODEC.encodeStart(NbtOps.INSTANCE, this.levelFacadeMap);
         tagDataResult
                 .resultOrPartial(err -> CFMain.LOGGER.error("Encoding error: {}", err))
                 .ifPresent(tag -> compoundTag.put(ID, tag));
         return compoundTag;
     }
 
-    public Map<String, Block> blocksToString() {
-        Map<String, Block> map = new HashMap<>();
-        for (Map.Entry<BlockPos, Block> entry : camouflagedBlocks.entrySet()) {
-            map.put(String.valueOf(entry.getKey().asLong()), entry.getValue());
-        }
-        return map;
-    }
-
-    public static CableFacadeSavedData load(CompoundTag tag) {
-        DataResult<Pair<Map<String, Block>, Tag>> dataResult = CODEC.decode(NbtOps.INSTANCE, tag.get(ID));
-        Optional<Pair<Map<String, Block>, Tag>> mapTagPair = dataResult
+    private static CableFacadeSavedData load(CompoundTag compoundTag, ServerLevel serverLevel) {
+        DataResult<Pair<LevelFacadeMap, Tag>> dataResult = LevelFacadeMap.CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
+        Optional<Pair<LevelFacadeMap, Tag>> mapTagPair = dataResult
                 .resultOrPartial(err -> CFMain.LOGGER.error("Decoding error: {}", err));
         if (mapTagPair.isPresent()) {
-            Map<String, Block> map = mapTagPair.get().getFirst();
-            return new CableFacadeSavedData(blocksFromString(map));
+            LevelFacadeMap facadeMap = mapTagPair.get().getFirst();
+            return new CableFacadeSavedData(facadeMap, serverLevel);
         }
-        return new CableFacadeSavedData();
-    }
-
-    public static Object2ObjectOpenHashMap<BlockPos, Block> blocksFromString(Map<String, Block> map) {
-        Object2ObjectOpenHashMap<BlockPos, Block> blocks = new Object2ObjectOpenHashMap<>();
-        for (Map.Entry<String, Block> entry : map.entrySet()) {
-            blocks.put(BlockPos.of(Long.parseLong(entry.getKey())), entry.getValue());
-        }
-        return blocks;
+        return new CableFacadeSavedData(serverLevel);
     }
 
     public static CableFacadeSavedData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(CableFacadeSavedData::load, CableFacadeSavedData::new, ID);
+        return level.getDataStorage().computeIfAbsent(compoundTag -> load(compoundTag, level), () -> new CableFacadeSavedData(level), ID);
     }
 }

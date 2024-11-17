@@ -3,6 +3,7 @@ package com.portingdeadmods.cable_facades.events;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
+import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
 import com.portingdeadmods.cable_facades.networking.s2c.SyncFacadedBlocksS2C;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
@@ -21,9 +22,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.event.level.ChunkDataEvent;
+import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -53,32 +57,33 @@ public final class GameEvents {
     private static void syncFacades(ServerPlayer player) {
         ServerLevel level = (ServerLevel) player.level();
         CableFacadeSavedData data = CableFacadeSavedData.get(level);
-        if (!data.getCamouflagedBlocks().isEmpty()) {
-            ModMessages.sendToPlayer(new SyncFacadedBlocksS2C(data.getCamouflagedBlocks()), player);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onBlockBreak(BlockEvent.BreakEvent event){
-        Level level = event.getPlayer().level();
-        BlockPos pos = event.getPos();
-        BlockState state = event.getState();
-        if (FacadeUtils.hasFacade(level, pos)) {
-            if (level instanceof ServerLevel serverLevel) {
-                CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
-                Block camoBlock = data.getCamouflagedBlocks().get(pos);
-                ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
-                CompoundTag nbtData = new CompoundTag();
-                nbtData.putString("facade_block", BuiltInRegistries.BLOCK.getKey(camoBlock).toString());
-                facadeStack.setTag(nbtData);
-                data.remove(pos);
-                ModMessages.sendToClients(new SyncFacadedBlocksS2C(data.getCamouflagedBlocks()));
-                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
-                event.setCanceled(true);
+        if (!data.isEmpty()) {
+            ChunkFacadeMap facadeMapForChunk = data.getFacadeMapForChunk(player.chunkPosition());
+            if (facadeMapForChunk != null) {
+                ModMessages.sendToPlayer(new SyncFacadedBlocksS2C(facadeMapForChunk.getChunkMap()), player);
             }
         }
     }
 
+    @SubscribeEvent
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        Level level = event.getPlayer().level();
+        BlockPos pos = event.getPos();
+        Player player = event.getPlayer();
+
+        if (FacadeUtils.hasFacade(level, pos)) {
+            Block facade = FacadeUtils.getFacade(level, pos);
+            FacadeUtils.removeFacade(level, pos);
+            if (!player.isCreative()) {
+                ItemStack facadeStack = CFItems.FACADE.get().createFacade(facade);
+                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+            }
+            updateBlocks(level, pos);
+            event.setCanceled(true);
+        }
+    }
+
+    // TODO: Move to wrench item class
     @SubscribeEvent
     public static void onRightClick(PlayerInteractEvent.RightClickBlock event) {
         Player player = event.getEntity();
@@ -100,13 +105,23 @@ public final class GameEvents {
             }
             player.swing(event.getHand());
 
-            level.getLightEngine().checkBlock(pos);
-            BlockState state = level.getBlockState(pos);
-            level.sendBlockUpdated(pos, state, state, 3);
-            level.updateNeighborsAt(pos, state.getBlock());
+            updateBlocks(level, pos);
             event.setCanceled(true);
 
         }
 
+    }
+
+    private static void updateBlocks(Level level, BlockPos pos) {
+        level.getLightEngine().checkBlock(pos);
+        BlockState state = level.getBlockState(pos);
+        level.sendBlockUpdated(pos, state, state, 3);
+        level.updateNeighborsAt(pos, state.getBlock());
+    }
+
+    @SubscribeEvent
+    public static void loadChunk(ChunkEvent.Load event) {
+        ChunkAccess chunk = event.getChunk();
+        CFMain.LOGGER.debug("Chunk: {}", chunk);
     }
 }

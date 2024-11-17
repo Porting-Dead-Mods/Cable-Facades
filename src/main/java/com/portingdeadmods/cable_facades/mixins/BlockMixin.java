@@ -1,9 +1,11 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.events.ClientCamoManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -33,14 +35,14 @@ public abstract class BlockMixin {
 
         if (sidePos.equals(FACADE_CHECK_MARKER)) {
             BlockPos relativePos = pos.relative(side);
-            if (ClientCamoManager.CAMOUFLAGED_BLOCKS != null) {
+            if (ClientCamoManager.CAMOUFLAGED_BLOCKS != null && ClientCamoManager.CAMOUFLAGED_BLOCKS.containsKey(relativePos)) {
                 Block facade = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(relativePos);
                 if (facade != null) {
-                    BlockState facadeState = facade.defaultBlockState();
-                    return facadeState;
+                    return facade.defaultBlockState();
                 }
             }
         }
+
         return neighbor;
     }
 
@@ -59,10 +61,11 @@ public abstract class BlockMixin {
         }
 
         try {
-            if (ClientCamoManager.CAMOUFLAGED_BLOCKS != null) {
+            if (ClientCamoManager.CAMOUFLAGED_BLOCKS != null && ClientCamoManager.CAMOUFLAGED_BLOCKS.containsKey(sidePos)) {
                 Block facade = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(sidePos);
                 if (facade != null) {
                     boolean shouldRender = safeCheckFaceRendering(state, level, pos, side);
+                    CFMain.LOGGER.debug("returning proper facade, pos: {}", sidePos);
                     ci.setReturnValue(shouldRender);
                 }
             }
