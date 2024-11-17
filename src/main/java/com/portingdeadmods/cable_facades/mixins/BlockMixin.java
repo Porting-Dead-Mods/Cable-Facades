@@ -63,7 +63,6 @@ public abstract class BlockMixin {
                 Block facade = ClientFacadeManager.FACADED_BLOCKS.get(sidePos);
                 if (facade != null) {
                     boolean shouldRender = safeCheckFaceRendering(state, level, pos, side);
-                    CFMain.LOGGER.debug("returning proper facade, pos: {}", sidePos);
                     ci.setReturnValue(shouldRender);
                 }
             }
@@ -80,4 +79,5 @@ public abstract class BlockMixin {
             return true;
         }
     }
+
 }
