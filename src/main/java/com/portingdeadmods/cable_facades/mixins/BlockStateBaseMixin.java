@@ -41,19 +41,20 @@ public abstract class BlockStateBaseMixin {
             at = @At("HEAD")
     )
     private void onRemove(Level level, BlockPos blockPos, BlockState blockState, boolean isMoving, CallbackInfo ci) {
-        Block block = getBlock();
-        if (CFConfig.isBlockAllowed(block) && FacadeUtils.hasFacade(level, blockPos)) {
-            if (!blockState.is(block)) {
+        if (FacadeUtils.hasFacade(level, blockPos)) {
+            if (!blockState.is(getBlock())) {
                 if (level instanceof ServerLevel serverLevel) {
                     CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
                     Block camoBlock = data.getCamouflagedBlocks().get(blockPos);
-                    ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
-                    CompoundTag nbtData = new CompoundTag();
-                    nbtData.putString("facade_block", BuiltInRegistries.BLOCK.getKey(camoBlock).toString());
-                    facadeStack.setTag(nbtData);
-                    data.remove(blockPos);
-                    ModMessages.sendToClients(new RemoveCamoPacket(blockPos));
-                    Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
+                    if (camoBlock != null) {
+                        ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
+                        CompoundTag nbtData = new CompoundTag();
+                        nbtData.putString("facade_block", BuiltInRegistries.BLOCK.getKey(camoBlock).toString());
+                        facadeStack.setTag(nbtData);
+                        data.remove(blockPos);
+                        ModMessages.sendToClients(new RemoveCamoPacket(blockPos));
+                        Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
+                    }
                 }
             }
         }
@@ -65,10 +66,15 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void getCollisionShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext, CallbackInfoReturnable<VoxelShape> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-            if (camoBlock != null) {
-                cir.setReturnValue(camoBlock.defaultBlockState().getCollisionShape(blockGetter, blockPos, collisionContext));
+        if (!RECURSION_GUARD.get()) {
+            try {
+                RECURSION_GUARD.set(true);
+                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (camoBlock != null) {
+                    cir.setReturnValue(camoBlock.defaultBlockState().getCollisionShape(blockGetter, blockPos, collisionContext));
+                }
+            } finally {
+                RECURSION_GUARD.set(false);
             }
         }
     }
@@ -79,10 +85,15 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void getShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext,CallbackInfoReturnable<VoxelShape> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-            if (camoBlock != null) {
-                cir.setReturnValue(camoBlock.defaultBlockState().getShape(blockGetter, blockPos, collisionContext));
+        if (!RECURSION_GUARD.get()) {
+            try {
+                RECURSION_GUARD.set(true);
+                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (camoBlock != null) {
+                    cir.setReturnValue(camoBlock.defaultBlockState().getShape(blockGetter, blockPos, collisionContext));
+                }
+            } finally {
+                RECURSION_GUARD.set(false);
             }
         }
     }
@@ -93,10 +104,15 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void getOcclusionShape(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<VoxelShape> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-            if (camoBlock != null) {
-                cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, blockPos));
+        if (!RECURSION_GUARD.get()) {
+            try {
+                RECURSION_GUARD.set(true);
+                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (camoBlock != null) {
+                    cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, blockPos));
+                }
+            } finally {
+                RECURSION_GUARD.set(false);
             }
         }
     }
@@ -107,11 +123,16 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
-        if (CFConfig.isBlockAllowed(getBlock())) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-            if (camoBlock != null) {
-                BlockState camoState = camoBlock.defaultBlockState();
-                cir.setReturnValue(camoState.canOcclude() && camoState.isSolidRender(blockGetter, blockPos));
+        if (!RECURSION_GUARD.get()) {
+            try {
+                RECURSION_GUARD.set(true);
+                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (camoBlock != null) {
+                    BlockState camoState = camoBlock.defaultBlockState();
+                    cir.setReturnValue(camoState.canOcclude() && camoState.isSolidRender(blockGetter, blockPos));
+                }
+            } finally {
+                RECURSION_GUARD.set(false);
             }
         }
     }
@@ -122,13 +143,20 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void getLightBlock(BlockGetter level, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
-        Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
-        if (camoBlock != null) {
-            BlockState camoState = camoBlock.defaultBlockState();
-            if (camoState.isSolidRender(level, pos)) {
-                cir.setReturnValue(level.getMaxLightLevel());
-            } else {
-                cir.setReturnValue(camoState.propagatesSkylightDown(level, pos) ? 0 : 1);
+        if (!RECURSION_GUARD.get()) {
+            try {
+                RECURSION_GUARD.set(true);
+                Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
+                if (camoBlock != null) {
+                    BlockState camoState = camoBlock.defaultBlockState();
+                    if (camoState.isSolidRender(level, pos)) {
+                        cir.setReturnValue(level.getMaxLightLevel());
+                    } else {
+                        cir.setReturnValue(camoState.propagatesSkylightDown(level, pos) ? 0 : 1);
+                    }
+                }
+            } finally {
+                RECURSION_GUARD.set(false);
             }
         }
     }
@@ -139,24 +167,16 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void propagatesSkylightDown(BlockGetter level, BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
-        Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
-        if (camoBlock != null) {
-            BlockState camoState = camoBlock.defaultBlockState();
-            cir.setReturnValue(camoBlock.propagatesSkylightDown(camoState, level, pos));
-        }
-    }
-
-    @Inject(
-            method = "canOcclude",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void canOcclude(CallbackInfoReturnable<Boolean> cir) {
-        Block block = getBlock();
-        if (CFConfig.isBlockAllowed(block)) {
-            Block camoBlock = FacadeUtils.getFacade(null, null);
-            if (camoBlock != null) {
-                cir.setReturnValue(camoBlock.defaultBlockState().canOcclude());
+        if (!RECURSION_GUARD.get()) {
+            try {
+                RECURSION_GUARD.set(true);
+                Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
+                if (camoBlock != null) {
+                    BlockState camoState = camoBlock.defaultBlockState();
+                    cir.setReturnValue(camoBlock.propagatesSkylightDown(camoState, level, pos));
+                }
+            } finally {
+                RECURSION_GUARD.set(false);
             }
         }
     }

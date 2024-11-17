@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -34,6 +35,27 @@ public final class GameEvents {
             CableFacadeSavedData data = CableFacadeSavedData.get(level);
             if (!data.getCamouflagedBlocks().isEmpty()) {
                 ModMessages.sendToPlayer(new CamouflagedBlocksS2CPacket(data.getCamouflagedBlocks()), player);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onBlockBreak(BlockEvent.BreakEvent event){
+        Level level = event.getPlayer().level();
+        BlockPos pos = event.getPos();
+        BlockState state = event.getState();
+        if (FacadeUtils.hasFacade(level, pos)) {
+            if (level instanceof ServerLevel serverLevel) {
+                CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
+                Block camoBlock = data.getCamouflagedBlocks().get(pos);
+                ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
+                CompoundTag nbtData = new CompoundTag();
+                nbtData.putString("facade_block", BuiltInRegistries.BLOCK.getKey(camoBlock).toString());
+                facadeStack.setTag(nbtData);
+                data.remove(pos);
+                ModMessages.sendToClients(new CamouflagedBlocksS2CPacket(data.getCamouflagedBlocks()));
+                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+                event.setCanceled(true);
             }
         }
     }
