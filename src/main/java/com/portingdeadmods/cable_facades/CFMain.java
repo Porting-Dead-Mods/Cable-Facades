@@ -1,7 +1,7 @@
 package com.portingdeadmods.cable_facades;
 
 import com.mojang.logging.LogUtils;
-import com.portingdeadmods.cable_facades.networking.ModMessages;
+import com.portingdeadmods.cable_facades.networking.CFMessages;
 import com.portingdeadmods.cable_facades.registries.CFCreativeTabs;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
@@ -23,7 +23,7 @@ public class CFMain {
         CFItems.ITEMS.register(modEventBus);
         CFCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
         CFRecipes.RECIPES.register(modEventBus);
-        ModMessages.register();
+        CFMessages.register();
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFConfig.SPEC);
 

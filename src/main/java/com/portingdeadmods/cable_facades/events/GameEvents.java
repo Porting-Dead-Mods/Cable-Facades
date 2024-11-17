@@ -4,7 +4,7 @@ import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadedBlocksPacket;
-import com.portingdeadmods.cable_facades.networking.ModMessages;
+import com.portingdeadmods.cable_facades.networking.CFMessages;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadedBlocksPacket;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
@@ -36,15 +37,17 @@ public final class GameEvents {
         BlockPos pos = event.getPos();
         Player player = event.getPlayer();
 
-        if (FacadeUtils.hasFacade(level, pos)) {
-            Block facade = FacadeUtils.getFacade(level, pos);
-            FacadeUtils.removeFacade(level, pos);
-            if (!player.isCreative()) {
-                ItemStack facadeStack = CFItems.FACADE.get().createFacade(facade);
-                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+        if (!level.isClientSide()) {
+            if (FacadeUtils.hasFacade(level, pos)) {
+                Block facade = FacadeUtils.getFacade(level, pos);
+                FacadeUtils.removeFacade(level, pos);
+                if (!player.isCreative()) {
+                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facade);
+                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+                }
+                FacadeUtils.updateBlocks(level, pos);
+                event.setCanceled(true);
             }
-            updateBlocks(level, pos);
-            event.setCanceled(true);
         }
     }
 
@@ -58,18 +61,20 @@ public final class GameEvents {
         if (player.isShiftKeyDown()
                 && player.getMainHandItem().is(CFItemTags.WRENCHES)
                 && facadeBlock != null) {
-            FacadeUtils.removeFacade(level, pos);
+            if (!level.isClientSide()) {
+                FacadeUtils.removeFacade(level, pos);
 
-            if (!player.isCreative()) {
-                ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeBlock);
-                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
-            } else {
-                level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
-                        SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                if (!player.isCreative()) {
+                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeBlock);
+                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+                } else {
+                    level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
+                            SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                }
+
+                updateBlocks(level, pos);
             }
-            player.swing(event.getHand());
-
-            updateBlocks(level, pos);
+            player.swing(InteractionHand.MAIN_HAND);
             event.setCanceled(true);
 
         }
@@ -92,7 +97,7 @@ public final class GameEvents {
 
         ChunkFacadeMap facadeMapForChunk = CableFacadeSavedData.get(serverLevel).getFacadeMapForChunk(chunk.getPos());
         if (facadeMapForChunk != null) {
-            ModMessages.sendToPlayer(new AddFacadedBlocksPacket(chunkPos, facadeMapForChunk.getChunkMap()), serverPlayer);
+            CFMessages.sendToPlayer(new AddFacadedBlocksPacket(chunkPos, facadeMapForChunk.getChunkMap()), serverPlayer);
         }
     }
 
@@ -101,6 +106,6 @@ public final class GameEvents {
         ChunkPos chunkPos = event.getPos();
         ServerPlayer serverPlayer = event.getPlayer();
 
-        ModMessages.sendToPlayer(new RemoveFacadedBlocksPacket(chunkPos), serverPlayer);
+        CFMessages.sendToPlayer(new RemoveFacadedBlocksPacket(chunkPos), serverPlayer);
     }
 }

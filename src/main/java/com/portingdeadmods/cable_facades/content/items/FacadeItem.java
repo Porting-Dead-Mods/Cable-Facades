@@ -22,7 +22,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.function.Consumer;
@@ -50,41 +49,34 @@ public class FacadeItem extends Item {
         BlockPos pos = context.getClickedPos();
         ItemStack itemStack = context.getItemInHand();
 
-        if (itemStack.hasTag()) {
-            CompoundTag tag = itemStack.getTag();
-            Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
-            Block targetBlock = context.getLevel().getBlockState(pos).getBlock();
+        if (!level.isClientSide()) {
+            if (itemStack.hasTag() && !FacadeUtils.hasFacade(level, pos)) {
+                CompoundTag tag = itemStack.getTag();
+                Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
+                Block targetBlock = context.getLevel().getBlockState(pos).getBlock();
 
-            if (!CFConfig.isBlockAllowed(targetBlock)
-                    && context.getLevel().getBlockState(pos).getTags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE))){
-                return InteractionResult.FAIL;
+                boolean noFacadeTag = context.getLevel().getBlockState(pos).getTags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE));
+
+                // Check that the block is part of the config or has the tag
+                if (!CFConfig.isBlockAllowed(targetBlock) && noFacadeTag) {
+                    return InteractionResult.FAIL;
+                }
+
+                // Prevent block from being facaded with itself
+                if (targetBlock == block) {
+                    return InteractionResult.FAIL;
+                }
+
+                FacadeUtils.addFacade(level, pos, block);
+
+                FacadeUtils.updateBlocks(level, pos);
+
+                if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
+                    itemStack.shrink(1);
+                }
             }
-
-            // Prevent block from being facaded with itself
-            if (targetBlock == block) {
-                return InteractionResult.FAIL;
-            }
-
-            // Ensure there is not facade yet
-            if (FacadeUtils.hasFacade(level, pos)) {
-                return InteractionResult.FAIL;
-            }
-
-            FacadeUtils.addFacade(level, pos, block);
-
-            if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
-                itemStack.shrink(1);
-            }
-
-            BlockState state = level.getBlockState(pos);
-            level.sendBlockUpdated(pos, state, state, 3);
-            level.updateNeighborsAt(pos, state.getBlock());
-            // Update self and surrounding
-            level.getLightEngine().checkBlock(pos);
-
-            return InteractionResult.SUCCESS;
         }
-        return super.useOn(context);
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     @Override
