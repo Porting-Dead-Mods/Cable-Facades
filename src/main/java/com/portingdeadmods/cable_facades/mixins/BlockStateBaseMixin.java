@@ -58,6 +58,11 @@ public abstract class BlockStateBaseMixin {
                         data.removeFacade(blockPos);
                         ModMessages.sendToClients(new RemoveFacadePacket(blockPos));
                         Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
+                        BlockState state = level.getBlockState(blockPos);
+                        level.sendBlockUpdated(blockPos, state, state, 3);
+                        level.updateNeighborsAt(blockPos, state.getBlock());
+                        // Update self and surrounding
+                        level.getLightEngine().checkBlock(blockPos);
                     }
                 }
             }
@@ -121,7 +126,7 @@ public abstract class BlockStateBaseMixin {
         }
     }
 
-
+    /*
     @Inject(
             method = "isSolidRender",
             at = @At("HEAD"),
@@ -185,4 +190,5 @@ public abstract class BlockStateBaseMixin {
             }
         }
     }
+     */
 }

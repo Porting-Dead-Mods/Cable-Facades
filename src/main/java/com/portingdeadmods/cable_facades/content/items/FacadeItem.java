@@ -65,12 +65,11 @@ public class FacadeItem extends Item {
                 itemStack.shrink(1);
             }
 
-            // Update self and surrounding
-            level.getLightEngine().checkBlock(pos);
-
             BlockState state = level.getBlockState(pos);
             level.sendBlockUpdated(pos, state, state, 3);
             level.updateNeighborsAt(pos, state.getBlock());
+            // Update self and surrounding
+            level.getLightEngine().checkBlock(pos);
 
             return InteractionResult.SUCCESS;
         }
