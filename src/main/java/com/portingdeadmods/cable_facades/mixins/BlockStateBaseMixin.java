@@ -46,11 +46,7 @@ public abstract class BlockStateBaseMixin {
                         FacadeUtils.removeFacade(level, blockPos);
 
                         Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
-                        BlockState state = level.getBlockState(blockPos);
-                        level.sendBlockUpdated(blockPos, state, state, 3);
-                        level.updateNeighborsAt(blockPos, state.getBlock());
-                        // Update self and surrounding
-                        level.getLightEngine().checkBlock(blockPos);
+                        FacadeUtils.updateBlocks(level, blockPos);
                     }
                 }
             }

@@ -2,7 +2,7 @@ package com.portingdeadmods.cable_facades.utils;
 
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
-import com.portingdeadmods.cable_facades.networking.ModMessages;
+import com.portingdeadmods.cable_facades.networking.CFMessages;
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadePacket;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePacket;
 import net.minecraft.core.BlockPos;
@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public class FacadeUtils {
@@ -29,13 +30,21 @@ public class FacadeUtils {
         if (level instanceof ServerLevel serverLevel) {
             CableFacadeSavedData.get(serverLevel).addFacade(pos, block);
         }
-        ModMessages.sendToClients(new AddFacadePacket(pos, block));
+        CFMessages.sendToChunk(new AddFacadePacket(pos, block), level.getChunkAt(pos));
     }
 
     public static void removeFacade(Level level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
             CableFacadeSavedData.get(serverLevel).removeFacade(pos);
         }
-        ModMessages.sendToClients(new RemoveFacadePacket(pos));
+        CFMessages.sendToChunk(new RemoveFacadePacket(pos), level.getChunkAt(pos));
+    }
+
+    public static void updateBlocks(Level level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        level.sendBlockUpdated(pos, state, state, 3);
+        level.updateNeighborsAt(pos, state.getBlock());
+        // Update self and surrounding
+        level.getLightEngine().checkBlock(pos);
     }
 }

@@ -4,12 +4,13 @@ import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.networking.s2c.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
-public final class ModMessages {
+public final class CFMessages {
     private static SimpleChannel INSTANCE;
 
     private static int packetId = 0;
@@ -65,6 +66,10 @@ public final class ModMessages {
 
     public static <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
         INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), message);
+    }
+
+    public static <MSG> void sendToChunk(MSG message, LevelChunk chunk) {
+        INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> chunk), message);
     }
 
     public static <MSG> void sendToClients(MSG message) {
