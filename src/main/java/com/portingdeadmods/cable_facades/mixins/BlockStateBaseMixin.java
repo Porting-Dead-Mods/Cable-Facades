@@ -59,15 +59,10 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void getCollisionShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext, CallbackInfoReturnable<VoxelShape> cir) {
-        if (!RECURSION_GUARD.get()) {
-            try {
-                RECURSION_GUARD.set(true);
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getCollisionShape(blockGetter, blockPos, collisionContext));
-                }
-            } finally {
-                RECURSION_GUARD.set(false);
+        if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+            if (camoBlock != null) {
+                cir.setReturnValue(camoBlock.defaultBlockState().getCollisionShape(blockGetter, BlockPos.ZERO, collisionContext));
             }
         }
     }
@@ -78,15 +73,10 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void getShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext, CallbackInfoReturnable<VoxelShape> cir) {
-        if (!RECURSION_GUARD.get()) {
-            try {
-                RECURSION_GUARD.set(true);
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getShape(blockGetter, blockPos, collisionContext));
-                }
-            } finally {
-                RECURSION_GUARD.set(false);
+        if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+            if (camoBlock != null) {
+                cir.setReturnValue(camoBlock.defaultBlockState().getShape(blockGetter, BlockPos.ZERO, collisionContext));
             }
         }
     }
@@ -97,82 +87,12 @@ public abstract class BlockStateBaseMixin {
             cancellable = true
     )
     private void getOcclusionShape(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<VoxelShape> cir) {
-        if (!RECURSION_GUARD.get()) {
-            try {
-                RECURSION_GUARD.set(true);
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, blockPos));
-                }
-            } finally {
-                RECURSION_GUARD.set(false);
+        if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+            if (camoBlock != null) {
+                cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, BlockPos.ZERO));
             }
         }
     }
 
-    /*
-    @Inject(
-            method = "isSolidRender",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
-        if (!RECURSION_GUARD.get()) {
-            try {
-                RECURSION_GUARD.set(true);
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    BlockState camoState = camoBlock.defaultBlockState();
-                    cir.setReturnValue(camoState.canOcclude() && camoState.isSolidRender(blockGetter, blockPos));
-                }
-            } finally {
-                RECURSION_GUARD.set(false);
-            }
-        }
-    }
-
-    @Inject(
-            method = "getLightBlock",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void getLightBlock(BlockGetter level, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
-        if (!RECURSION_GUARD.get()) {
-            try {
-                RECURSION_GUARD.set(true);
-                Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
-                if (camoBlock != null) {
-                    BlockState camoState = camoBlock.defaultBlockState();
-                    if (camoState.isSolidRender(level, pos)) {
-                        cir.setReturnValue(level.getMaxLightLevel());
-                    } else {
-                        cir.setReturnValue(camoState.propagatesSkylightDown(level, pos) ? 0 : 1);
-                    }
-                }
-            } finally {
-                RECURSION_GUARD.set(false);
-            }
-        }
-    }
-
-    @Inject(
-            method = "propagatesSkylightDown",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void propagatesSkylightDown(BlockGetter level, BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
-        if (!RECURSION_GUARD.get()) {
-            try {
-                RECURSION_GUARD.set(true);
-                Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
-                if (camoBlock != null) {
-                    BlockState camoState = camoBlock.defaultBlockState();
-                    cir.setReturnValue(camoBlock.propagatesSkylightDown(camoState, level, pos));
-                }
-            } finally {
-                RECURSION_GUARD.set(false);
-            }
-        }
-    }
-     */
 }
