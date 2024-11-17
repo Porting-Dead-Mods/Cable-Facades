@@ -2,6 +2,7 @@ package com.portingdeadmods.cable_facades.mixins;
 
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
+import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.*;
@@ -30,11 +31,11 @@ public abstract class BlockStateMixin implements IForgeBlockState {
 
     @Override
     public int getLightEmission(BlockGetter blockGetter, BlockPos pos) {
-        if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
-            Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
+        if (FacadeUtils.hasFacade(blockGetter, pos)) {
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, pos);
             if (camoBlock != null) {
                 CFMain.LOGGER.debug("Self block state: {}", cable_facades$self());
-                CFMain.LOGGER.debug("Camo block state: {}", ClientFacadeManager.FACADED_BLOCKS.get(pos));
+                CFMain.LOGGER.debug("Camo block state: {}", camoBlock.defaultBlockState().getBlock());
                 return camoBlock.getLightEmission(camoBlock.defaultBlockState(), blockGetter, pos);
             }
         }
