@@ -1,9 +1,7 @@
 package com.portingdeadmods.cable_facades.networking;
 
 import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.networking.s2c.AddFacadePacket;
-import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePacket;
-import com.portingdeadmods.cable_facades.networking.s2c.SyncFacadedBlocksS2C;
+import com.portingdeadmods.cable_facades.networking.s2c.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
@@ -30,10 +28,10 @@ public final class ModMessages {
 
         INSTANCE = net;
 
-        net.messageBuilder(SyncFacadedBlocksS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(SyncFacadedBlocksS2C::new)
-                .encoder(SyncFacadedBlocksS2C::toBytes)
-                .consumerMainThread(SyncFacadedBlocksS2C::handle)
+        net.messageBuilder(SyncFacadedBlocks.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(SyncFacadedBlocks::new)
+                .encoder(SyncFacadedBlocks::toBytes)
+                .consumerMainThread(SyncFacadedBlocks::handle)
                 .add();
 
         net.messageBuilder(RemoveFacadePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
@@ -46,6 +44,18 @@ public final class ModMessages {
                 .decoder(AddFacadePacket::new)
                 .encoder(AddFacadePacket::toBytes)
                 .consumerMainThread(AddFacadePacket::handle)
+                .add();
+
+        net.messageBuilder(AddFacadedBlocksPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(AddFacadedBlocksPacket::new)
+                .encoder(AddFacadedBlocksPacket::toBytes)
+                .consumerMainThread(AddFacadedBlocksPacket::handle)
+                .add();
+
+        net.messageBuilder(RemoveFacadedBlocksPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(RemoveFacadedBlocksPacket::new)
+                .encoder(RemoveFacadedBlocksPacket::toBytes)
+                .consumerMainThread(RemoveFacadedBlocksPacket::handle)
                 .add();
     }
 

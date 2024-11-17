@@ -5,6 +5,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class ClientStuff {
+public final class ClientStuff {
     public static final FacadeItemRenderer FACADE_ITEM_RENDERER = new FacadeItemRenderer();
 }

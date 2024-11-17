@@ -16,7 +16,6 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -24,7 +23,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
@@ -69,7 +67,7 @@ public final class GameClientEvents {
             return;
         }
 
-        Map<BlockPos, @Nullable Block> chunkFacades = ClientCamoManager.CAMOUFLAGED_BLOCKS;
+        Map<BlockPos, @Nullable Block> chunkFacades = ClientFacadeManager.FACADED_BLOCKS;
         if (chunkFacades == null || chunkFacades.isEmpty()) {
             return;
         }

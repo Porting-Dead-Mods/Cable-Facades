@@ -1,10 +1,9 @@
 package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
-import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
-import com.portingdeadmods.cable_facades.events.ClientCamoManager;
+import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.events.ClientStuff;
-import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
@@ -13,8 +12,10 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -29,8 +30,18 @@ import java.util.function.Consumer;
 public class FacadeItem extends Item {
     public static final String FACADE_BLOCK = "facade_block";
 
-    public FacadeItem(Properties p_41383_) {
-        super(p_41383_);
+    public FacadeItem(Properties properties) {
+        super(properties);
+    }
+
+    // DEBUGGING CODE
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level p_41432_, Player p_41433_, InteractionHand p_41434_) {
+        if (p_41432_.isClientSide()) {
+            CFMain.LOGGER.debug("Facades: {}", ClientFacadeManager.FACADED_BLOCKS);
+            CFMain.LOGGER.debug("Loaded: {}", ClientFacadeManager.LOADED_BLOCKS);
+        }
+        return super.use(p_41432_, p_41433_, p_41434_);
     }
 
     @Override
@@ -77,9 +88,9 @@ public class FacadeItem extends Item {
     }
 
     @Override
-    public Component getName(ItemStack p_41458_) {
-        if (p_41458_.hasTag()) {
-            CompoundTag tag = p_41458_.getTag();
+    public Component getName(ItemStack itemStack) {
+        if (itemStack.hasTag()) {
+            CompoundTag tag = itemStack.getTag();
             Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
             BlockItem blockItem = (BlockItem) block.asItem();
             return Component.literal("Facade - " + blockItem.getDescription().getString());

@@ -1,6 +1,6 @@
 package com.portingdeadmods.cable_facades.mixins;
 
-import com.portingdeadmods.cable_facades.events.ClientCamoManager;
+import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.*;
@@ -16,8 +16,8 @@ public abstract class BlockStateMixin implements IForgeBlockState {
 
     @Override
     public BlockState getAppearance(BlockAndTintGetter blockGetter, BlockPos pos, Direction side, @Nullable BlockState queryState, @Nullable BlockPos queryPos) {
-        if (ClientCamoManager.CAMOUFLAGED_BLOCKS.containsKey(pos)) {
-            Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
+        if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
+            Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
             if (camoBlock != null) {
                 BlockState camoState = camoBlock.defaultBlockState();
                 return camoState.getBlock().getAppearance(camoState, blockGetter, pos, side, queryState, queryPos);
@@ -29,8 +29,8 @@ public abstract class BlockStateMixin implements IForgeBlockState {
 
     @Override
     public int getLightEmission(BlockGetter blockGetter, BlockPos pos) {
-        if (ClientCamoManager.CAMOUFLAGED_BLOCKS.containsKey(pos)) {
-            Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
+        if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
+            Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
             if (camoBlock != null) {
                 return camoBlock.getLightEmission(camoBlock.defaultBlockState(), blockGetter, pos);
             }

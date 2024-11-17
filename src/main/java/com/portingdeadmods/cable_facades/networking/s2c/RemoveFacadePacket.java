@@ -1,17 +1,10 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
-import com.portingdeadmods.cable_facades.events.ClientCamoManager;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.client.Minecraft;
+import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraftforge.network.NetworkEvent;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
 import java.util.function.Supplier;
 
 public record RemoveFacadePacket(BlockPos facadePos) {
@@ -25,6 +18,6 @@ public record RemoveFacadePacket(BlockPos facadePos) {
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> ClientCamoManager.CAMOUFLAGED_BLOCKS.remove(this.facadePos));
+        context.enqueueWork(() -> ClientFacadeManager.FACADED_BLOCKS.remove(this.facadePos));
     }
 }

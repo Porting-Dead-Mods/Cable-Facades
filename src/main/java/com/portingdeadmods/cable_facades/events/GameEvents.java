@@ -1,17 +1,15 @@
 package com.portingdeadmods.cable_facades.events;
 
 import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
-import com.portingdeadmods.cable_facades.networking.s2c.SyncFacadedBlocksS2C;
+import com.portingdeadmods.cable_facades.networking.s2c.AddFacadedBlocksPacket;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
+import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadedBlocksPacket;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -19,52 +17,19 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.event.level.ChunkDataEvent;
-import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.event.level.ChunkWatchEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = CFMain.MODID)
 public final class GameEvents {
-    @SubscribeEvent
-    public static void onJoin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            syncFacades(player);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onJoin(PlayerEvent.PlayerChangedDimensionEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            syncFacades(player);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onJoin(PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            syncFacades(player);
-        }
-    }
-
-    private static void syncFacades(ServerPlayer player) {
-        ServerLevel level = (ServerLevel) player.level();
-        CableFacadeSavedData data = CableFacadeSavedData.get(level);
-        if (!data.isEmpty()) {
-            ChunkFacadeMap facadeMapForChunk = data.getFacadeMapForChunk(player.chunkPosition());
-            if (facadeMapForChunk != null) {
-                ModMessages.sendToPlayer(new SyncFacadedBlocksS2C(facadeMapForChunk.getChunkMap()), player);
-            }
-        }
-    }
-
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         Level level = event.getPlayer().level();
@@ -83,7 +48,6 @@ public final class GameEvents {
         }
     }
 
-    // TODO: Move to wrench item class
     @SubscribeEvent
     public static void onRightClick(PlayerInteractEvent.RightClickBlock event) {
         Player player = event.getEntity();
@@ -112,7 +76,7 @@ public final class GameEvents {
 
     }
 
-    private static void updateBlocks(Level level, BlockPos pos) {
+    public static void updateBlocks(Level level, BlockPos pos) {
         level.getLightEngine().checkBlock(pos);
         BlockState state = level.getBlockState(pos);
         level.sendBlockUpdated(pos, state, state, 3);
@@ -120,8 +84,23 @@ public final class GameEvents {
     }
 
     @SubscribeEvent
-    public static void loadChunk(ChunkEvent.Load event) {
-        ChunkAccess chunk = event.getChunk();
-        CFMain.LOGGER.debug("Chunk: {}", chunk);
+    public static void loadChunk(ChunkWatchEvent.Watch event) {
+        LevelChunk chunk = event.getChunk();
+        ChunkPos chunkPos = event.getPos();
+        ServerPlayer serverPlayer = event.getPlayer();
+        ServerLevel serverLevel = event.getLevel();
+
+        ChunkFacadeMap facadeMapForChunk = CableFacadeSavedData.get(serverLevel).getFacadeMapForChunk(chunk.getPos());
+        if (facadeMapForChunk != null) {
+            ModMessages.sendToPlayer(new AddFacadedBlocksPacket(chunkPos, facadeMapForChunk.getChunkMap()), serverPlayer);
+        }
+    }
+
+    @SubscribeEvent
+    public static void unloadChunk(ChunkWatchEvent.UnWatch event) {
+        ChunkPos chunkPos = event.getPos();
+        ServerPlayer serverPlayer = event.getPlayer();
+
+        ModMessages.sendToPlayer(new RemoveFacadedBlocksPacket(chunkPos), serverPlayer);
     }
 }
