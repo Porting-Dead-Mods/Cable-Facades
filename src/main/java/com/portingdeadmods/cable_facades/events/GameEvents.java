@@ -1,8 +1,9 @@
 package com.portingdeadmods.cable_facades.events;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
-import com.portingdeadmods.cable_facades.networking.CamouflagedBlocksS2CPacket;
+import com.portingdeadmods.cable_facades.networking.s2c.SyncFacadedBlocksS2C;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
@@ -31,11 +32,29 @@ public final class GameEvents {
     @SubscribeEvent
     public static void onJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            ServerLevel level = (ServerLevel) player.level();
-            CableFacadeSavedData data = CableFacadeSavedData.get(level);
-            if (!data.getCamouflagedBlocks().isEmpty()) {
-                ModMessages.sendToPlayer(new CamouflagedBlocksS2CPacket(data.getCamouflagedBlocks()), player);
-            }
+            syncFacades(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onJoin(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            syncFacades(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onJoin(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            syncFacades(player);
+        }
+    }
+
+    private static void syncFacades(ServerPlayer player) {
+        ServerLevel level = (ServerLevel) player.level();
+        CableFacadeSavedData data = CableFacadeSavedData.get(level);
+        if (!data.getCamouflagedBlocks().isEmpty()) {
+            ModMessages.sendToPlayer(new SyncFacadedBlocksS2C(data.getCamouflagedBlocks()), player);
         }
     }
 
@@ -66,26 +85,18 @@ public final class GameEvents {
         Level level = event.getLevel();
         BlockPos pos = event.getPos();
 
+        Block facadeBlock = FacadeUtils.getFacade(level, pos);
         if (player.isShiftKeyDown()
                 && player.getMainHandItem().is(CFItemTags.WRENCHES)
-                && FacadeUtils.hasFacade(level, pos)) {
-            if (level instanceof ServerLevel serverLevel) {
-                CableFacadeSavedData savedData = CableFacadeSavedData.get(serverLevel);
-                Block facadeBlock = savedData.getCamouflagedBlocks().get(pos);
-                savedData.remove(pos);
-                ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
-                CompoundTag nbtData = new CompoundTag();
-                nbtData.putString("facade_block",BuiltInRegistries.BLOCK.getKey(facadeBlock).toString());
-                facadeStack.setTag(nbtData);
+                && facadeBlock != null) {
+            FacadeUtils.removeFacade(level, pos);
 
-                if (!player.isCreative()) {
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
-                } else {
-                    level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
-                            SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-                }
+            if (!player.isCreative()) {
+                ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeBlock);
+                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
             } else {
-                ClientCamoManager.CAMOUFLAGED_BLOCKS.remove(pos);
+                level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
+                        SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
             }
             player.swing(event.getHand());
 
@@ -94,6 +105,7 @@ public final class GameEvents {
             level.sendBlockUpdated(pos, state, state, 3);
             level.updateNeighborsAt(pos, state.getBlock());
             event.setCanceled(true);
+
         }
 
     }
