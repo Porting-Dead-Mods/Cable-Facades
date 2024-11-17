@@ -4,7 +4,7 @@ import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.ClientCamoManager;
 import com.portingdeadmods.cable_facades.networking.ModMessages;
-import com.portingdeadmods.cable_facades.networking.RemoveCamoPacket;
+import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePacket;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
@@ -52,7 +52,7 @@ public abstract class BlockStateBaseMixin {
                     nbtData.putString("facade_block", BuiltInRegistries.BLOCK.getKey(camoBlock).toString());
                     facadeStack.setTag(nbtData);
                     data.remove(blockPos);
-                    ModMessages.sendToClients(new RemoveCamoPacket(blockPos));
+                    ModMessages.sendToClients(new RemoveFacadePacket(blockPos));
                     Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
                 }
             }

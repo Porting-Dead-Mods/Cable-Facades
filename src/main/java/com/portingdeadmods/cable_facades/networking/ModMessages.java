@@ -1,6 +1,9 @@
 package com.portingdeadmods.cable_facades.networking;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.networking.s2c.AddFacadePacket;
+import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePacket;
+import com.portingdeadmods.cable_facades.networking.s2c.SyncFacadedBlocksS2C;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
@@ -12,6 +15,7 @@ public final class ModMessages {
     private static SimpleChannel INSTANCE;
 
     private static int packetId = 0;
+
     private static int id() {
         return packetId++;
     }
@@ -26,16 +30,22 @@ public final class ModMessages {
 
         INSTANCE = net;
 
-        net.messageBuilder(CamouflagedBlocksS2CPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(CamouflagedBlocksS2CPacket::new)
-                .encoder(CamouflagedBlocksS2CPacket::toBytes)
-                .consumerMainThread(CamouflagedBlocksS2CPacket::handle)
+        net.messageBuilder(SyncFacadedBlocksS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(SyncFacadedBlocksS2C::new)
+                .encoder(SyncFacadedBlocksS2C::toBytes)
+                .consumerMainThread(SyncFacadedBlocksS2C::handle)
                 .add();
 
-        net.messageBuilder(RemoveCamoPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(RemoveCamoPacket::new)
-                .encoder(RemoveCamoPacket::toBytes)
-                .consumerMainThread(RemoveCamoPacket::handle)
+        net.messageBuilder(RemoveFacadePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(RemoveFacadePacket::new)
+                .encoder(RemoveFacadePacket::toBytes)
+                .consumerMainThread(RemoveFacadePacket::handle)
+                .add();
+
+        net.messageBuilder(AddFacadePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(AddFacadePacket::new)
+                .encoder(AddFacadePacket::toBytes)
+                .consumerMainThread(AddFacadePacket::handle)
                 .add();
     }
 

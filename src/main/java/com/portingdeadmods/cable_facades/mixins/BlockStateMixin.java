@@ -30,7 +30,6 @@ public abstract class BlockStateMixin implements IForgeBlockState {
 
     @Override
     public int getLightEmission(BlockGetter level, BlockPos pos) {
-
         if (ClientCamoManager.CAMOUFLAGED_BLOCKS.containsKey(pos)) {
             Block camoBlock = ClientCamoManager.CAMOUFLAGED_BLOCKS.get(pos);
             if (camoBlock != null) {

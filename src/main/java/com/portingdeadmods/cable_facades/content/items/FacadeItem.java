@@ -6,6 +6,8 @@ import com.portingdeadmods.cable_facades.events.ClientCamoManager;
 import com.portingdeadmods.cable_facades.events.ClientStuff;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
+import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -32,42 +34,38 @@ public class FacadeItem extends Item {
     }
 
     @Override
-    public InteractionResult useOn(UseOnContext p_41427_) {
-        ItemStack itemStack = p_41427_.getItemInHand();
+    public InteractionResult useOn(UseOnContext context) {
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        ItemStack itemStack = context.getItemInHand();
+
         if (itemStack.hasTag()) {
             CompoundTag tag = itemStack.getTag();
-            BlockPos pos = p_41427_.getClickedPos();
             Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
-            Block targetBlock = p_41427_.getLevel().getBlockState(pos).getBlock();
+            Block targetBlock = context.getLevel().getBlockState(pos).getBlock();
 
-            if (!CFConfig.isBlockAllowed(targetBlock) && !p_41427_.getLevel().getBlockState(pos).is(CFItemTags.SUPPORTS_FACADE)){
+            if (!CFConfig.isBlockAllowed(targetBlock)
+                    && context.getLevel().getBlockState(pos).getTags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE))){
                 return InteractionResult.FAIL;
             }
 
+            // Prevent block from being facaded with itself
             if (targetBlock == block) {
                 return InteractionResult.FAIL;
             }
 
-            boolean isAlreadyCamouflaged = p_41427_.getLevel() instanceof ServerLevel serverLevel
-                    ? CableFacadeSavedData.get(serverLevel).contains(pos)
-                    : ClientCamoManager.CAMOUFLAGED_BLOCKS.containsKey(pos);
-
-            if (isAlreadyCamouflaged) {
+            // Ensure there is not facade yet
+            if (FacadeUtils.hasFacade(level, pos)) {
                 return InteractionResult.FAIL;
             }
 
-            if (p_41427_.getLevel() instanceof ServerLevel serverLevel) {
-                CableFacadeSavedData savedData = CableFacadeSavedData.get(serverLevel);
-                savedData.put(pos, block);
-            } else {
-                ClientCamoManager.CAMOUFLAGED_BLOCKS.put(pos, block);
-            }
+            FacadeUtils.addFacade(level, pos, block);
 
-            if (!p_41427_.getPlayer().isCreative() && CFConfig.consumeFacade) {
+            if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
                 itemStack.shrink(1);
             }
 
-            Level level = p_41427_.getLevel();
+            // Update self and surrounding
             level.getLightEngine().checkBlock(pos);
 
             BlockState state = level.getBlockState(pos);
@@ -76,7 +74,7 @@ public class FacadeItem extends Item {
 
             return InteractionResult.SUCCESS;
         }
-        return super.useOn(p_41427_);
+        return super.useOn(context);
     }
 
     @Override
@@ -98,5 +96,13 @@ public class FacadeItem extends Item {
                 return ClientStuff.FACADE_ITEM_RENDERER;
             }
         });
+    }
+
+    public ItemStack createFacade(Block block) {
+        ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
+        CompoundTag nbtData = new CompoundTag();
+        nbtData.putString(FacadeItem.FACADE_BLOCK, BuiltInRegistries.BLOCK.getKey(block).toString());
+        facadeStack.setTag(nbtData);
+        return facadeStack;
     }
 }
