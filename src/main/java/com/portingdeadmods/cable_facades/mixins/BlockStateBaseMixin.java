@@ -1,8 +1,6 @@
 package com.portingdeadmods.cable_facades.mixins;
 
-import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
-import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
@@ -18,7 +16,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -89,6 +86,48 @@ public abstract class BlockStateBaseMixin {
             Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
             if (camoBlock != null) {
                 cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, BlockPos.ZERO));
+            }
+        }
+    }
+
+    @Inject(
+            method = "getLightBlock",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void getLightBlock(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Integer> cir){
+        if(FacadeUtils.hasFacade(blockGetter,blockPos)){
+            Block camoBlock = FacadeUtils.getFacade(blockGetter,blockPos);
+            if(camoBlock != null){
+                cir.setReturnValue(camoBlock.defaultBlockState().getLightBlock(blockGetter,BlockPos.ZERO));
+            }
+        }
+    }
+
+    @Inject(
+            method = "propagatesSkylightDown",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void propagatesSkylightDown(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir){
+        if(FacadeUtils.hasFacade(blockGetter,blockPos)){
+            Block camoBlock = FacadeUtils.getFacade(blockGetter,blockPos);
+            if(camoBlock != null){
+                cir.setReturnValue(camoBlock.defaultBlockState().propagatesSkylightDown(blockGetter,BlockPos.ZERO));
+            }
+        }
+    }
+
+    @Inject(
+            method = "isSolidRender",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir){
+        if(FacadeUtils.hasFacade(blockGetter,blockPos)){
+            Block camoBlock = FacadeUtils.getFacade(blockGetter,blockPos);
+            if(camoBlock != null){
+                cir.setReturnValue(camoBlock.defaultBlockState().isSolidRender(blockGetter,BlockPos.ZERO));
             }
         }
     }
