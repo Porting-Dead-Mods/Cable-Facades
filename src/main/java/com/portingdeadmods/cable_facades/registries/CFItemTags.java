@@ -8,15 +8,15 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
 public class CFItemTags {
-    public static final TagKey<Item> WRENCHES = forgeTag("wrenches");
+    public static final TagKey<Item> WRENCHES = cTag("wrenches");
 
     public static final TagKey<Block> SUPPORTS_FACADE = facadeTag("supports_facade");
 
-    private static TagKey<Item> forgeTag(String name) {
-        return TagKey.create(Registries.ITEM, new ResourceLocation("forge", name));
+    private static TagKey<Item> cTag(String name) {
+        return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", name));
     }
 
     private static TagKey<Block> facadeTag(String name) {
-        return TagKey.create(Registries.BLOCK, new ResourceLocation(CFMain.MODID, name));
+        return TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(CFMain.MODID, name));
     }
 }

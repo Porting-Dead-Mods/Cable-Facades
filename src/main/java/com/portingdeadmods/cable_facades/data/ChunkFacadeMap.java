@@ -1,4 +1,4 @@
-package com.portingdeadmods.cable_facades.data.helper;
+package com.portingdeadmods.cable_facades.data;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -28,6 +28,10 @@ public class ChunkFacadeMap {
 
     public Map<BlockPos, Block> getChunkMap() {
         return chunkMap;
+    }
+
+    public boolean isEmpty() {
+        return getChunkMap().isEmpty();
     }
 
     private static ChunkFacadeMap chunkMapFromString(Map<String, Block> chunkFacade) {

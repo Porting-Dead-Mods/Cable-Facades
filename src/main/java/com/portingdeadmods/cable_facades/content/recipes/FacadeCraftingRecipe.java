@@ -1,16 +1,15 @@
 package com.portingdeadmods.cable_facades.content.recipes;
 
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
+import com.portingdeadmods.cable_facades.registries.CFDataComponents;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
@@ -18,18 +17,20 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
+
 public class FacadeCraftingRecipe extends CustomRecipe {
-    public FacadeCraftingRecipe(ResourceLocation p_252125_, CraftingBookCategory p_249010_) {
-        super(p_252125_, p_249010_);
+    public FacadeCraftingRecipe(CraftingBookCategory category) {
+        super(category);
     }
 
     @Override
-    public boolean matches(CraftingContainer craftingContainer, Level level) {
+    public boolean matches(CraftingInput craftingInput, Level level) {
         boolean hasBlock = false;
         boolean hasFacade = false;
 
-        for (int i = 0; i < craftingContainer.getContainerSize(); i++) {
-            ItemStack stack = craftingContainer.getItem(i);
+        for (int i = 0; i < craftingInput.size(); i++) {
+            ItemStack stack = craftingInput.getItem(i);
             Item item = stack.getItem();
             if (item instanceof FacadeItem)
                 hasFacade = true;
@@ -42,11 +43,11 @@ public class FacadeCraftingRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingContainer craftingContainer, RegistryAccess registryAccess) {
+    public ItemStack assemble(CraftingInput craftingInput, HolderLookup.Provider registryAccess) {
         Block facadeBlock = null;
         ItemStack itemStack = ItemStack.EMPTY;
-        for (int i = 0; i < craftingContainer.getContainerSize(); i++) {
-            ItemStack item = craftingContainer.getItem(i);
+        for (int i = 0; i < craftingInput.size(); i++) {
+            ItemStack item = craftingInput.getItem(i);
             if (item.getItem() instanceof BlockItem blockItem) {
                 facadeBlock = blockItem.getBlock();
                 if(facadeBlock.defaultBlockState().getRenderShape() == RenderShape.ENTITYBLOCK_ANIMATED){
@@ -57,7 +58,7 @@ public class FacadeCraftingRecipe extends CustomRecipe {
             }
         }
         if (!itemStack.isEmpty()) {
-            itemStack.getOrCreateTag().putString(FacadeItem.FACADE_BLOCK, BuiltInRegistries.BLOCK.getKey(facadeBlock).toString());
+            itemStack.set(CFDataComponents.FACADE_BLOCK, Optional.ofNullable(facadeBlock));
             return itemStack;
         }
         return ItemStack.EMPTY;

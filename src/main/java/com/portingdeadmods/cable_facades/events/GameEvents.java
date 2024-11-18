@@ -1,13 +1,12 @@
 package com.portingdeadmods.cable_facades.events;
 
 import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
-import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
-import com.portingdeadmods.cable_facades.networking.CFMessages;
-import com.portingdeadmods.cable_facades.networking.s2c.AddFacadedBlocksPacket;
-import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadedBlocksPacket;
+import com.portingdeadmods.cable_facades.data.ChunkFacadeMap;
+import com.portingdeadmods.cable_facades.networking.s2c.AddFacadedBlocksPayload;
+import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadedBlocksPayload;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.utils.ChunkFacadeHelper;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -24,15 +23,15 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.event.level.ChunkWatchEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.ChunkWatchEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
-@Mod.EventBusSubscriber(modid = CFMain.MODID)
+@EventBusSubscriber(modid = CFMain.MODID)
 public final class GameEvents {
     @SubscribeEvent
     public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
@@ -105,14 +104,15 @@ public final class GameEvents {
 
     @SubscribeEvent
     public static void loadChunk(ChunkWatchEvent.Watch event) {
-        LevelChunk chunk = event.getChunk();
         ChunkPos chunkPos = event.getPos();
         ServerPlayer serverPlayer = event.getPlayer();
         ServerLevel serverLevel = event.getLevel();
 
-        ChunkFacadeMap facadeMapForChunk = CableFacadeSavedData.get(serverLevel).getFacadeMapForChunk(chunk.getPos());
-        if (facadeMapForChunk != null) {
-            CFMessages.sendToPlayer(new AddFacadedBlocksPacket(chunkPos, facadeMapForChunk.getChunkMap()), serverPlayer);
+        if (serverLevel.hasChunk(chunkPos.x, chunkPos.z)) {
+            ChunkFacadeMap facadeMapForChunk = ChunkFacadeHelper.get(serverLevel).getFacadeMapForChunk(chunkPos);
+            if (!facadeMapForChunk.isEmpty()) {
+                PacketDistributor.sendToPlayer(serverPlayer, new AddFacadedBlocksPayload(chunkPos, facadeMapForChunk.getChunkMap()));
+            }
         }
     }
 
@@ -120,6 +120,6 @@ public final class GameEvents {
     public static void unloadChunk(ChunkWatchEvent.UnWatch event) {
         ChunkPos chunkPos = event.getPos();
         ServerPlayer serverPlayer = event.getPlayer();
-        CFMessages.sendToPlayer(new RemoveFacadedBlocksPacket(chunkPos), serverPlayer);
+        PacketDistributor.sendToPlayer(serverPlayer, new RemoveFacadedBlocksPayload(chunkPos));
     }
 }
