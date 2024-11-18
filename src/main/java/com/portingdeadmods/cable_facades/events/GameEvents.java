@@ -3,13 +3,15 @@ package com.portingdeadmods.cable_facades.events;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
-import com.portingdeadmods.cable_facades.networking.s2c.AddFacadedBlocksPacket;
 import com.portingdeadmods.cable_facades.networking.CFMessages;
+import com.portingdeadmods.cable_facades.networking.s2c.AddFacadedBlocksPacket;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadedBlocksPacket;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -23,6 +25,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkWatchEvent;
@@ -31,6 +34,17 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = CFMain.MODID)
 public final class GameEvents {
+    @SubscribeEvent
+    public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
+        Player player = event.getEntity();
+        String msgReceived = CFMain.MODID + "_update_message_received";
+        if (!player.getPersistentData().getBoolean(msgReceived)) {
+            player.sendSystemMessage(Component.literal("*Cable-Facades Update*").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("This update will delete all previously placed facades because we changed the way facades are saved. We apologize for this inconvenience. This is the last time this will happen. On the bright side, the mod's overall performance should be a lot better now."));
+            player.getPersistentData().putBoolean(msgReceived, true);
+        }
+    }
+
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         Level level = event.getPlayer().level();

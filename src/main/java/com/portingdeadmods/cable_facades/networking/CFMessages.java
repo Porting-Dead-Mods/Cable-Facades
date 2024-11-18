@@ -60,19 +60,11 @@ public final class CFMessages {
                 .add();
     }
 
-    public static <MSG> void sendToServer(MSG message) {
-        INSTANCE.sendToServer(message);
-    }
-
     public static <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
         INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), message);
     }
 
     public static <MSG> void sendToChunk(MSG message, LevelChunk chunk) {
         INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> chunk), message);
-    }
-
-    public static <MSG> void sendToClients(MSG message) {
-        INSTANCE.send(PacketDistributor.ALL.noArg(), message);
     }
 }
