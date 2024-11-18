@@ -13,6 +13,7 @@ import net.minecraftforge.common.extensions.IForgeBlockState;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(BlockState.class)
 public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase implements IForgeBlockState {
@@ -23,27 +24,41 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         super(null, null, null);
     }
 
+    @Unique
+    private static final ThreadLocal<Boolean> cable_facades$recursionGuard = ThreadLocal.withInitial(() -> false);
+
     @Override
     public BlockState getAppearance(BlockAndTintGetter blockGetter, BlockPos pos, Direction side, @Nullable BlockState queryState, @Nullable BlockPos queryPos) {
-        if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
-            Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
-            if (camoBlock != null) {
-                BlockState camoState = camoBlock.defaultBlockState();
-                return camoState.getBlock().getAppearance(camoState, blockGetter, pos, side, queryState, queryPos);
+        if (cable_facades$recursionGuard.get()) return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
+        cable_facades$recursionGuard.set(true);
+        try {
+            if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
+                Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
+                if (camoBlock != null) {
+                    BlockState camoState = camoBlock.defaultBlockState();
+                    return camoState.getBlock().getAppearance(camoState, blockGetter, pos, side, queryState, queryPos);
+                }
             }
+            return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
+        } finally {
+            cable_facades$recursionGuard.set(false);
         }
-        return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
     }
 
     @Override
     public int getLightEmission(BlockGetter blockGetter, BlockPos pos) {
-        if (FacadeUtils.hasFacade(blockGetter,pos)) {
-            Block camoBlock = FacadeUtils.getFacade(blockGetter,pos);
-            if (camoBlock != null) {
-                return camoBlock.defaultBlockState().getLightEmission();
+        if (cable_facades$recursionGuard.get()) return getBlock().getLightEmission(this.asState(), blockGetter, pos);
+        cable_facades$recursionGuard.set(true);
+        try {
+            if (FacadeUtils.hasFacade(blockGetter, pos)) {
+                Block camoBlock = FacadeUtils.getFacade(blockGetter, pos);
+                if (camoBlock != null) {
+                    return camoBlock.defaultBlockState().getLightEmission();
+                }
             }
+            return getBlock().getLightEmission(this.asState(), blockGetter, pos);
+        } finally {
+            cable_facades$recursionGuard.set(false);
         }
-        return getBlock().getLightEmission(this.asState(), blockGetter, pos);
     }
-
 }
