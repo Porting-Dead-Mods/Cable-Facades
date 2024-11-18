@@ -95,4 +95,51 @@ public abstract class BlockStateBaseMixin {
         }
     }
 
+    @Inject(
+            method = "isSolidRender",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
+        if (FacadeUtils.hasFacade(blockGetter,blockPos)) {
+            Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
+            if (camoBlock != null) {
+                BlockState camoState = camoBlock.defaultBlockState();
+                cir.setReturnValue(camoState.canOcclude() && camoState.isSolidRender(blockGetter, blockPos));
+            }
+        }
+    }
+
+    @Inject(
+            method = "getLightBlock",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void getLightBlock(BlockGetter level, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
+        if(FacadeUtils.hasFacade(level,pos)){
+            Block camoBlock = FacadeUtils.getFacade(level,pos);
+            if (camoBlock != null) {
+                BlockState camoState = camoBlock.defaultBlockState();
+                if (camoState.isSolidRender(level, pos)) {
+                    cir.setReturnValue(level.getMaxLightLevel());
+                } else {
+                    cir.setReturnValue(camoState.propagatesSkylightDown(level, pos) ? 0 : 1);
+                }
+            }
+        }
+    }
+
+    @Inject(
+            method = "propagatesSkylightDown",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void propagatesSkylightDown(BlockGetter level, BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+        if(FacadeUtils.hasFacade(level,pos)){
+            Block camoBlock = FacadeUtils.getFacade(level,pos);
+            if (camoBlock != null) {
+                cir.setReturnValue(camoBlock.propagatesSkylightDown(camoBlock.defaultBlockState(), level, pos));
+            }
+        }
+    }
 }

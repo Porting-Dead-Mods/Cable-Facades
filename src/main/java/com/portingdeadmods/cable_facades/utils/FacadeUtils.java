@@ -41,10 +41,8 @@ public class FacadeUtils {
     }
 
     public static void updateBlocks(Level level, BlockPos pos) {
+        level.getLightEngine().checkBlock(pos);
         BlockState state = level.getBlockState(pos);
         level.sendBlockUpdated(pos, state, state, 3);
-        level.updateNeighborsAt(pos, state.getBlock());
-        // Update self and surrounding
-        level.getLightEngine().checkBlock(pos);
-    }
+        level.updateNeighborsAt(pos, state.getBlock());}
 }

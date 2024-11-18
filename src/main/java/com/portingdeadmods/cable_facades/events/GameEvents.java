@@ -72,9 +72,10 @@ public final class GameEvents {
                             SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 }
 
-                updateBlocks(level, pos);
             }
             player.swing(InteractionHand.MAIN_HAND);
+
+            updateBlocks(level, pos);
             event.setCanceled(true);
 
         }
@@ -105,7 +106,6 @@ public final class GameEvents {
     public static void unloadChunk(ChunkWatchEvent.UnWatch event) {
         ChunkPos chunkPos = event.getPos();
         ServerPlayer serverPlayer = event.getPlayer();
-
         CFMessages.sendToPlayer(new RemoveFacadedBlocksPacket(chunkPos), serverPlayer);
     }
 }
