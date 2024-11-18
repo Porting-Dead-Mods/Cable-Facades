@@ -1,6 +1,8 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
+import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
@@ -24,12 +26,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BlockBehaviour.BlockStateBase.class)
 public abstract class BlockStateBaseMixin {
-
     @Shadow
     public abstract Block getBlock();
-
-    @Unique
-    private static final ThreadLocal<Boolean> RECURSION_GUARD = ThreadLocal.withInitial(() -> false);
 
     @Inject(
             method = "onRemove",
@@ -91,6 +89,19 @@ public abstract class BlockStateBaseMixin {
             Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
             if (camoBlock != null) {
                 cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, BlockPos.ZERO));
+            }
+        }
+    }
+
+    @Inject(method = "getLightBlock", at = @At("HEAD"), cancellable = true)
+    public void getLightEmission(BlockGetter blockGetter, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
+        if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
+            CFMain.LOGGER.debug("Block: {}", this);
+            Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
+            if (camoBlock != null) {
+                CFMain.LOGGER.debug("Self block state: {}", getBlock());
+                CFMain.LOGGER.debug("Camo block state: {}", ClientFacadeManager.FACADED_BLOCKS.get(pos));
+                cir.setReturnValue(camoBlock.getLightEmission(camoBlock.defaultBlockState(), blockGetter, pos));
             }
         }
     }
