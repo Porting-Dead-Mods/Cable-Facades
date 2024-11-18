@@ -30,15 +30,12 @@ public class CableFacadeSavedData extends SavedData {
     public static final String ID = "cable_facades_saved_data";
 
     private final LevelFacadeMap levelFacadeMap;
-    private final ServerLevel serverLevel;
 
-    public CableFacadeSavedData(LevelFacadeMap levelFacadeMap, ServerLevel serverLevel) {
+    public CableFacadeSavedData(LevelFacadeMap levelFacadeMap) {
         this.levelFacadeMap = levelFacadeMap;
-        this.serverLevel = serverLevel;
     }
-
-    public CableFacadeSavedData(ServerLevel serverLevel) {
-        this(new LevelFacadeMap(), serverLevel);
+    public CableFacadeSavedData() {
+        this(new LevelFacadeMap());
     }
 
     public LevelFacadeMap getLevelFacadeMap() {
@@ -60,12 +57,12 @@ public class CableFacadeSavedData extends SavedData {
     }
 
     public @NotNull ChunkFacadeMap getOrCreateFacadeMapForPos(BlockPos blockPos) {
-        ChunkPos chunkPos = this.serverLevel.getChunk(blockPos).getPos();
+        ChunkPos chunkPos = new ChunkPos(blockPos.getX(), blockPos.getY());
         return getOrCreateFacadeMapForChunk(chunkPos);
     }
 
     public @Nullable ChunkFacadeMap getFacadeMapForPos(BlockPos blockPos) {
-        ChunkPos chunkPos = this.serverLevel.getChunk(blockPos).getPos();
+        ChunkPos chunkPos = new ChunkPos(blockPos.getX(), blockPos.getY());
         return getFacadeMapForChunk(chunkPos);
     }
 
@@ -106,12 +103,12 @@ public class CableFacadeSavedData extends SavedData {
                 .resultOrPartial(err -> CFMain.LOGGER.error("Decoding error: {}", err));
         if (mapTagPair.isPresent()) {
             LevelFacadeMap facadeMap = mapTagPair.get().getFirst();
-            return new CableFacadeSavedData(facadeMap, serverLevel);
+            return new CableFacadeSavedData(facadeMap);
         }
-        return new CableFacadeSavedData(serverLevel);
+        return new CableFacadeSavedData();
     }
 
     public static CableFacadeSavedData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(compoundTag -> load(compoundTag, level), () -> new CableFacadeSavedData(level), ID);
+        return level.getDataStorage().computeIfAbsent(compoundTag -> load(compoundTag, level), CableFacadeSavedData::new, ID);
     }
 }
