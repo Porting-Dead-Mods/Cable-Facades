@@ -7,6 +7,7 @@ import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -50,5 +51,4 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         }
         return getBlock().getLightEmission(this.asState(), blockGetter, pos);
     }
-
 }
