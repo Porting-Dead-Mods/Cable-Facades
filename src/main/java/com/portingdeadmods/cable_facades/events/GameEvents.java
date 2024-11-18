@@ -45,10 +45,10 @@ public final class GameEvents {
                     ItemStack facadeStack = CFItems.FACADE.get().createFacade(facade);
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 }
-                FacadeUtils.updateBlocks(level, pos);
                 event.setCanceled(true);
             }
         }
+        FacadeUtils.updateBlocks(level, pos);
     }
 
     @SubscribeEvent

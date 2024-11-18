@@ -44,9 +44,9 @@ public abstract class BlockStateBaseMixin {
                         FacadeUtils.removeFacade(level, blockPos);
 
                         Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
-                        FacadeUtils.updateBlocks(level, blockPos);
                     }
                 }
+                FacadeUtils.updateBlocks(level, blockPos);
             }
         }
     }
@@ -89,19 +89,6 @@ public abstract class BlockStateBaseMixin {
             Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
             if (camoBlock != null) {
                 cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, BlockPos.ZERO));
-            }
-        }
-    }
-
-    @Inject(method = "getLightBlock", at = @At("HEAD"), cancellable = true)
-    public void getLightEmission(BlockGetter blockGetter, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
-        if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
-            CFMain.LOGGER.debug("Block: {}", this);
-            Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
-            if (camoBlock != null) {
-                CFMain.LOGGER.debug("Self block state: {}", getBlock());
-                CFMain.LOGGER.debug("Camo block state: {}", ClientFacadeManager.FACADED_BLOCKS.get(pos));
-                cir.setReturnValue(camoBlock.getLightEmission(camoBlock.defaultBlockState(), blockGetter, pos));
             }
         }
     }

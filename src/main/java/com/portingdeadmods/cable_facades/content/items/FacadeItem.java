@@ -69,13 +69,14 @@ public class FacadeItem extends Item {
 
                 FacadeUtils.addFacade(level, pos, block);
 
-                FacadeUtils.updateBlocks(level, pos);
-
                 if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
                     itemStack.shrink(1);
                 }
             }
         }
+
+        FacadeUtils.updateBlocks(level, pos);
+
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
