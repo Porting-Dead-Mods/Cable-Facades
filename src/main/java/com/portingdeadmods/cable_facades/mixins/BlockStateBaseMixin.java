@@ -95,6 +95,7 @@ public abstract class BlockStateBaseMixin {
         }
     }
 
+    /*
     @Inject(
             method = "isSolidRender",
             at = @At("HEAD"),
@@ -142,4 +143,6 @@ public abstract class BlockStateBaseMixin {
             }
         }
     }
+
+     */
 }
