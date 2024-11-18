@@ -1,6 +1,7 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
 import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
+import com.portingdeadmods.cable_facades.utils.ClientFacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -23,7 +24,7 @@ public record AddFacadePacket(BlockPos facadePos, Block block) {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
             ClientFacadeManager.FACADED_BLOCKS.put(facadePos, block);
-//            ClientFacadeUtils.updateBlocks(this.facadePos);
+            ClientFacadeUtils.updateBlocks(this.facadePos);
         });
         return true;
     }
