@@ -6,7 +6,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.mixins.LevelRendererAccess;
 import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.registries.CFRenderTypes;
+import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -16,13 +19,17 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderHighlightEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
@@ -134,5 +141,25 @@ public final class GameClientEvents {
 
         // Draw the buffer
         bufferSource.endBatch(FACADE_RENDER_TYPE);
+    }
+
+    // From Immersive Engineering. Thank you blu, for figuring out this fix <3
+    @SubscribeEvent
+    public static void renderOutline(RenderHighlightEvent.Block event) {
+        if (event.getCamera().getEntity() instanceof LivingEntity living) {
+            Level world = living.level();
+            BlockHitResult rtr = event.getTarget();
+            BlockPos pos = rtr.getBlockPos();
+            Vec3 renderView = event.getCamera().getPosition();
+            BlockState targetBlock = world.getBlockState(rtr.getBlockPos());
+            if (FacadeUtils.hasFacade(world, pos)) {
+                ((LevelRendererAccess) event.getLevelRenderer()).callRenderHitOutline(
+                        event.getPoseStack(), event.getMultiBufferSource().getBuffer(CFRenderTypes.LINES_NONTRANSLUCENT),
+                        living, renderView.x, renderView.y, renderView.z,
+                        pos, targetBlock
+                );
+                event.setCanceled(true);
+            }
+        }
     }
 }
