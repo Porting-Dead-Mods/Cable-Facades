@@ -1,7 +1,7 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.registries.CFItems;
-import com.portingdeadmods.cable_facades.utils.ChunkFacadeHelper;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -41,7 +41,7 @@ public abstract class BlockStateBaseMixin {
             if (FacadeUtils.hasFacade(level, blockPos)) {
                 if (!blockState.is(getBlock())) {
                     if (level instanceof ServerLevel serverLevel) {
-                        ChunkFacadeHelper helper = ChunkFacadeHelper.get(serverLevel);
+                        CableFacadeSavedData helper = CableFacadeSavedData.get(serverLevel);
                         Block facadeBlock = helper.getFacade(blockPos);
                         if (facadeBlock != null) {
                             ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeBlock);

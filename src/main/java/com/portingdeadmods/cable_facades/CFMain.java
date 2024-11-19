@@ -1,7 +1,10 @@
 package com.portingdeadmods.cable_facades;
 
 import com.mojang.logging.LogUtils;
-import com.portingdeadmods.cable_facades.registries.*;
+import com.portingdeadmods.cable_facades.registries.CFCreativeTabs;
+import com.portingdeadmods.cable_facades.registries.CFDataComponents;
+import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.registries.CFRecipes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -18,7 +21,6 @@ public class CFMain {
         CFCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
         CFRecipes.RECIPES.register(modEventBus);
         CFDataComponents.DATA_COMPONENTS.register(modEventBus);
-        CFDataAttachments.ATTACHMENT_TYPES.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CFConfig.SPEC);
 

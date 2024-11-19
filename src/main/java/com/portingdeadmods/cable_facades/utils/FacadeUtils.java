@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades.utils;
 
+import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadePayload;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePayload;
@@ -21,21 +22,21 @@ public class FacadeUtils {
     @Nullable
     public static Block getFacade(BlockGetter level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
-            return ChunkFacadeHelper.get(serverLevel).getFacade(pos);
+            return CableFacadeSavedData.get(serverLevel).getFacade(pos);
         }
         return ClientFacadeManager.FACADED_BLOCKS.get(pos);
     }
 
     public static void addFacade(Level level, BlockPos pos, Block block) {
         if (level instanceof ServerLevel serverLevel) {
-            ChunkFacadeHelper.get(serverLevel).addFacade(pos, block);
+            CableFacadeSavedData.get(serverLevel).addFacade(pos, block);
             PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new AddFacadePayload(pos, block));
         }
     }
 
     public static void removeFacade(Level level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
-            ChunkFacadeHelper.get(serverLevel).removeFacade(pos);
+            CableFacadeSavedData.get(serverLevel).removeFacade(pos);
             PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new RemoveFacadePayload(pos));
         }
     }

@@ -1,4 +1,4 @@
-package com.portingdeadmods.cable_facades.data;
+package com.portingdeadmods.cable_facades.data.helper;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

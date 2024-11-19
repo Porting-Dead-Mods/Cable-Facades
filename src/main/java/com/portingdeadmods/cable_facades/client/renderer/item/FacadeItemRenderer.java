@@ -27,16 +27,16 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
             BlockState state = block.defaultBlockState();
 
             Minecraft.getInstance().getBlockRenderer().renderSingleBlock(state, poseStack, buffer, combinedLight, combinedOverlay);
-
-            var model = Minecraft.getInstance().getModelManager().getModel(CFClientEvents.FACADE_OUTLINE);
-            Minecraft.getInstance().getItemRenderer().renderModelLists(
-                    model,
-                    stack,
-                    combinedLight,
-                    OverlayTexture.NO_OVERLAY,
-                    poseStack,
-                    buffer.getBuffer(model.getRenderTypes(stack, true).getFirst())
-            );
         }
+
+        var model = Minecraft.getInstance().getModelManager().getModel(CFClientEvents.FACADE_OUTLINE);
+        Minecraft.getInstance().getItemRenderer().renderModelLists(
+                model,
+                stack,
+                combinedLight,
+                OverlayTexture.NO_OVERLAY,
+                poseStack,
+                buffer.getBuffer(model.getRenderTypes(stack, true).getFirst())
+        );
     }
 }

@@ -11,16 +11,21 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+import java.util.List;
+
 public record RemoveFacadedBlocksPayload(ChunkPos chunkPos) implements CustomPacketPayload {
     public static final Type<RemoveFacadedBlocksPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(CFMain.MODID, "remove_facaded_blocks"));
     public static final StreamCodec<ByteBuf, RemoveFacadedBlocksPayload> STREAM_CODEC = CodecUtils.CHUNK_POS_STREAM_CODEC.map(RemoveFacadedBlocksPayload::new, RemoveFacadedBlocksPayload::chunkPos);
 
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
-            for (BlockPos pos : ClientFacadeManager.LOADED_BLOCKS.get(this.chunkPos)) {
-                ClientFacadeManager.FACADED_BLOCKS.remove(pos);
+            List<BlockPos> blockPosList = ClientFacadeManager.LOADED_BLOCKS.get(this.chunkPos);
+            if (blockPosList != null) {
+                for (BlockPos pos : blockPosList) {
+                    ClientFacadeManager.FACADED_BLOCKS.remove(pos);
+                }
+                ClientFacadeManager.LOADED_BLOCKS.remove(this.chunkPos);
             }
-            ClientFacadeManager.LOADED_BLOCKS.remove(this.chunkPos);
         });
     }
 
