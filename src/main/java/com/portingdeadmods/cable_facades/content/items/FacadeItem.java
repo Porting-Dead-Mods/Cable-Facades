@@ -2,13 +2,13 @@ package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.registries.CFDataComponents;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -17,6 +17,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.NotNull;
@@ -32,12 +33,15 @@ public class FacadeItem extends Item {
 
     // DEBUGGING CODE
     @Override
-    public InteractionResultHolder<ItemStack> use(Level p_41432_, Player p_41433_, InteractionHand p_41434_) {
-        if (p_41432_.isClientSide()) {
-            CFMain.LOGGER.debug("Facades: {}", ClientFacadeManager.FACADED_BLOCKS);
-            CFMain.LOGGER.debug("Loaded: {}", ClientFacadeManager.LOADED_BLOCKS);
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand interactionHand) {
+        if (level instanceof ServerLevel serverLevel) {
+            ChunkPos chunkpos = new ChunkPos(player.getOnPos());
+            CFMain.LOGGER.debug("chunkpos: {}", chunkpos);
+            long pos = chunkpos.toLong();
+            ChunkPos cPos = new ChunkPos(pos);
+            CFMain.LOGGER.debug("chunkpos from long: {}", cPos);
         }
-        return super.use(p_41432_, p_41433_, p_41434_);
+        return super.use(level, player, interactionHand);
     }
 
     @Override
@@ -77,6 +81,7 @@ public class FacadeItem extends Item {
         }
 
         FacadeUtils.updateBlocks(level, pos);
+
 
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

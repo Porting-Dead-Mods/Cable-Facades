@@ -39,4 +39,12 @@ public class LevelFacadeMap {
                 .map(entry -> new AbstractMap.SimpleEntry<>(String.valueOf(entry.getKey().toLong()), entry.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
     }
+
+
+    @Override
+    public String toString() {
+        return "LevelFacadeMap{" +
+                "chunkFacadeMaps=" + chunkFacadeMaps +
+                '}';
+    }
 }

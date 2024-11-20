@@ -45,4 +45,11 @@ public class ChunkFacadeMap {
                 .map(entry -> new AbstractMap.SimpleEntry<>(String.valueOf(entry.getKey().asLong()), entry.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
     }
+
+    @Override
+    public String toString() {
+        return "ChunkFacadeMap{" +
+                "chunkMap=" + chunkMap +
+                '}';
+    }
 }

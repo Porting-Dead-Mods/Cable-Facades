@@ -58,12 +58,12 @@ public class CableFacadeSavedData extends SavedData {
     }
 
     public @NotNull ChunkFacadeMap getOrCreateFacadeMapForPos(BlockPos blockPos) {
-        ChunkPos chunkPos = new ChunkPos(blockPos.getX(), blockPos.getY());
+        ChunkPos chunkPos = new ChunkPos(blockPos);
         return getOrCreateFacadeMapForChunk(chunkPos);
     }
 
     public @Nullable ChunkFacadeMap getFacadeMapForPos(BlockPos blockPos) {
-        ChunkPos chunkPos = new ChunkPos(blockPos.getX(), blockPos.getY());
+        ChunkPos chunkPos = new ChunkPos(blockPos);
         return getFacadeMapForChunk(chunkPos);
     }
 
@@ -115,5 +115,12 @@ public class CableFacadeSavedData extends SavedData {
 
     private static SavedData.Factory<CableFacadeSavedData> factory(ServerLevel pLevel) {
         return new SavedData.Factory<>(CableFacadeSavedData::new, (tag, provider) -> load(tag, pLevel));
+    }
+
+    @Override
+    public String toString() {
+        return "CableFacadeSavedData{" +
+                "levelFacadeMap=" + levelFacadeMap +
+                '}';
     }
 }
