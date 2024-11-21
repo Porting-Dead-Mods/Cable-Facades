@@ -6,6 +6,7 @@ import com.portingdeadmods.cable_facades.registries.CFDataComponents;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -67,8 +68,13 @@ public class FacadeItem extends Item {
                     return InteractionResult.FAIL;
                 }
 
-                // Prevent block from being facaded with itself
-                if (targetBlock == block1) {
+                // Prevent block from being facaded with itself or if it's disallowed
+                if (targetBlock == block1 || CFConfig.isBlockDisallowed(block1)) {
+                    if(targetBlock == block1){
+                        context.getPlayer().displayClientMessage(Component.literal("Cannot facade block with itself").withStyle(ChatFormatting.RED),true);
+                    } else {
+                        context.getPlayer().displayClientMessage(Component.literal("This block cannot be used as a cover (disabled by config)").withStyle(ChatFormatting.RED),true);
+                    }
                     return InteractionResult.FAIL;
                 }
 
