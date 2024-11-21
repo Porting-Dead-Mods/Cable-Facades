@@ -81,10 +81,6 @@ public class CFConfig {
     }
 
     public static boolean isBlockAllowed(Block targetBlock) {
-        // Check if the block is explicitly disallowed
-        if (isBlockDisallowed(targetBlock)) {
-            return false;
-        }
 
         // Check if the block is already in the cache
         Boolean cached = allowedBlocks.get(targetBlock);
