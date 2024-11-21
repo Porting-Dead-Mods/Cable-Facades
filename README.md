@@ -22,13 +22,12 @@ When holding a wrench:
 
 ## Supported Versions
 
-| NeoForge |        |
-|----------|--------|
-|          | 1.20.1 |
-| Forge    |        |
-|          | 1.20.1 |
-
-1.21 coming soon!
+| NeoForge |        | Actively Supported  |
+|----------|--------|---|
+|          | 1.21.1 | ✅ |
+|          | 1.20.1 | ✅ |
+| Forge    |        |   |
+|          | 1.20.1 | ✅ |
 
 ## Pre-Supported Mods
 * Computer Craft
