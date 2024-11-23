@@ -29,8 +29,10 @@ public record AddFacadedBlocksPacket(ChunkPos chunkPos, Map<BlockPos, Block> fac
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
-            ClientFacadeManager.FACADED_BLOCKS.putAll(this.facadedBlocks);
-            ClientFacadeManager.LOADED_BLOCKS.put(this.chunkPos, this.facadedBlocks.keySet().stream().toList());
+            if (!ClientFacadeManager.LOADED_BLOCKS.containsKey(this.chunkPos)) {
+                ClientFacadeManager.FACADED_BLOCKS.putAll(this.facadedBlocks);
+                ClientFacadeManager.LOADED_BLOCKS.put(this.chunkPos, this.facadedBlocks.keySet().stream().toList());
+            }
         });
     }
 }

@@ -110,9 +110,9 @@ public final class GameEvents {
         ServerPlayer serverPlayer = event.getPlayer();
         ServerLevel serverLevel = event.getLevel();
 
-        ChunkFacadeMap facadeMapForChunk = CableFacadeSavedData.get(serverLevel).getFacadeMapForChunk(chunk.getPos());
+        ChunkFacadeMap facadeMapForChunk = CableFacadeSavedData.get(serverLevel).getFacadeMapForChunk(chunkPos);
         if (facadeMapForChunk != null) {
-            CFMessages.sendToPlayer(new AddFacadedBlocksPacket(chunkPos, facadeMapForChunk.getChunkMap()), serverPlayer);
+            CFMessages.sendToChunk(new AddFacadedBlocksPacket(chunkPos, facadeMapForChunk.getChunkMap()), chunk);
         }
     }
 
