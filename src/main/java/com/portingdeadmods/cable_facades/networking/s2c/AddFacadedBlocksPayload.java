@@ -30,8 +30,10 @@ public record AddFacadedBlocksPayload(ChunkPos chunkPos,
 
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
-            ClientFacadeManager.FACADED_BLOCKS.putAll(this.facadedBlocks);
-            ClientFacadeManager.LOADED_BLOCKS.put(this.chunkPos, this.facadedBlocks.keySet().stream().toList());
+            if (!ClientFacadeManager.LOADED_BLOCKS.containsKey(this.chunkPos)) {
+                ClientFacadeManager.FACADED_BLOCKS.putAll(this.facadedBlocks);
+                ClientFacadeManager.LOADED_BLOCKS.put(this.chunkPos, this.facadedBlocks.keySet().stream().toList());
+            }
         });
     }
 
