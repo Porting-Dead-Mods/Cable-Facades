@@ -30,6 +30,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderHighlightEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
@@ -162,6 +163,10 @@ public final class GameClientEvents {
                 event.setCanceled(true);
             }
         }
+    }
+
+    public static void loadChunk(ChunkEvent.Load event) {
+
     }
 
 }

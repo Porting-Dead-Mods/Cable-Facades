@@ -57,12 +57,12 @@ public class CableFacadeSavedData extends SavedData {
     }
 
     public @NotNull ChunkFacadeMap getOrCreateFacadeMapForPos(BlockPos blockPos) {
-        ChunkPos chunkPos = new ChunkPos(blockPos.getX(), blockPos.getY());
+        ChunkPos chunkPos = new ChunkPos(blockPos);
         return getOrCreateFacadeMapForChunk(chunkPos);
     }
 
     public @Nullable ChunkFacadeMap getFacadeMapForPos(BlockPos blockPos) {
-        ChunkPos chunkPos = new ChunkPos(blockPos.getX(), blockPos.getY());
+        ChunkPos chunkPos = new ChunkPos(blockPos);
         return getFacadeMapForChunk(chunkPos);
     }
 
