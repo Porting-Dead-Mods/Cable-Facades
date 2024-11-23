@@ -98,7 +98,7 @@ public final class GameEvents {
         ChunkFacadeMap facadeMapForChunk = data.getFacadeMapForChunk(chunkPos);
         if (facadeMapForChunk != null) {
             CFMain.LOGGER.debug("Server Facaded Blocks: {}", facadeMapForChunk.getChunkMap());
-            PacketDistributor.sendToPlayer(serverPlayer, new AddFacadedBlocksPayload(chunkPos, facadeMapForChunk.getChunkMap()));
+            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, chunkPos, new AddFacadedBlocksPayload(chunkPos, facadeMapForChunk.getChunkMap()));
         }
     }
 
