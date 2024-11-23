@@ -162,4 +162,8 @@ public final class GameClientEvents {
             }
         }
     }
+
+    public static void loadChunk() {
+
+    }
 }

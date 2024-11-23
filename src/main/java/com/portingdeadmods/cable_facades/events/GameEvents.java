@@ -89,7 +89,7 @@ public final class GameEvents {
     }
 
     @SubscribeEvent
-    public static void loadChunk(ChunkWatchEvent.Watch event) {
+    public static void loadChunk(ChunkWatchEvent.Sent event) {
         ChunkPos chunkPos = event.getPos();
         ServerPlayer serverPlayer = event.getPlayer();
         ServerLevel serverLevel = event.getLevel();
