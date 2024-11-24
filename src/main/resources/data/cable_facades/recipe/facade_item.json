@@ -7,17 +7,17 @@
   ],
   "key": {
     "#": {
-      "tag": "forge:dyes/red"
+      "tag": "c:dyes/red"
     },
     "D": {
-      "tag": "forge:dyes/yellow"
+      "tag": "c:dyes/yellow"
     },
     "W": {
       "tag": "minecraft:wool"
     }
   },
   "result": {
-    "item": "cable_facades:facade",
+    "id": "cable_facades:facade",
     "count": 16
   }
 }

@@ -1,7 +1,6 @@
 package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
-import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.registries.CFDataComponents;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
@@ -9,16 +8,11 @@ import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.NotNull;
@@ -30,19 +24,6 @@ public class FacadeItem extends Item {
 
     public FacadeItem(Properties properties) {
         super(properties);
-    }
-
-    // DEBUGGING CODE
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand interactionHand) {
-        if (level instanceof ServerLevel serverLevel) {
-            ChunkPos chunkpos = new ChunkPos(player.getOnPos());
-            CFMain.LOGGER.debug("chunkpos: {}", chunkpos);
-            long pos = chunkpos.toLong();
-            ChunkPos cPos = new ChunkPos(pos);
-            CFMain.LOGGER.debug("chunkpos from long: {}", cPos);
-        }
-        return super.use(level, player, interactionHand);
     }
 
     @Override
