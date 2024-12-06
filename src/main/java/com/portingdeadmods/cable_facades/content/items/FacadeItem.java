@@ -9,7 +9,7 @@ import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -24,6 +24,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.function.Consumer;
 
@@ -53,7 +54,7 @@ public class FacadeItem extends Item {
         if (!level.isClientSide()) {
             if (itemStack.hasTag() && !FacadeUtils.hasFacade(level, pos)) {
                 CompoundTag tag = itemStack.getTag();
-                Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
+                Block block = Registry.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
                 Block targetBlock = context.getLevel().getBlockState(pos).getBlock();
 
                 boolean noFacadeTag = context.getLevel().getBlockState(pos).getTags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE));
@@ -90,7 +91,7 @@ public class FacadeItem extends Item {
     public Component getName(ItemStack itemStack) {
         if (itemStack.hasTag()) {
             CompoundTag tag = itemStack.getTag();
-            Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
+            Block block = Registry.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
             BlockItem blockItem = (BlockItem) block.asItem();
             return Component.literal("Facade - " + blockItem.getDescription().getString());
         }
@@ -110,7 +111,7 @@ public class FacadeItem extends Item {
     public ItemStack createFacade(Block block) {
         ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
         CompoundTag nbtData = new CompoundTag();
-        nbtData.putString(FacadeItem.FACADE_BLOCK, BuiltInRegistries.BLOCK.getKey(block).toString());
+        nbtData.putString(FacadeItem.FACADE_BLOCK, ForgeRegistries.BLOCKS.getKey(block).toString());
         facadeStack.setTag(nbtData);
         return facadeStack;
     }

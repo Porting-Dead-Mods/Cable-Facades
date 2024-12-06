@@ -2,13 +2,14 @@ package com.portingdeadmods.cable_facades.networking.s2c;
 
 import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public record AddFacadedBlocksPacket(ChunkPos chunkPos, Map<BlockPos, Block> facadedBlocks) {
@@ -22,7 +23,7 @@ public record AddFacadedBlocksPacket(ChunkPos chunkPos, Map<BlockPos, Block> fac
         for (Map.Entry<BlockPos, Block> entry : this.facadedBlocks.entrySet()) {
             buf.writeBlockPos(entry.getKey());
             //noinspection deprecation
-            buf.writeResourceLocation(BuiltInRegistries.BLOCK.getKey(entry.getValue()));
+            buf.writeResourceLocation(Objects.requireNonNull(ForgeRegistries.BLOCKS.getKey(entry.getValue())));
         }
     }
 

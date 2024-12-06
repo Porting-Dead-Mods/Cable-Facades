@@ -151,12 +151,15 @@ dependencies {
     // compileOnly fg.deobf("mezz.jei:jei-${mc_version}-common-api:${jei_version}")
     // compileOnly fg.deobf("mezz.jei:jei-${mc_version}-forge-api:${jei_version}")
     // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}")
+    /*
     runtimeOnly fg.deobf("curse.maven:supermartijn642s-config-lib-438332:4629797")
-    //runtimeOnly fg.deobf("curse.maven:ferritecore-429235:4810975")
+    runtimeOnly fg.deobf("curse.maven:ferritecore-429235:4810975")
     runtimeOnly fg.deobf("curse.maven:rechiseled-558998:5286306")
-    runtimeOnly fg.deobf("curse.maven:pipez-443900:5550816")
+     */
+    runtimeOnly fg.deobf("curse.maven:pipez-443900:5550814")
+    /*
     runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
-    //runtimeOnly fg.deobf("curse.maven:modernfix-790626:5876359")
+    runtimeOnly fg.deobf("curse.maven:modernfix-790626:5876359")
     runtimeOnly fg.deobf("curse.maven:thermal-dynamics-227443:5372747")
     runtimeOnly fg.deobf("curse.maven:cofh-core-69162:5374122")
     runtimeOnly fg.deobf("curse.maven:thermal-foundation-222880:5443583")
@@ -171,7 +174,7 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:integrated-dynamics-236307:5890856")
     runtimeOnly fg.deobf("curse.maven:cyclops-core-232758:5583765")
     runtimeOnly fg.deobf("curse.maven:common-capabilities-247007:5650234")
-
+     */
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"))
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}"))
     runtimeOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}"))

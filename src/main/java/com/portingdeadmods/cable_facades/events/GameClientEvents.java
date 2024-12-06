@@ -148,7 +148,7 @@ public final class GameClientEvents {
     @SubscribeEvent
     public static void renderOutline(RenderHighlightEvent.Block event) {
         if (event.getCamera().getEntity() instanceof LivingEntity living) {
-            Level world = living.level();
+            Level world = living.level;
             BlockHitResult rtr = event.getTarget();
             BlockPos pos = rtr.getBlockPos();
             Vec3 renderView = event.getCamera().getPosition();

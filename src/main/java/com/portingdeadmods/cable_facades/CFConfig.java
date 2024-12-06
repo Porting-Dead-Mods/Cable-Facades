@@ -8,10 +8,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Mod.EventBusSubscriber(modid = CFMain.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -19,9 +16,16 @@ public class CFConfig {
 
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> BLOCK_STRINGS = BUILDER.comment("List of blocks that are allowed to be covered. Supports '*' as a wildcard.")
-            .defineListAllowEmpty("blocks", List.of("pipez:*_pipe","mekanism:*_cable","mekanism:*_conductor","mekanism:*_pipe","mekanism:*_tube","mekanism:*_transporter","mekanism_extras:*_cable","mekanism_extras:*_conductor","mekanism_extras:*_pipe","mekanism_extras:*_tube","mekanism_extras:*_transporter","thermal:*_duct","thermal:*_duct_windowed","computercraft:cable","powah:energy_cable_*","create:fluid_pipe","pneumaticcraft:*_tube","ppfluids:fluid_pipe","prettypipes:pipe","laserio:laser_*","cyclic:*_pipe","embers:*_pipe","embers:item_extractor","elementalcraft:elementpipe*","gtceu:*wire","gtceu:*pipe"), CFConfig::validateBlockName);
-    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> NOT_ALLOWED_BLOCK_STRINGS = BUILDER.comment("List of blocks that are explicitly not allowed to be used as a cover. Supports '*' as a wildcard.")
-            .defineListAllowEmpty("not_allowed_blocks", List.of(), CFConfig::validateBlockName);
+            .defineListAllowEmpty(Collections.singletonList("blocks"),
+                    () -> List.of("pipez:*_pipe","mekanism:*_cable","mekanism:*_conductor","mekanism:*_pipe","mekanism:*_tube","mekanism:*_transporter","mekanism_extras:*_cable","mekanism_extras:*_conductor","mekanism_extras:*_pipe","mekanism_extras:*_tube","mekanism_extras:*_transporter","thermal:*_duct","thermal:*_duct_windowed","computercraft:cable","powah:energy_cable_*","create:fluid_pipe","pneumaticcraft:*_tube","ppfluids:fluid_pipe","prettypipes:pipe","laserio:laser_*","cyclic:*_pipe","embers:*_pipe","embers:item_extractor","elementalcraft:elementpipe*","gtceu:*wire","gtceu:*pipe"),
+                    CFConfig::validateBlockName
+            );
+
+    private static final ForgeConfigSpec.ConfigValue<List<?>> NOT_ALLOWED_BLOCK_STRINGS = BUILDER.comment("List of blocks that are explicitly not allowed to be used as a cover. Supports '*' as a wildcard.")
+            .defineListAllowEmpty(Collections.singletonList("not_allowed_blocks"),
+                    () -> List.of(),
+                    CFConfig::validateBlockName
+            );
     private static final ForgeConfigSpec.BooleanValue CONSUME_FACADE = BUILDER.comment("Whether the facade should be consumed when placed.")
             .define("consumeFacade", true);
 
@@ -67,7 +71,7 @@ public class CFConfig {
             }
         }
 
-        for (String blockName : NOT_ALLOWED_BLOCK_STRINGS.get()) {
+        for (String blockName : (List<String>) NOT_ALLOWED_BLOCK_STRINGS.get()) {
             if (blockName.contains("*")) {
                 String regex = blockName.replace("*", ".*");
                 notAllowedBlockPatterns.add(Pattern.compile(regex));

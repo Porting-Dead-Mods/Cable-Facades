@@ -47,7 +47,7 @@ public final class GameEvents {
 
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
-        Level level = event.getPlayer().level();
+        Level level = event.getPlayer().level;
         BlockPos pos = event.getPos();
         Player player = event.getPlayer();
 
