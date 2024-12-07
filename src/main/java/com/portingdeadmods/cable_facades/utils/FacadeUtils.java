@@ -41,10 +41,12 @@ public class FacadeUtils {
     }
 
     public static void updateBlocks(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        level.sendBlockUpdated(pos, state, state, 3);
-        level.updateNeighborsAt(pos, state.getBlock());
+        if(level.isInWorldBounds(pos)){
+            BlockState state = level.getBlockState(pos);
+            level.sendBlockUpdated(pos, state, state, 3);
+            level.updateNeighborsAt(pos, state.getBlock());
 
-        level.getLightEngine().checkBlock(pos);
+            level.getLightEngine().checkBlock(pos);
+        }
     }
 }
