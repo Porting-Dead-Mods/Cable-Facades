@@ -33,9 +33,8 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         cable_facades$recursionGuard.set(true);
         try {
             if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
-                Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
-                if (camoBlock != null) {
-                    BlockState camoState = camoBlock.defaultBlockState();
+                BlockState camoState = ClientFacadeManager.FACADED_BLOCKS.get(pos);
+                if (camoState != null) {
                     return camoState.getBlock().getAppearance(camoState, blockGetter, pos, side, queryState, queryPos);
                 }
             }
@@ -51,9 +50,9 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, pos)) {
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, pos);
-                if (camoBlock != null) {
-                    return camoBlock.defaultBlockState().getLightEmission();
+                BlockState camoState = FacadeUtils.getFacade(blockGetter, pos);
+                if (camoState != null) {
+                    return camoState.getLightEmission();
                 }
             }
             return getBlock().getLightEmission(this.asState(), blockGetter, pos);
