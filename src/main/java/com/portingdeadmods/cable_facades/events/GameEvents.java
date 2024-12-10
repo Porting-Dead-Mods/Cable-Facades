@@ -38,10 +38,10 @@ public final class GameEvents {
 
         if (!level.isClientSide()) {
             if (FacadeUtils.hasFacade(level, pos)) {
-                Block facade = FacadeUtils.getFacade(level, pos);
+                BlockState facade = FacadeUtils.getFacade(level, pos);
                 FacadeUtils.removeFacade(level, pos);
                 if (!player.isCreative()) {
-                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facade);
+                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facade.getBlock());
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 }
                 event.setCanceled(true);
@@ -56,7 +56,7 @@ public final class GameEvents {
         Level level = event.getLevel();
         BlockPos pos = event.getPos();
 
-        Block facadeBlock = FacadeUtils.getFacade(level, pos);
+        BlockState facadeBlock = FacadeUtils.getFacade(level, pos);
         if (player.isShiftKeyDown()
                 && player.getMainHandItem().is(CFItemTags.WRENCHES)
                 && facadeBlock != null) {
@@ -64,7 +64,7 @@ public final class GameEvents {
                 FacadeUtils.removeFacade(level, pos);
 
                 if (!player.isCreative()) {
-                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeBlock);
+                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeBlock.getBlock());
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 } else {
                     level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
@@ -78,6 +78,8 @@ public final class GameEvents {
             event.setCanceled(true);
 
         }
+
+        //TODO: When not crouching, is this when we handle rotation?
 
     }
 
