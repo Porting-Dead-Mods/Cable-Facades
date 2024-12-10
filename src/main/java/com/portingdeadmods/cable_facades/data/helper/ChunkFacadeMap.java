@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.portingdeadmods.cable_facades.utils.CodecUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.AbstractMap;
 import java.util.HashMap;
@@ -16,17 +17,17 @@ public class ChunkFacadeMap {
             Codec.unboundedMap(Codec.STRING, CodecUtils.BLOCK_CODEC).fieldOf("chunk_map").forGetter(ChunkFacadeMap::chunkMapToString)
     ).apply(builder, ChunkFacadeMap::chunkMapFromString));
 
-    private final Map<BlockPos, Block> chunkMap;
+    private final Map<BlockPos, BlockState> chunkMap;
 
     public ChunkFacadeMap() {
         this.chunkMap = new HashMap<>();
     }
 
-    public ChunkFacadeMap(Map<BlockPos, Block> chunkMap) {
+    public ChunkFacadeMap(Map<BlockPos, BlockState> chunkMap) {
         this.chunkMap = chunkMap;
     }
 
-    public Map<BlockPos, Block> getChunkMap() {
+    public Map<BlockPos, BlockState> getChunkMap() {
         return chunkMap;
     }
 
