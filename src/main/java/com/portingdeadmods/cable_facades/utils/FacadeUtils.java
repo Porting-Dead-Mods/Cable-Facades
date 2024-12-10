@@ -20,17 +20,17 @@ public class FacadeUtils {
     }
 
     @Nullable
-    public static Block getFacade(BlockGetter level, BlockPos pos) {
+    public static BlockState getFacade(BlockGetter level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
             return CableFacadeSavedData.get(serverLevel).getFacade(pos);
         }
         return ClientFacadeManager.FACADED_BLOCKS.get(pos);
     }
 
-    public static void addFacade(Level level, BlockPos pos, Block block) {
+    public static void addFacade(Level level, BlockPos pos, BlockState blockState) {
         if (level instanceof ServerLevel serverLevel) {
-            CableFacadeSavedData.get(serverLevel).addFacade(pos, block);
-            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new AddFacadePayload(pos, block));
+            CableFacadeSavedData.get(serverLevel).addFacade(pos, blockState);
+            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new AddFacadePayload(pos, blockState));
         }
     }
 
