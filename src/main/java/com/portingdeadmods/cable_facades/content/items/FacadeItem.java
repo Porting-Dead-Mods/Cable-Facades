@@ -59,7 +59,7 @@ public class FacadeItem extends Item {
                     return InteractionResult.FAIL;
                 }
 
-                FacadeUtils.addFacade(level, pos, block1);
+                FacadeUtils.addFacade(level, pos, block1.defaultBlockState());
 
                 if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
                     itemStack.shrink(1);
