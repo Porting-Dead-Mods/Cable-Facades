@@ -21,7 +21,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -74,14 +73,14 @@ public final class GameClientEvents {
             return;
         }
 
-        Map<BlockPos, @Nullable Block> chunkFacades = ClientFacadeManager.FACADED_BLOCKS;
+        Map<BlockPos, @Nullable BlockState> chunkFacades = ClientFacadeManager.FACADED_BLOCKS;
         if (chunkFacades == null || chunkFacades.isEmpty()) {
             return;
         }
 
         // Capture all facades which are actually visible
         Frustum frustum = event.getFrustum();
-        List<Map.Entry<BlockPos, Block>> visibleFacades = chunkFacades.entrySet().stream()
+        List<Map.Entry<BlockPos, BlockState>> visibleFacades = chunkFacades.entrySet().stream()
                 .filter(entry -> {
                     if (entry == null) return false;
                     BlockPos pos = entry.getKey();
@@ -111,13 +110,12 @@ public final class GameClientEvents {
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
         // Render all the facades to the buffer
-        for (Map.Entry<BlockPos, Block> entry : visibleFacades) {
+        for (Map.Entry<BlockPos, BlockState> entry : visibleFacades) {
             BlockPos pos = entry.getKey();
-            Block facadeBlock = entry.getValue();
-            if (pos == null || facadeBlock == null) {
+            BlockState facadeState = entry.getValue();
+            if (pos == null || facadeState == null) {
                 continue;
             }
-            BlockState facadeState = facadeBlock.defaultBlockState();
 
             // Get the model and model data for the facade
             BlockRenderDispatcher blockRenderer = mc.getBlockRenderer();
