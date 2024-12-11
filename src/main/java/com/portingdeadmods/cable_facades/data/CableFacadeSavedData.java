@@ -99,10 +99,18 @@ public class CableFacadeSavedData extends SavedData {
     }
 
     private static CableFacadeSavedData load(CompoundTag compoundTag, ServerLevel serverLevel) {
-        //TODO : Handle migration!
         DataResult<Pair<LevelFacadeMap, Tag>> dataResult = LevelFacadeMap.CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
         Optional<Pair<LevelFacadeMap, Tag>> mapTagPair = dataResult
                 .resultOrPartial(err -> CFMain.LOGGER.error("Decoding error: {}", err));
+        
+        //Here, we check if an error has happened. If so, attempt to re-parse using the migration codec.
+        if (dataResult.error().isPresent()) {
+            CFMain.LOGGER.error("Data may be outdated - attempting migration!");
+            dataResult = LevelFacadeMap.MIGRATION_CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
+            mapTagPair = dataResult
+                //And of course if this fails, there's an actual error.
+                .resultOrPartial(err -> CFMain.LOGGER.error("Migration failed: {}", err));
+        }
         if (mapTagPair.isPresent()) {
             LevelFacadeMap facadeMap = mapTagPair.get().getFirst();
             return new CableFacadeSavedData(facadeMap);
