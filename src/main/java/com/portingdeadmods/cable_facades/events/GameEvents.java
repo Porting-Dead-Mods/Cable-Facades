@@ -56,10 +56,11 @@ public final class GameEvents {
         Player player = event.getEntity();
         Level level = event.getLevel();
         BlockPos pos = event.getPos();
+        InteractionHand hand = event.getHand();
 
         BlockState facadeState = FacadeUtils.getFacade(level, pos);
         if (player.isShiftKeyDown()
-                && player.getMainHandItem().is(CFItemTags.WRENCHES)
+                && player.getItemInHand(hand).is(CFItemTags.WRENCHES)
                 && facadeState != null) {
             if (!level.isClientSide()) {
                 FacadeUtils.removeFacade(level, pos);
@@ -73,13 +74,13 @@ public final class GameEvents {
                 }
 
             }
-            player.swing(InteractionHand.MAIN_HAND);
+            player.swing(hand);
 
             updateBlocks(level, pos);
             event.setCanceled(true);
 
         }
-        else if (player.getMainHandItem().is(CFItemTags.WRENCHES)
+        else if (player.getItemInHand(hand).is(CFItemTags.WRENCHES)
             && facadeState != null) {
             //Rotation!
             if (!level.isClientSide()) {
@@ -98,7 +99,7 @@ public final class GameEvents {
                 }
 
             }
-            player.swing(InteractionHand.MAIN_HAND);
+            player.swing(hand);
 
             updateBlocks(level, pos);
             event.setCanceled(true);
