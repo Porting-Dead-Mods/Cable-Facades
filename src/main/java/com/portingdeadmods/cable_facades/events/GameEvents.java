@@ -20,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -89,9 +90,21 @@ public final class GameEvents {
                 //But this would work with a furnace, chest etc as-is.
 
                 if (facadeState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-                    //This rotates it clockwise
-                    Direction direction = facadeState.getValue(HorizontalDirectionalBlock.FACING).getClockWise();                    
-                    BlockState newFacadeState = facadeState.setValue(HorizontalDirectionalBlock.FACING, direction);
+                    Direction direction = facadeState.getValue(HorizontalDirectionalBlock.FACING);                   
+                    //We only need to rotate the block horizontally here, so this works well.
+                    BlockState newFacadeState = facadeState.setValue(HorizontalDirectionalBlock.FACING, direction.getClockWise());
+
+                    //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
+                    FacadeUtils.removeFacade(level, pos);
+                    FacadeUtils.addFacade(level, pos, newFacadeState);
+                }
+
+                //The same as above, but for blocks that can face up/down too.
+                else if (facadeState.hasProperty(DirectionalBlock.FACING)) {
+                    Direction direction = facadeState.getValue(DirectionalBlock.FACING);
+
+                    //Here however, we can't just go clockwise. We need to also account for up / down.
+                    BlockState newFacadeState = facadeState.setValue(DirectionalBlock.FACING, rotate(direction));
 
                     //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
                     FacadeUtils.removeFacade(level, pos);
@@ -134,5 +147,27 @@ public final class GameEvents {
         ChunkPos chunkPos = event.getPos();
         ServerPlayer serverPlayer = event.getPlayer();
         PacketDistributor.sendToPlayer(serverPlayer, new RemoveFacadedBlocksPayload(chunkPos));
+    }
+
+
+    //TODO: Possibly move to another spot?
+    //Used to rotate a direction more nicely, as the default order when allowing for up / down would feel clunky.
+    private static Direction rotate(Direction direction) {
+        switch (direction) {
+            case DOWN:
+                return Direction.NORTH;
+            case EAST:
+                return Direction.SOUTH;
+            case NORTH:
+                return Direction.EAST;
+            case SOUTH:
+                return Direction.WEST;
+            case UP:
+                return Direction.DOWN;
+            case WEST:
+                return Direction.UP;            
+        }
+        //Impossible to hit..
+        return direction;
     }
 }
