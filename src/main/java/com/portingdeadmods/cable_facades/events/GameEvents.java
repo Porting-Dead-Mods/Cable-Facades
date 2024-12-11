@@ -9,6 +9,7 @@ import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -55,15 +57,15 @@ public final class GameEvents {
         Level level = event.getLevel();
         BlockPos pos = event.getPos();
 
-        BlockState facadeBlock = FacadeUtils.getFacade(level, pos);
+        BlockState facadeState = FacadeUtils.getFacade(level, pos);
         if (player.isShiftKeyDown()
                 && player.getMainHandItem().is(CFItemTags.WRENCHES)
-                && facadeBlock != null) {
+                && facadeState != null) {
             if (!level.isClientSide()) {
                 FacadeUtils.removeFacade(level, pos);
 
                 if (!player.isCreative()) {
-                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeBlock.getBlock());
+                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeState.getBlock());
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 } else {
                     level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
@@ -77,8 +79,31 @@ public final class GameEvents {
             event.setCanceled(true);
 
         }
+        else if (player.getMainHandItem().is(CFItemTags.WRENCHES)
+            && facadeState != null) {
+            //Rotation!
+            if (!level.isClientSide()) {
+                
+                //This is a very rudimentary rotation, and some further work will be required for things like stairs and slabs..
+                //But this would work with a furnace, chest etc as-is.
 
-        //TODO: When not crouching, is this when we handle rotation?
+                if (facadeState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                    //This rotates it clockwise
+                    Direction direction = facadeState.getValue(HorizontalDirectionalBlock.FACING).getClockWise();                    
+                    BlockState newFacadeState = facadeState.setValue(HorizontalDirectionalBlock.FACING, direction);
+
+                    //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
+                    FacadeUtils.removeFacade(level, pos);
+                    FacadeUtils.addFacade(level, pos, newFacadeState);
+                }
+
+            }
+            player.swing(InteractionHand.MAIN_HAND);
+
+            updateBlocks(level, pos);
+            event.setCanceled(true);
+        }
+
 
     }
 
