@@ -23,6 +23,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.Half;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -90,9 +92,18 @@ public final class GameEvents {
                 //But this would work with a furnace, chest etc as-is.
 
                 if (facadeState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-                    Direction direction = facadeState.getValue(HorizontalDirectionalBlock.FACING);                   
+                    Direction direction = facadeState.getValue(HorizontalDirectionalBlock.FACING);    
+                    //Init variable here so we can adjust it as we see fit when checking things like stairs and slabs.
+                    BlockState newFacadeState = facadeState;
+                    
+                    //This, in vanilla, is technically explicit support for stairs - but should play nicely with modded blocks too.
+                    if (facadeState.hasProperty(BlockStateProperties.HALF) && direction == Direction.WEST) {
+                        Half half = facadeState.getValue(BlockStateProperties.HALF);
+                        newFacadeState = newFacadeState.setValue(BlockStateProperties.HALF, half == Half.BOTTOM ? Half.TOP : Half.BOTTOM);
+                    }
+                                   
                     //We only need to rotate the block horizontally here, so this works well.
-                    BlockState newFacadeState = facadeState.setValue(HorizontalDirectionalBlock.FACING, direction.getClockWise());
+                    newFacadeState = newFacadeState.setValue(HorizontalDirectionalBlock.FACING, direction.getClockWise());
 
                     //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
                     FacadeUtils.removeFacade(level, pos);
