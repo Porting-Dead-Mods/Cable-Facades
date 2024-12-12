@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Half;
+import net.minecraft.world.level.block.state.properties.SlabType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -99,6 +100,7 @@ public final class GameEvents {
                     //This, in vanilla, is technically explicit support for stairs - but should play nicely with modded blocks too.
                     if (facadeState.hasProperty(BlockStateProperties.HALF) && direction == Direction.WEST) {
                         Half half = facadeState.getValue(BlockStateProperties.HALF);
+                        //Inverts the HALF.
                         newFacadeState = newFacadeState.setValue(BlockStateProperties.HALF, half == Half.BOTTOM ? Half.TOP : Half.BOTTOM);
                     }
                                    
@@ -120,6 +122,17 @@ public final class GameEvents {
                     //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
                     FacadeUtils.removeFacade(level, pos);
                     FacadeUtils.addFacade(level, pos, newFacadeState);
+                }
+
+                //Basically explicit slab support. But it works on anything utilising SLAB_TYPE
+                else if (facadeState.hasProperty(BlockStateProperties.SLAB_TYPE)) {
+                    SlabType slab = facadeState.getValue(BlockStateProperties.SLAB_TYPE);
+                    //Inverts the SlabType.
+                    BlockState newFacadeState = facadeState.setValue(BlockStateProperties.SLAB_TYPE, nextSlab(slab));
+                    //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
+                    FacadeUtils.removeFacade(level, pos);
+                    FacadeUtils.addFacade(level, pos, newFacadeState);
+
                 }
 
             }
@@ -173,6 +186,14 @@ public final class GameEvents {
             case WEST -> Direction.UP;
             //Impossible to hit...
             default -> direction;
+        };
+    }
+
+    private static SlabType nextSlab(SlabType slab) {
+        return switch(slab) {
+            case BOTTOM -> SlabType.TOP;
+            case TOP -> SlabType.DOUBLE;
+            case DOUBLE -> SlabType.BOTTOM;
         };
     }
 }
