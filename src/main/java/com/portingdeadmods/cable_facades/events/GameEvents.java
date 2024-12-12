@@ -153,21 +153,15 @@ public final class GameEvents {
     //TODO: Possibly move to another spot?
     //Used to rotate a direction more nicely, as the default order when allowing for up / down would feel clunky.
     private static Direction rotate(Direction direction) {
-        switch (direction) {
-            case DOWN:
-                return Direction.NORTH;
-            case EAST:
-                return Direction.SOUTH;
-            case NORTH:
-                return Direction.EAST;
-            case SOUTH:
-                return Direction.WEST;
-            case UP:
-                return Direction.DOWN;
-            case WEST:
-                return Direction.UP;            
-        }
-        //Impossible to hit..
-        return direction;
+        return switch(direction) {
+            case DOWN -> Direction.NORTH;
+            case EAST -> Direction.SOUTH;
+            case NORTH -> Direction.EAST;
+            case SOUTH -> Direction.WEST;
+            case UP -> Direction.DOWN;
+            case WEST -> Direction.UP;
+            //Impossible to hit...
+            default -> direction;
+        };
     }
 }
