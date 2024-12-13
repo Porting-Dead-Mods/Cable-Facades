@@ -108,6 +108,18 @@ public class FacadeItem extends Item {
         });
     }
 
+    @Override
+    public boolean hasCraftingRemainingItem(ItemStack stack) {
+        return true;
+    }
+    @Override
+    public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
+        if (Boolean.TRUE.equals(itemStack.getTag().contains("has_facade_remainder"))) {
+            return this.getDefaultInstance();
+        }
+        return ItemStack.EMPTY;
+    }
+
     public ItemStack createFacade(Block block) {
         ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
         CompoundTag nbtData = new CompoundTag();
@@ -115,4 +127,6 @@ public class FacadeItem extends Item {
         facadeStack.setTag(nbtData);
         return facadeStack;
     }
+
+
 }
