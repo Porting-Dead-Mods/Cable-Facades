@@ -32,11 +32,19 @@ public class FacadeCraftingRecipe extends CustomRecipe {
         for (int i = 0; i < craftingInput.size(); i++) {
             ItemStack stack = craftingInput.getItem(i);
             Item item = stack.getItem();
-            if (item instanceof FacadeItem facadeItem) {
-                facadeStack = stack.copy();
-                hasFacade = true;
+            if (item instanceof FacadeItem) {
+                if (!hasFacade) {
+                    facadeStack = stack.copy();
+                    hasFacade = true;
+                } else{
+                    return false;
+                }
             } else if (item instanceof BlockItem) {
-                hasBlock = true;
+                if (!hasBlock) {
+                    hasBlock = true;
+                } else {
+                    return false;
+                }
             } else if (!stack.isEmpty()) {
                 return false;
             }
@@ -52,7 +60,7 @@ public class FacadeCraftingRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput craftingInput, HolderLookup.Provider registryAccess) {
+    public @NotNull ItemStack assemble(CraftingInput craftingInput, HolderLookup.Provider registryAccess) {
         Block facadeBlock = null;
         ItemStack originalFacadeStack = ItemStack.EMPTY;
         ItemStack facadeStack = ItemStack.EMPTY;
