@@ -22,17 +22,29 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     @Override
     public void renderByItem(ItemStack stack, ItemTransforms.TransformType transformType, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
+        poseStack.pushPose();
         if (stack.hasTag()) {
             CompoundTag tag = stack.getTag();
             if (tag.contains(FacadeItem.FACADE_BLOCK)) {
                 ResourceLocation blockId = new ResourceLocation(tag.getString(FacadeItem.FACADE_BLOCK));
                 Block block = Registry.BLOCK.get(blockId);
                 BlockState state = block.defaultBlockState();
+                ItemStack defaultInstance = state.getBlock().asItem().getDefaultInstance();
 
-                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(state, poseStack, buffer, combinedLight, combinedOverlay);
+                poseStack.pushPose();
+                {
+                    poseStack.translate(0.5, 0.5, 0.5);
+                    poseStack.scale(2, 2, 2);
+                    Minecraft.getInstance().getItemRenderer().renderStatic(Minecraft.getInstance().player, defaultInstance, ItemTransforms.TransformType.FIXED, false, poseStack, buffer, Minecraft.getInstance().level, combinedLight, combinedOverlay, 0);
+                }
+                poseStack.popPose();
             }
         }
 
+        float scaleFactor = 0.001f;
+
+        poseStack.translate(-(scaleFactor / 2), -(scaleFactor / 2), -(scaleFactor / 2));
+        poseStack.scale(1 + scaleFactor, 1 + scaleFactor, 1 + scaleFactor);
         var model = Minecraft.getInstance().getModelManager().getModel(
                 new ResourceLocation(CFMain.MODID, "item/facade_outline"));
         Minecraft.getInstance().getItemRenderer().renderModelLists(
@@ -43,5 +55,6 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
                 poseStack,
                 buffer.getBuffer(model.getRenderTypes(stack, true).get(0))
         );
+        poseStack.popPose();
     }
 }
