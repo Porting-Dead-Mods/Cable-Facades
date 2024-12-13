@@ -1,6 +1,5 @@
 package com.portingdeadmods.cable_facades.mixins;
 
-import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

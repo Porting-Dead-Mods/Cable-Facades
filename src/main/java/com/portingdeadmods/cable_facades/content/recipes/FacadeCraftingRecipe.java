@@ -2,7 +2,6 @@ package com.portingdeadmods.cable_facades.content.recipes;
 
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.registries.CFDataComponents;
-import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.BlockItem;
@@ -28,24 +27,35 @@ public class FacadeCraftingRecipe extends CustomRecipe {
     public boolean matches(CraftingInput craftingInput, Level level) {
         boolean hasBlock = false;
         boolean hasFacade = false;
+        ItemStack facadeStack = null;
 
         for (int i = 0; i < craftingInput.size(); i++) {
             ItemStack stack = craftingInput.getItem(i);
             Item item = stack.getItem();
-            if (item instanceof FacadeItem)
+            if (item instanceof FacadeItem facadeItem) {
+                facadeStack = stack.copy();
                 hasFacade = true;
-            else if (item instanceof BlockItem)
+            } else if (item instanceof BlockItem) {
                 hasBlock = true;
-            else if (!stack.isEmpty())
+            } else if (!stack.isEmpty()) {
                 return false;
+            }
         }
+
+        if (hasFacade && !hasBlock) {
+            if (facadeStack.getOrDefault(CFDataComponents.FACADE_BLOCK, Optional.empty()).isPresent()) {
+                return true;
+            }
+        }
+
         return hasFacade && hasBlock;
     }
 
     @Override
     public ItemStack assemble(CraftingInput craftingInput, HolderLookup.Provider registryAccess) {
         Block facadeBlock = null;
-        ItemStack itemStack = ItemStack.EMPTY;
+        ItemStack originalFacadeStack = ItemStack.EMPTY;
+        ItemStack facadeStack = ItemStack.EMPTY;
         for (int i = 0; i < craftingInput.size(); i++) {
             ItemStack item = craftingInput.getItem(i);
             if (item.getItem() instanceof BlockItem blockItem) {
@@ -54,13 +64,23 @@ public class FacadeCraftingRecipe extends CustomRecipe {
                     return ItemStack.EMPTY;
                 }
             } else if (item.getItem() instanceof FacadeItem) {
-                itemStack = CFItems.FACADE.get().getDefaultInstance();
+                facadeStack = item.copy();
+                originalFacadeStack = item;
             }
         }
-        if (!itemStack.isEmpty()) {
-            itemStack.set(CFDataComponents.FACADE_BLOCK, Optional.ofNullable(facadeBlock));
-            return itemStack;
+
+        if (!facadeStack.isEmpty() && facadeBlock != null) {
+            ItemStack stack = facadeStack.getItem().getDefaultInstance();
+            stack.set(CFDataComponents.FACADE_BLOCK, Optional.of(facadeBlock));
+            return stack;
+        } else if (!facadeStack.isEmpty()) {
+            Optional<Block> optionalBlock = facadeStack.get(CFDataComponents.FACADE_BLOCK);
+            if (optionalBlock.isPresent()) {
+                originalFacadeStack.set(CFDataComponents.HAS_FACADE_REMAINDER, true);
+                return optionalBlock.get().asItem().getDefaultInstance();
+            }
         }
+
         return ItemStack.EMPTY;
     }
 

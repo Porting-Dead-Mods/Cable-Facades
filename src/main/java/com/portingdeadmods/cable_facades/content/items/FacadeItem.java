@@ -21,8 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Optional;
 
 public class FacadeItem extends Item {
-    public static final String FACADE_BLOCK = "facade_block";
-
     public FacadeItem(Properties properties) {
         super(properties);
     }
@@ -88,5 +86,19 @@ public class FacadeItem extends Item {
         ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
         facadeStack.set(CFDataComponents.FACADE_BLOCK, Optional.of(block));
         return facadeStack;
+    }
+
+    @Override
+    public boolean hasCraftingRemainingItem(ItemStack stack) {
+        return true;
+    }
+
+    @Override
+    public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
+        if (Boolean.TRUE.equals(itemStack.get(CFDataComponents.HAS_FACADE_REMAINDER))) {
+            return this.getDefaultInstance();
+        }
+
+        return ItemStack.EMPTY;
     }
 }

@@ -19,4 +19,6 @@ public class CFDataComponents {
 
     public static final Supplier<DataComponentType<Optional<Block>>> FACADE_BLOCK = DATA_COMPONENTS.registerComponentType("facade_block",
             blockBuilder -> blockBuilder.persistent(OPTIONAL_BLOCK_CODEC).networkSynchronized(ByteBufCodecs.optional(CodecUtils.BLOCK_STREAM_CODEC)));
+    public static final Supplier<DataComponentType<Boolean>> HAS_FACADE_REMAINDER = DATA_COMPONENTS.registerComponentType("has_facade_remainder",
+            blockBuilder -> blockBuilder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
 }

@@ -21,22 +21,38 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
-        Optional<Block> optionalBlock = stack.get(CFDataComponents.FACADE_BLOCK);
-        if (optionalBlock.isPresent()) {
-            Block block = optionalBlock.get();
-            BlockState state = block.defaultBlockState();
+        poseStack.pushPose();
+        {
+            Optional<Block> optionalBlock = stack.get(CFDataComponents.FACADE_BLOCK);
+            if (optionalBlock.isPresent()) {
+                Block block = optionalBlock.get();
+                BlockState state = block.defaultBlockState();
 
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(state, poseStack, buffer, combinedLight, combinedOverlay);
+                ItemStack defaultInstance = state.getBlock().asItem().getDefaultInstance();
+
+                poseStack.pushPose();
+                {
+                    poseStack.translate(0.5, 0.5, 0.5);
+                    poseStack.scale(2, 2, 2);
+                    Minecraft.getInstance().getItemRenderer().renderStatic(Minecraft.getInstance().player, defaultInstance, ItemDisplayContext.FIXED, false, poseStack, buffer, Minecraft.getInstance().level, combinedLight, combinedOverlay, 0);
+                }
+                poseStack.popPose();
+            }
+
+            float scaleFactor = 0.001f;
+
+            poseStack.translate(-(scaleFactor / 2), -(scaleFactor / 2), -(scaleFactor / 2));
+            poseStack.scale(1 + scaleFactor, 1 + scaleFactor, 1 + scaleFactor);
+            var model = Minecraft.getInstance().getModelManager().getModel(CFClientEvents.FACADE_OUTLINE);
+            Minecraft.getInstance().getItemRenderer().renderModelLists(
+                    model,
+                    stack,
+                    combinedLight,
+                    OverlayTexture.NO_OVERLAY,
+                    poseStack,
+                    buffer.getBuffer(model.getRenderTypes(stack, true).getFirst())
+            );
         }
-
-        var model = Minecraft.getInstance().getModelManager().getModel(CFClientEvents.FACADE_OUTLINE);
-        Minecraft.getInstance().getItemRenderer().renderModelLists(
-                model,
-                stack,
-                combinedLight,
-                OverlayTexture.NO_OVERLAY,
-                poseStack,
-                buffer.getBuffer(model.getRenderTypes(stack, true).getFirst())
-        );
+        poseStack.popPose();
     }
 }
