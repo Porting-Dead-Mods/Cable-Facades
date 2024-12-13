@@ -42,9 +42,9 @@ public abstract class BlockStateBaseMixin {
                 if (!blockState.is(getBlock())) {
                     if (level instanceof ServerLevel serverLevel) {
                         CableFacadeSavedData helper = CableFacadeSavedData.get(serverLevel);
-                        Block facadeBlock = helper.getFacade(blockPos);
-                        if (facadeBlock != null) {
-                            ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeBlock);
+                        BlockState facadeState = helper.getFacade(blockPos);
+                        if (facadeState != null) {
+                            ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeState.getBlock());
                             FacadeUtils.removeFacade(level, blockPos);
 
                             Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
@@ -68,9 +68,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getCollisionShape(blockGetter, BlockPos.ZERO, collisionContext));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.getCollisionShape(blockGetter, BlockPos.ZERO, collisionContext));
                 }
             }
         } finally {
@@ -88,9 +88,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getShape(blockGetter, BlockPos.ZERO, collisionContext));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.getShape(blockGetter, BlockPos.ZERO, collisionContext));
                 }
             }
         } finally {
@@ -108,9 +108,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, BlockPos.ZERO));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.getOcclusionShape(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
@@ -128,9 +128,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getLightBlock(blockGetter, BlockPos.ZERO));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.getLightBlock(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
@@ -148,9 +148,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().propagatesSkylightDown(blockGetter, BlockPos.ZERO));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.propagatesSkylightDown(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
@@ -168,9 +168,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().isSolidRender(blockGetter, BlockPos.ZERO));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.isSolidRender(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
