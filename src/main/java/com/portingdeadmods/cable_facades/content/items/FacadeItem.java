@@ -2,10 +2,10 @@ package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.events.ClientStuff;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -114,7 +114,8 @@ public class FacadeItem extends Item {
     }
     @Override
     public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
-        if (Boolean.TRUE.equals(itemStack.getTag().contains("has_facade_remainder"))) {
+        CompoundTag tag = itemStack.getTag();
+        if (tag != null && Boolean.TRUE.equals(tag.getBoolean("has_facade_remainder"))) {
             return this.getDefaultInstance();
         }
         return ItemStack.EMPTY;

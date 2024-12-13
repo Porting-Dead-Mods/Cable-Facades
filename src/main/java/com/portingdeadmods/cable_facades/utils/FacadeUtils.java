@@ -1,7 +1,6 @@
 package com.portingdeadmods.cable_facades.utils;
 
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
-import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.networking.CFMessages;
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadePacket;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePacket;

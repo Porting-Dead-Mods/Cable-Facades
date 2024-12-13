@@ -4,6 +4,7 @@ import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.BlockItem;
@@ -33,18 +34,27 @@ public class FacadeCraftingRecipe extends CustomRecipe {
         for (int i = 0; i < craftingContainer.getContainerSize(); i++) {
             ItemStack stack = craftingContainer.getItem(i);
             Item item = stack.getItem();
-            if (item instanceof FacadeItem facadeItem) {
-                facadeStack = stack.copy();
-                hasFacade = true;
+            if (item instanceof FacadeItem) {
+                if (!hasFacade) {
+                    facadeStack = stack.copy();
+                    hasFacade = true;
+                } else{
+                    return false;
+                }
             } else if (item instanceof BlockItem) {
-                hasBlock = true;
+                if (!hasBlock) {
+                    hasBlock = true;
+                } else {
+                    return false;
+                }
             } else if (!stack.isEmpty()) {
                 return false;
             }
         }
 
         if (hasFacade && !hasBlock) {
-            if (facadeStack.getTag().contains(FacadeItem.FACADE_BLOCK)) {
+            CompoundTag tag = facadeStack.getTag();
+            if (tag != null && tag.contains(FacadeItem.FACADE_BLOCK)) {
                 return true;
             }
         }

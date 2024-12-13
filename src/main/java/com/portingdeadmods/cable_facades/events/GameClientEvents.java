@@ -9,6 +9,7 @@ import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.mixins.LevelRendererAccess;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.registries.CFRenderTypes;
+import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;

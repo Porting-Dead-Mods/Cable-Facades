@@ -1,28 +1,27 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
-import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
+import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
+import com.portingdeadmods.cable_facades.utils.NetworkingUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.Map;
 import java.util.function.Supplier;
 
-public record AddFacadedBlocksPacket(ChunkPos chunkPos, Map<BlockPos, Block> facadedBlocks) {
+public record AddFacadedBlocksPacket(ChunkPos chunkPos, Map<BlockPos, BlockState> facadedBlocks) {
     public AddFacadedBlocksPacket(FriendlyByteBuf buf) {
-        this(buf.readChunkPos(), SyncFacadedBlocks.getFacades(buf));
+        this(buf.readChunkPos(), NetworkingUtils.getFacades(buf));
     }
 
     public void toBytes(FriendlyByteBuf buf) {
         buf.writeChunkPos(this.chunkPos);
         buf.writeInt(this.facadedBlocks.size());
-        for (Map.Entry<BlockPos, Block> entry : this.facadedBlocks.entrySet()) {
+        for (Map.Entry<BlockPos, BlockState> entry : this.facadedBlocks.entrySet()) {
             buf.writeBlockPos(entry.getKey());
-            //noinspection deprecation
-            buf.writeResourceLocation(BuiltInRegistries.BLOCK.getKey(entry.getValue()));
+            NetworkingUtils.writeBlockState(buf, entry.getValue());
         }
     }
 
