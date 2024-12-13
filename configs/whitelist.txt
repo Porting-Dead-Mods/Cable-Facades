@@ -1,2 +1,2 @@
 # Add only ONE block per line
-minecraft:grass_block
+enderio:conduit
