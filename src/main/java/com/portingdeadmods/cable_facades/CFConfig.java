@@ -8,6 +8,10 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +23,7 @@ public class CFConfig {
 
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> BLOCK_STRINGS = BUILDER.comment("List of blocks that are allowed to be covered. Supports '*' as a wildcard.")
-            .defineListAllowEmpty("blocks", List.of("pipez:*_pipe","mekanism:*_cable","mekanism:*_conductor","mekanism:*_pipe","mekanism:*_tube","mekanism:*_transporter","mekanism_extras:*_cable","mekanism_extras:*_conductor","mekanism_extras:*_pipe","mekanism_extras:*_tube","mekanism_extras:*_transporter","thermal:*_duct","thermal:*_duct_windowed","computercraft:cable","powah:energy_cable_*","create:fluid_pipe","pneumaticcraft:*_tube","ppfluids:fluid_pipe","prettypipes:pipe","laserio:laser_*","cyclic:*_pipe","embers:*_pipe","embers:item_extractor","elementalcraft:elementpipe*","gtceu:*wire","gtceu:*pipe","enderio:*_conduit"), CFConfig::validateBlockName);
+            .defineListAllowEmpty("blocks", List.of("pipez:*_pipe","mekanism:*_cable","mekanism:*_conductor","mekanism:*_pipe","mekanism:*_tube","mekanism:*_transporter","mekanism_extras:*_cable","mekanism_extras:*_conductor","mekanism_extras:*_pipe","mekanism_extras:*_tube","mekanism_extras:*_transporter","thermal:*_duct","thermal:*_duct_windowed","computercraft:cable","powah:energy_cable_*","create:fluid_pipe","pneumaticcraft:*_tube","ppfluids:fluid_pipe","prettypipes:pipe","laserio:laser_*","cyclic:*_pipe","embers:*_pipe","embers:item_extractor","elementalcraft:elementpipe*","gtceu:*wire","gtceu:*pipe","enderio:conduit"), CFConfig::validateBlockName);
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> NOT_ALLOWED_BLOCK_STRINGS = BUILDER.comment("List of blocks that are explicitly not allowed to be used as a cover. Supports '*' as a wildcard.")
             .defineListAllowEmpty("not_allowed_blocks", List.of(), CFConfig::validateBlockName);
     private static final ForgeConfigSpec.BooleanValue CONSUME_FACADE = BUILDER.comment("Whether the facade should be consumed when placed.")
@@ -46,6 +50,38 @@ public class CFConfig {
         return false;
     }
 
+    public static List<String> downloadListFromGithub(String listType) {
+        String githubBaseUrl = "https://raw.githubusercontent.com/Porting-Dead-Mods/Cable-Facades/refs/heads/1.21.1/configs/";
+        String githubUrl = githubBaseUrl + (listType.equalsIgnoreCase("whitelist") ? "whitelist.txt" : "blacklist.txt");
+
+        List<String> downloadedList = new ArrayList<>();
+
+        try {
+            URL url = new URL(githubUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            if (connection.getResponseCode() == 200) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (!line.isBlank() && !line.startsWith("#")) {
+                            downloadedList.add(line.trim());
+                        }
+                    }
+                }
+            } else {
+                CFMain.LOGGER.error("Failed to download {}. HTTP code: {}", listType, connection.getResponseCode());
+            }
+        } catch (Exception e) {
+            CFMain.LOGGER.error("Error downloading {}: {}", listType, e.getMessage());
+        }
+
+        CFMain.LOGGER.info("Downloaded {} {} blocks from GitHub", downloadedList.size(), listType);
+        return downloadedList;
+    }
+
+
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
         consumeFacade = CONSUME_FACADE.get();
@@ -55,7 +91,12 @@ public class CFConfig {
         blockPatterns.clear();
         notAllowedBlockPatterns.clear();
 
-        for (String blockName : BLOCK_STRINGS.get()) {
+        // Download block lists from GitHub
+        List<String> downloadedBlockStrings = downloadListFromGithub("whitelist");
+        List<String> combinedBlockStrings = new ArrayList<>(BLOCK_STRINGS.get());
+        combinedBlockStrings.addAll(downloadedBlockStrings);
+
+        for (String blockName : combinedBlockStrings) {
             if (blockName.contains("*")) {
                 String regex = blockName.replace("*", ".*");
                 blockPatterns.add(Pattern.compile(regex));
@@ -67,7 +108,12 @@ public class CFConfig {
             }
         }
 
-        for (String blockName : NOT_ALLOWED_BLOCK_STRINGS.get()) {
+        // Download disallowed block lists from GitHub
+        List<String> downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
+        List<String> combinedNotAllowedBlockStrings = new ArrayList<>(NOT_ALLOWED_BLOCK_STRINGS.get());
+        combinedNotAllowedBlockStrings.addAll(downloadedNotAllowedBlockStrings);
+
+        for (String blockName : combinedNotAllowedBlockStrings) {
             if (blockName.contains("*")) {
                 String regex = blockName.replace("*", ".*");
                 notAllowedBlockPatterns.add(Pattern.compile(regex));
