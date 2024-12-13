@@ -34,9 +34,9 @@ public abstract class BlockMixin {
         if (sidePos.equals(FACADE_CHECK_MARKER)) {
             BlockPos relativePos = pos.relative(side);
             if (ClientFacadeManager.FACADED_BLOCKS != null && ClientFacadeManager.FACADED_BLOCKS.containsKey(relativePos)) {
-                Block facade = ClientFacadeManager.FACADED_BLOCKS.get(relativePos);
+                BlockState facade = ClientFacadeManager.FACADED_BLOCKS.get(relativePos);
                 if (facade != null) {
-                    return facade.defaultBlockState();
+                    return facade;
                 }
             }
         }
@@ -60,7 +60,7 @@ public abstract class BlockMixin {
 
         try {
             if (ClientFacadeManager.FACADED_BLOCKS != null && ClientFacadeManager.FACADED_BLOCKS.containsKey(sidePos)) {
-                Block facade = ClientFacadeManager.FACADED_BLOCKS.get(sidePos);
+                BlockState facade = ClientFacadeManager.FACADED_BLOCKS.get(sidePos);
                 if (facade != null) {
                     boolean shouldRender = safeCheckFaceRendering(state, level, pos, side);
                     ci.setReturnValue(shouldRender);

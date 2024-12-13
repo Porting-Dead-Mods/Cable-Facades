@@ -12,7 +12,7 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +25,7 @@ import java.util.Optional;
  * <br>
  * Internally it uses a hashmap that maps {@link ChunkPos} to {@link ChunkFacadeMap}
  * <br>
- * {@link ChunkFacadeMap} maps individual {@link BlockPos}itions to {@link Block}
+ * {@link ChunkFacadeMap} maps individual {@link BlockPos}itions to {@link BlockState}
  */
 public class CableFacadeSavedData extends SavedData {
     public static final String ID = "cable_facades_saved_data";
@@ -67,8 +67,8 @@ public class CableFacadeSavedData extends SavedData {
         return getFacadeMapForChunk(chunkPos);
     }
 
-    public void addFacade(BlockPos blockPos, Block block) {
-        getOrCreateFacadeMapForPos(blockPos).getChunkMap().put(blockPos, block);
+    public void addFacade(BlockPos blockPos, BlockState blockState) {
+        getOrCreateFacadeMapForPos(blockPos).getChunkMap().put(blockPos, blockState);
         setDirty();
     }
 
@@ -81,7 +81,7 @@ public class CableFacadeSavedData extends SavedData {
         return this.levelFacadeMap.getChunkFacadeMaps().isEmpty();
     }
 
-    public @Nullable Block getFacade(BlockPos blockPos) {
+    public @Nullable BlockState getFacade(BlockPos blockPos) {
         ChunkFacadeMap facadeMapForPos = getFacadeMapForPos(blockPos);
         if (facadeMapForPos != null) {
             return facadeMapForPos.getChunkMap().get(blockPos);
@@ -102,6 +102,15 @@ public class CableFacadeSavedData extends SavedData {
         DataResult<Pair<LevelFacadeMap, Tag>> dataResult = LevelFacadeMap.CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
         Optional<Pair<LevelFacadeMap, Tag>> mapTagPair = dataResult
                 .resultOrPartial(err -> CFMain.LOGGER.error("Decoding error: {}", err));
+        
+        //Here, we check if an error has happened. If so, attempt to re-parse using the migration codec.
+        if (dataResult.error().isPresent()) {
+            CFMain.LOGGER.error("Data may be outdated - attempting migration!");
+            dataResult = LevelFacadeMap.MIGRATION_CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
+            mapTagPair = dataResult
+                //And of course if this fails, there's an actual error.
+                .resultOrPartial(err -> CFMain.LOGGER.error("Migration failed: {}", err));
+        }
         if (mapTagPair.isPresent()) {
             LevelFacadeMap facadeMap = mapTagPair.get().getFirst();
             return new CableFacadeSavedData(facadeMap);

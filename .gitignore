@@ -111,6 +111,8 @@ gradle-app.setting
 
 **/build/
 
+bin
+
 # Common working directory
 run/
 runs/

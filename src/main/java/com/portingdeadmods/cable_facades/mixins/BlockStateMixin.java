@@ -6,7 +6,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.extensions.IBlockStateExtension;
@@ -33,10 +32,9 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         cable_facades$recursionGuard.set(true);
         try {
             if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
-                Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
-                if (camoBlock != null) {
-                    BlockState camoState = camoBlock.defaultBlockState();
-                    return camoState.getBlock().getAppearance(camoState, blockGetter, pos, side, queryState, queryPos);
+                BlockState facadeState = ClientFacadeManager.FACADED_BLOCKS.get(pos);
+                if (facadeState != null) {
+                    return facadeState.getBlock().getAppearance(facadeState, blockGetter, pos, side, queryState, queryPos);
                 }
             }
             return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
@@ -51,9 +49,9 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, pos)) {
-                Block camoBlock = FacadeUtils.getFacade(blockGetter, pos);
-                if (camoBlock != null) {
-                    return camoBlock.defaultBlockState().getLightEmission();
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, pos);
+                if (facadeState != null) {
+                    return facadeState.getLightEmission();
                 }
             }
             return getBlock().getLightEmission(this.asState(), blockGetter, pos);
