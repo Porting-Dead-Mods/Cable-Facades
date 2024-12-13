@@ -8,6 +8,10 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -21,7 +25,7 @@ public class CFConfig {
                     CFConfig::validateBlockName
             );
 
-    private static final ForgeConfigSpec.ConfigValue<List<?>> NOT_ALLOWED_BLOCK_STRINGS = BUILDER.comment("List of blocks that are explicitly not allowed to be used as a cover. Supports '*' as a wildcard.")
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> NOT_ALLOWED_BLOCK_STRINGS = BUILDER.comment("List of blocks that are explicitly not allowed to be used as a cover. Supports '*' as a wildcard.")
             .defineListAllowEmpty(Collections.singletonList("not_allowed_blocks"),
                     () -> List.of(),
                     CFConfig::validateBlockName
@@ -50,6 +54,38 @@ public class CFConfig {
         return false;
     }
 
+    public static List<String> downloadListFromGithub(String listType) {
+        String githubBaseUrl = "https://raw.githubusercontent.com/Porting-Dead-Mods/Cable-Facades/refs/heads/1.21.1/configs/";
+        String githubUrl = githubBaseUrl + (listType.equalsIgnoreCase("whitelist") ? "whitelist.txt" : "blacklist.txt");
+
+        List<String> downloadedList = new ArrayList<>();
+
+        try {
+            URL url = new URL(githubUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            if (connection.getResponseCode() == 200) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (!line.isBlank() && !line.startsWith("#")) {
+                            downloadedList.add(line.trim());
+                        }
+                    }
+                }
+            } else {
+                CFMain.LOGGER.error("Failed to download {}. HTTP code: {}", listType, connection.getResponseCode());
+            }
+        } catch (Exception e) {
+            CFMain.LOGGER.error("Error downloading {}: {}", listType, e.getMessage());
+        }
+
+        CFMain.LOGGER.info("Downloaded {} {} blocks from GitHub", downloadedList.size(), listType);
+        return downloadedList;
+    }
+
+
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
         consumeFacade = CONSUME_FACADE.get();
@@ -59,7 +95,12 @@ public class CFConfig {
         blockPatterns.clear();
         notAllowedBlockPatterns.clear();
 
-        for (String blockName : BLOCK_STRINGS.get()) {
+        // Download block lists from GitHub
+        List<String> downloadedBlockStrings = downloadListFromGithub("whitelist");
+        List<String> combinedBlockStrings = new ArrayList<>(BLOCK_STRINGS.get());
+        combinedBlockStrings.addAll(downloadedBlockStrings);
+
+        for (String blockName : combinedBlockStrings) {
             if (blockName.contains("*")) {
                 String regex = blockName.replace("*", ".*");
                 blockPatterns.add(Pattern.compile(regex));
@@ -71,7 +112,12 @@ public class CFConfig {
             }
         }
 
-        for (String blockName : (List<String>) NOT_ALLOWED_BLOCK_STRINGS.get()) {
+        // Download disallowed block lists from GitHub
+        List<String> downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
+        List<String> combinedNotAllowedBlockStrings = new ArrayList<>(NOT_ALLOWED_BLOCK_STRINGS.get());
+        combinedNotAllowedBlockStrings.addAll(downloadedNotAllowedBlockStrings);
+
+        for (String blockName : combinedNotAllowedBlockStrings) {
             if (blockName.contains("*")) {
                 String regex = blockName.replace("*", ".*");
                 notAllowedBlockPatterns.add(Pattern.compile(regex));
