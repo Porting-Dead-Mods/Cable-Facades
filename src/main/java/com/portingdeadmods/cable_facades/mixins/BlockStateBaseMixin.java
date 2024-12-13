@@ -68,9 +68,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                BlockState camoState = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoState != null) {
-                    cir.setReturnValue(camoState.getCollisionShape(blockGetter, BlockPos.ZERO, collisionContext));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.getCollisionShape(blockGetter, BlockPos.ZERO, collisionContext));
                 }
             }
         } finally {
@@ -88,9 +88,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                BlockState camoState = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoState != null) {
-                    cir.setReturnValue(camoState.getShape(blockGetter, BlockPos.ZERO, collisionContext));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.getShape(blockGetter, BlockPos.ZERO, collisionContext));
                 }
             }
         } finally {
@@ -108,9 +108,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                BlockState camoState = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoState != null) {
-                    cir.setReturnValue(camoState.getOcclusionShape(blockGetter, BlockPos.ZERO));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.getOcclusionShape(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
@@ -128,9 +128,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                BlockState camoState = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoState != null) {
-                    cir.setReturnValue(camoState.getLightBlock(blockGetter, BlockPos.ZERO));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.getLightBlock(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
@@ -148,9 +148,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                BlockState camoState = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoState != null) {
-                    cir.setReturnValue(camoState.propagatesSkylightDown(blockGetter, BlockPos.ZERO));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.propagatesSkylightDown(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
@@ -168,9 +168,9 @@ public abstract class BlockStateBaseMixin {
         cable_facades$recursionGuard.set(true);
         try {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
-                BlockState camoState = FacadeUtils.getFacade(blockGetter, blockPos);
-                if (camoState != null) {
-                    cir.setReturnValue(camoState.isSolidRender(blockGetter, BlockPos.ZERO));
+                BlockState facadeState = FacadeUtils.getFacade(blockGetter, blockPos);
+                if (facadeState != null) {
+                    cir.setReturnValue(facadeState.isSolidRender(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
