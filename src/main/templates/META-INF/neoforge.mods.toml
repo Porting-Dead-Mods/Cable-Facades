@@ -6,16 +6,13 @@ license="${mod_license}"
 
 [[mods]]
 modId="${mod_id}"
-[[mixins]]
-config = "${mod_id}.mixins.json"
-
 version="${mod_version}"
-
 displayName="${mod_name}"
-
 authors="${mod_authors}"
 
 description='''${mod_description}'''
+[[mixins]]
+config = "${mod_id}.mixins.json"
 
 [[dependencies.${mod_id}]]
 modId="neoforge"
