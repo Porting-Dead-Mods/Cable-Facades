@@ -1,3 +1,4 @@
 # Add only ONE block per line
 enderio:conduit
 ae2:cable_bus
+refinedstorage:cable
