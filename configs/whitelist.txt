@@ -2,3 +2,4 @@
 enderio:conduit
 ae2:cable_bus
 refinedstorage:cable
+toms_storage:inventory_cable
