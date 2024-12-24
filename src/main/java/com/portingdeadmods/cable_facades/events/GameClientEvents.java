@@ -28,6 +28,7 @@ import net.neoforged.neoforge.client.event.AddSectionGeometryEvent;
 import net.neoforged.neoforge.client.event.RenderHighlightEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
@@ -118,7 +119,10 @@ public final class GameClientEvents {
 
 
                     for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
-                        VertexConsumer buffer = sectionRenderingContext.getOrCreateChunkBuffer(facadeTransparency ? RenderType.translucent() : renderType);
+                        VertexConsumer buffer = sectionRenderingContext.getOrCreateChunkBuffer(GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType);
+                        if (facadeTransparency) {
+                            buffer = new AlphaWrapper(buffer);
+                        }
                         blockRenderer.renderBatched(facadeState, pos, level, poseStack, buffer, true, random, modelData, renderType);
                     }
 
@@ -152,5 +156,17 @@ public final class GameClientEvents {
 
     public static void loadChunk() {
 
+    }
+
+    private static class AlphaWrapper extends VertexConsumerWrapper {
+        public AlphaWrapper(VertexConsumer consumer) {
+            super(consumer);
+        }
+
+        @Override
+        public VertexConsumer setColor(int color) {
+            super.setColor(color & 0x88FFFFFF);
+            return this;
+        }
     }
 }
