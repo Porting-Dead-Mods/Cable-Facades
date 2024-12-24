@@ -8,8 +8,7 @@
     "BlockMixin",
     "BlockStateBaseMixin",
     "BlockStateMixin",
-    "LevelRendererAccess",
-    "ModelBlockRendererMixin"
+    "LevelRendererAccess"
   ],
   "client": [
   ],
