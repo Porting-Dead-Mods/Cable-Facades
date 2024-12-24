@@ -1,66 +1,48 @@
 package com.portingdeadmods.cable_facades.events;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.mixins.LevelRendererAccess;
-import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.registries.CFRenderTypes;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.AddSectionGeometryEvent;
 import net.neoforged.neoforge.client.event.RenderHighlightEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.Set;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 @EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT)
 public final class GameClientEvents {
 
-    private static float facadeTransparency = 1;
-    /**
-     * A copy of {@link RenderType#translucent()}, but with a variable alpha value
-     */
-    private static final RenderType FACADE_RENDER_TYPE = new RenderType(
-            CFMain.MODID + ":facades",
-            DefaultVertexFormat.BLOCK,
-            VertexFormat.Mode.QUADS,
-            131072,
-            true,
-            true,
-            () -> {
-                RenderType.translucent().setupRenderState();
-                RenderSystem.setShaderColor(1, 1, 1, facadeTransparency);
-            },
-            () -> {
-                RenderType.translucent().clearRenderState();
-                RenderSystem.setShaderColor(1, 1, 1, 1);
-            }
-    ) {
-    };
-    private static final RandomSource RANDOM = RandomSource.create();
+    public static final ThreadLocal<Boolean> RENDERING_FACADE = ThreadLocal.withInitial(() -> false);
+    public static boolean facadeTransparency = false;
+    public static boolean setFacadeTransparency = false;
+    private static final ThreadLocal<RandomSource> RANDOM = ThreadLocal.withInitial(RandomSource::create);
+    private static Timer resetTimer;
 
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
@@ -68,77 +50,84 @@ public final class GameClientEvents {
             return;
         }
 
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null) {
-            return;
-        }
+        if (setFacadeTransparency != facadeTransparency) {
+            setFacadeTransparency = facadeTransparency;
+            Set<SectionPos> sections = new ObjectOpenHashSet<>();
 
-        Map<BlockPos, @Nullable BlockState> chunkFacades = ClientFacadeManager.FACADED_BLOCKS;
-        if (chunkFacades == null || chunkFacades.isEmpty()) {
-            return;
-        }
+            ClientFacadeManager.FACADED_BLOCKS.keySet().forEach(k -> {
+                sections.add(SectionPos.of(k));
+            });
 
-        // Capture all facades which are actually visible
-        Frustum frustum = event.getFrustum();
-        List<Map.Entry<BlockPos, BlockState>> visibleFacades = chunkFacades.entrySet().stream()
-                .filter(entry -> {
-                    if (entry == null) return false;
-                    BlockPos pos = entry.getKey();
-                    if (pos == null) return false;
-                    AABB boundingBox = new AABB(pos);
-                    return frustum.isVisible(boundingBox);
-                })
-                .toList();
-
-        // If no visible facades, simply skip everything else
-        if (visibleFacades.isEmpty()) {
-            return;
-        }
-
-        // Update whether the player is holding a wrench
-        facadeTransparency = mc.player.getMainHandItem().is(CFItems.WRENCH.get()) ? 0.5f : 1;
-
-        // Get a buffer for the facade render type
-        MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-        VertexConsumer buffer = bufferSource.getBuffer(FACADE_RENDER_TYPE);
-
-        // Offset the pose stack for the camera position
-        ClientLevel level = mc.level;
-        Vec3 cameraPos = event.getCamera().getPosition();
-        PoseStack poseStack = event.getPoseStack();
-        poseStack.pushPose();
-        poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-
-        // Render all the facades to the buffer
-        for (Map.Entry<BlockPos, BlockState> entry : visibleFacades) {
-            BlockPos pos = entry.getKey();
-            BlockState facadeState = entry.getValue();
-            if (pos == null || facadeState == null) {
-                continue;
+            for (SectionPos section : sections) {
+                Minecraft.getInstance().levelRenderer.setSectionDirty(section.x(), section.y(), section.z());
             }
 
-            // Get the model and model data for the facade
-            BlockRenderDispatcher blockRenderer = mc.getBlockRenderer();
-            BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
-            ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
+            if (facadeTransparency) {
+                if (resetTimer != null) resetTimer.cancel();
 
-            // Offset the pose stack for the facade position
-            poseStack.pushPose();
-            poseStack.translate(pos.getX(), pos.getY(), pos.getZ());
+                resetTimer = new Timer("Cable Facades Reset Timer");
 
-            // Render the model
-            // Intentionally pass `null` for the render type as Forge's API specifies that models should submit all their geometry for `null` render type
-            //noinspection DataFlowIssue
-            blockRenderer.renderBatched(facadeState, pos, level, poseStack, buffer, true, RANDOM, modelData, null);
-
-            poseStack.popPose();
+                resetTimer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        CFMain.LOGGER.info("Facades made opaque due to timeout");
+                        facadeTransparency = false;
+                    }
+                }, 120000);
+            } else {
+                resetTimer.cancel();
+            }
         }
+    }
 
-        // Undo camera translation
-        poseStack.popPose();
+    @SubscribeEvent
+    public static void geometryEvent(AddSectionGeometryEvent e) {
+        SectionPos section = SectionPos.of(e.getSectionOrigin());
 
-        // Draw the buffer
-        bufferSource.endBatch(FACADE_RENDER_TYPE);
+        if (ClientFacadeManager.FACADED_BLOCKS.isEmpty()) return;
+
+        Map<BlockPos, @Nullable BlockState> actualBlocks = new Object2ObjectOpenHashMap<>();
+
+        ClientFacadeManager.FACADED_BLOCKS.entrySet().stream().filter(p -> SectionPos.of(p.getKey()).equals(section)).forEachOrdered(bp -> {
+            if (bp.getValue() != null) actualBlocks.put(bp.getKey(), bp.getValue());
+        });
+
+        if (actualBlocks.isEmpty()) return;
+
+        e.addRenderer(new AddSectionGeometryEvent.AdditionalSectionRenderer() {
+            @Override
+            public void render(AddSectionGeometryEvent.SectionRenderingContext sectionRenderingContext) {
+                RENDERING_FACADE.set(true);
+                BlockAndTintGetter level = sectionRenderingContext.getRegion();
+                RandomSource random = RANDOM.get();
+
+                for (Map.Entry<BlockPos, @Nullable BlockState> blockPosBlockStateEntry : actualBlocks.entrySet()) {
+                    random.setSeed(42L);
+                    //System.out.println("Rendering facade at " + blockPosBlockStateEntry.getKey());
+                    BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
+                    BlockState facadeState = blockPosBlockStateEntry.getValue();
+                    BlockPos pos = blockPosBlockStateEntry.getKey();
+                    PoseStack poseStack = sectionRenderingContext.getPoseStack();
+
+                    BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
+                    ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
+
+                    // Offset the pose stack for the facade position
+                    poseStack.pushPose();
+                    poseStack.translate(SectionPos.sectionRelative(pos.getX()), SectionPos.sectionRelative(pos.getY()), SectionPos.sectionRelative(pos.getZ()));
+
+
+                    for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+                        VertexConsumer buffer = sectionRenderingContext.getOrCreateChunkBuffer(facadeTransparency ? RenderType.translucent() : renderType);
+                        blockRenderer.renderBatched(facadeState, pos, level, poseStack, buffer, true, random, modelData, renderType);
+                    }
+
+                    poseStack.popPose();
+                }
+
+                RENDERING_FACADE.set(false);
+            }
+        });
     }
 
     // From Immersive Engineering. Thank you blu, for figuring out this fix <3
