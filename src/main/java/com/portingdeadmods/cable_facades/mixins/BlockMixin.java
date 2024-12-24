@@ -1,5 +1,7 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -19,15 +21,14 @@ public abstract class BlockMixin {
     @Unique
     private static final BlockPos FACADE_CHECK_MARKER = new BlockPos(0, 0, 0);
 
-    @ModifyVariable(
+    @WrapOperation(
             method = "shouldRenderFace(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;)Z",
-            at = @At("INVOKE_ASSIGN"),
-            ordinal = 1
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/BlockGetter;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;")
     )
-    private static BlockState useFacadeAsNeighbor(BlockState neighbor, BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos) {
+    private static BlockState useFacadeAsNeighbor(BlockGetter instance, BlockPos blockPos, Operation<BlockState> original, BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos) {
 
         if (pos == null || side == null || sidePos == null) {
-            return neighbor;
+            return original.call(instance, blockPos);
         }
 
         if (sidePos.equals(FACADE_CHECK_MARKER)) {
@@ -40,7 +41,7 @@ public abstract class BlockMixin {
             }
         }
 
-        return neighbor;
+        return original.call(instance, blockPos);
     }
 
     @Inject(
