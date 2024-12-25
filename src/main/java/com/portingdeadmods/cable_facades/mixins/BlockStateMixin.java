@@ -6,8 +6,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.SupportType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.common.extensions.IBlockStateExtension;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -55,6 +58,40 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
                 }
             }
             return getBlock().getLightEmission(this.asState(), blockGetter, pos);
+        } finally {
+            cable_facades$recursionGuard.set(false);
+        }
+    }
+
+    @Override
+    public boolean isFaceSturdy(BlockGetter level, BlockPos pos, Direction direction, SupportType supportType) {
+        if (cable_facades$recursionGuard.get()) return super.isFaceSturdy(level, pos, direction, supportType);
+        cable_facades$recursionGuard.set(true);
+        try {
+            if (FacadeUtils.hasFacade(level, pos)) {
+                BlockState facadeState = FacadeUtils.getFacade(level, pos);
+                if (facadeState != null) {
+                    return facadeState.isFaceSturdy(level, BlockPos.ZERO, direction, supportType);
+                }
+            }
+            return super.isFaceSturdy(level, pos, direction, supportType);
+        } finally {
+            cable_facades$recursionGuard.set(false);
+        }
+    }
+
+    @Override
+    public VoxelShape getVisualShape(BlockGetter level, BlockPos pos, CollisionContext context) {
+        if (cable_facades$recursionGuard.get()) return super.getVisualShape(level, pos, context);
+        cable_facades$recursionGuard.set(true);
+        try {
+            if (FacadeUtils.hasFacade(level, pos)) {
+                BlockState facadeState = FacadeUtils.getFacade(level, pos);
+                if (facadeState != null) {
+                    return facadeState.getVisualShape(level, BlockPos.ZERO, context);
+                }
+            }
+            return super.getVisualShape(level, pos, context);
         } finally {
             cable_facades$recursionGuard.set(false);
         }
