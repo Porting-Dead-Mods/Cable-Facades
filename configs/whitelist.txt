@@ -3,3 +3,5 @@ enderio:conduit
 ae2:cable_bus
 refinedstorage:cable
 toms_storage:inventory_cable
+industrialforegoingsouls:soul_network_pipe
+industrialforegoingsouls:soul_surge
