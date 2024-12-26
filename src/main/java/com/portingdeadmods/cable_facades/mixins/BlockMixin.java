@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,13 +22,12 @@ public abstract class BlockMixin {
 
     @ModifyVariable(
             method = "shouldRenderFace(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;)Z",
-            at = @At("INVOKE_ASSIGN"),
-            ordinal = 1
+            at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/world/level/BlockGetter;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;"),
+            index = 5
     )
-    private static BlockState useFacadeAsNeighbor(BlockState neighbor, BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos) {
-
+    private static BlockState useFacadeAsNeighbor(BlockState value, BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos) {
         if (pos == null || side == null || sidePos == null) {
-            return neighbor;
+            return value;
         }
 
         if (sidePos.equals(FACADE_CHECK_MARKER)) {
@@ -40,7 +40,7 @@ public abstract class BlockMixin {
             }
         }
 
-        return neighbor;
+        return value;
     }
 
     @Inject(
@@ -50,6 +50,12 @@ public abstract class BlockMixin {
     )
     private static void checkFacadeOcclusion(BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos, CallbackInfoReturnable<Boolean> ci) {
         if (state == null || level == null || pos == null || side == null || sidePos == null || ci == null) {
+            return;
+        }
+
+        if (GameClientEvents.RENDERING_FACADE.get()) {
+            BlockState sideState = ClientFacadeManager.FACADED_BLOCKS.getOrDefault(sidePos, null);
+            ci.setReturnValue(sideState != state);
             return;
         }
 
@@ -78,5 +84,4 @@ public abstract class BlockMixin {
             return true;
         }
     }
-
 }

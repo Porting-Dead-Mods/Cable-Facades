@@ -41,10 +41,8 @@ import java.util.Map;
 @Mod.EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT)
 public final class GameClientEvents {
 
+    public static final ThreadLocal<Boolean> RENDERING_FACADE = ThreadLocal.withInitial(() -> false);
     private static float facadeTransparency = 1;
-    /**
-     * A copy of {@link RenderType#translucent()}, but with a variable alpha value
-     */
     private static final RenderType FACADE_RENDER_TYPE = new RenderType(
             CFMain.MODID + ":facades",
             DefaultVertexFormat.BLOCK,
@@ -80,7 +78,6 @@ public final class GameClientEvents {
             return;
         }
 
-        // Capture all facades which are actually visible
         Frustum frustum = event.getFrustum();
         List<Map.Entry<BlockPos, BlockState>> visibleFacades = chunkFacades.entrySet().stream()
                 .filter(entry -> {
@@ -92,26 +89,21 @@ public final class GameClientEvents {
                 })
                 .toList();
 
-        // If no visible facades, simply skip everything else
         if (visibleFacades.isEmpty()) {
             return;
         }
 
-        // Update whether the player is holding a wrench
         facadeTransparency = mc.player.getMainHandItem().is(CFItems.WRENCH.get()) ? 0.5f : 1;
 
-        // Get a buffer for the facade render type
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
         VertexConsumer buffer = bufferSource.getBuffer(FACADE_RENDER_TYPE);
 
-        // Offset the pose stack for the camera position
         ClientLevel level = mc.level;
         Vec3 cameraPos = event.getCamera().getPosition();
         PoseStack poseStack = event.getPoseStack();
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
-        // Render all the facades to the buffer
         for (Map.Entry<BlockPos, BlockState> entry : visibleFacades) {
             BlockPos pos = entry.getKey();
             BlockState facadeState = entry.getValue();
@@ -119,31 +111,24 @@ public final class GameClientEvents {
                 continue;
             }
 
-            // Get the model and model data for the facade
+            RENDERING_FACADE.set(true);
             BlockRenderDispatcher blockRenderer = mc.getBlockRenderer();
             BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
             ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
 
-            // Offset the pose stack for the facade position
             poseStack.pushPose();
             poseStack.translate(pos.getX(), pos.getY(), pos.getZ());
 
-            // Render the model
-            // Intentionally pass `null` for the render type as Forge's API specifies that models should submit all their geometry for `null` render type
-            //noinspection DataFlowIssue
             blockRenderer.renderBatched(facadeState, pos, level, poseStack, buffer, true, RANDOM, modelData, null);
 
             poseStack.popPose();
+            RENDERING_FACADE.set(false);
         }
 
-        // Undo camera translation
         poseStack.popPose();
-
-        // Draw the buffer
         bufferSource.endBatch(FACADE_RENDER_TYPE);
     }
 
-    // From Immersive Engineering. Thank you blu, for figuring out this fix <3
     @SubscribeEvent
     public static void renderOutline(RenderHighlightEvent.Block event) {
         if (event.getCamera().getEntity() instanceof LivingEntity living) {
@@ -165,7 +150,5 @@ public final class GameClientEvents {
     }
 
     public static void loadChunk(ChunkEvent.Load event) {
-
     }
-
 }
