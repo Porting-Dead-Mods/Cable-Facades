@@ -129,6 +129,12 @@ dependencies {
 
     runtimeOnly "curse.maven:pipez-443900:5757713"
 
+    runtimeOnly "curse.maven:applied-energistics-2-223794:6006016"
+
+    runtimeOnly "curse.maven:athena-841890:5431579"
+    runtimeOnly "curse.maven:chipped-456956:5813117"
+    runtimeOnly "curse.maven:resourceful-lib-570073:5681267"
+
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
     // The group id is ignored when searching -- in this case, it is "blank"

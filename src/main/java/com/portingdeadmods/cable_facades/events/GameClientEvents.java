@@ -2,6 +2,7 @@ package com.portingdeadmods.cable_facades.events;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.mixins.LevelRendererAccess;
 import com.portingdeadmods.cable_facades.registries.CFRenderTypes;
@@ -18,6 +19,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -31,8 +33,8 @@ import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -113,10 +115,16 @@ public final class GameClientEvents {
                     BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
                     ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
 
-                    // Offset the pose stack for the facade position
                     poseStack.pushPose();
                     poseStack.translate(SectionPos.sectionRelative(pos.getX()), SectionPos.sectionRelative(pos.getY()), SectionPos.sectionRelative(pos.getZ()));
 
+                    Block facadedBlock = level.getBlockState(pos).getBlock();
+
+                    if(CFConfig.canPatchZFighting(facadedBlock)){
+                        poseStack.translate(0.5, 0.5, 0.5);
+                        poseStack.scale(0.99995F, 0.99995F, 0.99995F);
+                        poseStack.translate(-0.5, -0.5, -0.5);
+                    }
 
                     for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
                         VertexConsumer buffer = sectionRenderingContext.getOrCreateChunkBuffer(GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType);
