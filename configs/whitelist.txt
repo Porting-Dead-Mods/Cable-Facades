@@ -5,3 +5,4 @@ refinedstorage:cable
 toms_storage:inventory_cable
 industrialforegoingsouls:soul_network_pipe
 industrialforegoingsouls:soul_surge
+modern_industrialization:pipe
