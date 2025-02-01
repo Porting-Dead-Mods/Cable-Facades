@@ -31,6 +31,7 @@ import net.neoforged.neoforge.client.event.RenderHighlightEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -162,8 +163,9 @@ public final class GameClientEvents {
         }
     }
 
-    public static void loadChunk() {
-
+    @SubscribeEvent
+    public static void onChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        ClientFacadeManager.FACADED_BLOCKS.clear();
     }
 
     private static class AlphaWrapper extends VertexConsumerWrapper {
