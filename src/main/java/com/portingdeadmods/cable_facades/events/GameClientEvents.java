@@ -127,6 +127,13 @@ public final class GameClientEvents {
                         poseStack.translate(-0.5, -0.5, -0.5);
                     }
 
+                    if(facadedBlock.asItem().getDescriptionId().contains("create"))
+                    {
+                        poseStack.translate(0.5, 0.5, 0.5);
+                        poseStack.scale(1.0005F, 1.0005F, 1.0005F);
+                        poseStack.translate(-0.5, -0.5, -0.5);
+                    }
+
                     for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
                         VertexConsumer buffer = sectionRenderingContext.getOrCreateChunkBuffer(GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType);
                         if (facadeTransparency) {

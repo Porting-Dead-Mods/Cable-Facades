@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades;
 
+import com.portingdeadmods.cable_facades.api.CableFacadesAPI;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
@@ -28,6 +29,8 @@ public class CFConfig {
             .defineListAllowEmpty("not_allowed_blocks", List.of(), () -> "", CFConfig::validateBlockName);
     private static final ModConfigSpec.ConfigValue<List<? extends String>> Z_FIGHTING = BUILDER.comment("List of blocks that need z-fighting fixes. Supports '*' as a wildcard.")
             .defineListAllowEmpty("z_fighting", List.of("ae2:cable_bus"), () -> "", CFConfig::validateBlockName);
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> HIDDEN_WHEN_FACADED = BUILDER.comment("List of blocks that should not render when covered by a facade. Supports '*' as a wildcard.")
+            .defineListAllowEmpty("hidden_when_facaded", List.of(), () -> "", CFConfig::validateBlockName);
     private static final ModConfigSpec.BooleanValue CONSUME_FACADE = BUILDER.comment("Whether the facade should be consumed when placed.")
             .define("consumeFacade", true);
 
@@ -36,9 +39,11 @@ public class CFConfig {
     private static final Map<Block, Boolean> allowedBlocks = new HashMap<>();
     private static final Map<Block, Boolean> disallowedBlocks = new HashMap<>();
     private static final Map<Block, Boolean> zFightingBlocks = new HashMap<>();
+    private static final Map<Block, Boolean> hiddenBlocks = new HashMap<>();
     private static final List<Pattern> blockPatterns = new ArrayList<>();
     private static final List<Pattern> notAllowedBlockPatterns = new ArrayList<>();
     private static final List<Pattern> zFightingPatterns = new ArrayList<>();
+    private static final List<Pattern> hiddenBlockPatterns = new ArrayList<>();
     public static boolean consumeFacade;
 
     private static boolean validateBlockName(final Object obj) {
@@ -57,6 +62,7 @@ public class CFConfig {
             case "whitelist" -> "whitelist.txt";
             case "blacklist" -> "blacklist.txt";
             case "zfighting" -> "zfighting.txt";
+            case "hidden_facaded" -> "hidden_facaded.txt";
             default -> throw new IllegalArgumentException("Invalid list type: " + listType);
         };
         String githubUrl = githubBaseUrl + filename;
@@ -103,6 +109,7 @@ public class CFConfig {
         List<String> downloadedBlockStrings = downloadListFromGithub("whitelist");
         List<String> combinedBlockStrings = new ArrayList<>(BLOCK_STRINGS.get());
         combinedBlockStrings.addAll(downloadedBlockStrings);
+        combinedBlockStrings.addAll(CableFacadesAPI.getAdditionalAllowedBlocks());
 
         for (String blockName : combinedBlockStrings) {
             if (blockName.contains("*")) {
@@ -120,6 +127,7 @@ public class CFConfig {
         List<String> downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
         List<String> combinedNotAllowedBlockStrings = new ArrayList<>(NOT_ALLOWED_BLOCK_STRINGS.get());
         combinedNotAllowedBlockStrings.addAll(downloadedNotAllowedBlockStrings);
+        combinedNotAllowedBlockStrings.addAll(CableFacadesAPI.getAdditionalDisallowedBlocks());
 
         for (String blockName : combinedNotAllowedBlockStrings) {
             if (blockName.contains("*")) {
@@ -137,6 +145,7 @@ public class CFConfig {
         List<String> downloadedZFightingStrings = downloadListFromGithub("zfighting");
         List<String> combinedZFightingStrings = new ArrayList<>(Z_FIGHTING.get());
         combinedZFightingStrings.addAll(downloadedZFightingStrings);
+        combinedZFightingStrings.addAll(CableFacadesAPI.getAdditionalZFightingBlocks());
 
         for (String blockName : combinedZFightingStrings) {
             if (blockName.contains("*")) {
@@ -146,6 +155,23 @@ public class CFConfig {
                 Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(blockName));
                 if (block != null) {
                     zFightingBlocks.put(block, true);
+                }
+            }
+        }
+
+        List<String> downloadedHiddenStrings = downloadListFromGithub("hidden_facaded");
+        List<String> combinedHiddenStrings = new ArrayList<>(HIDDEN_WHEN_FACADED.get());
+        combinedHiddenStrings.addAll(downloadedHiddenStrings);
+        combinedHiddenStrings.addAll(CableFacadesAPI.getAdditionalHiddenBlocks());
+
+        for (String blockName : combinedHiddenStrings) {
+            if (blockName.contains("*")) {
+                String regex = blockName.replace("*", ".*");
+                hiddenBlockPatterns.add(Pattern.compile(regex));
+            } else {
+                Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(blockName));
+                if (block != null) {
+                    hiddenBlocks.put(block, true);
                 }
             }
         }
@@ -208,6 +234,26 @@ public class CFConfig {
             }
         }
         zFightingBlocks.put(targetBlock, false);
+        return false;
+    }
+
+    public static boolean shouldHideWhenFacaded(Block targetBlock) {
+        Boolean cached = hiddenBlocks.get(targetBlock);
+        if (cached != null) {
+            return cached;
+        }
+
+        ResourceLocation blockId = BuiltInRegistries.BLOCK.getKey(targetBlock);
+        if (blockId != null) {
+            String blockIdString = blockId.toString();
+            for (Pattern pattern : hiddenBlockPatterns) {
+                if (pattern.matcher(blockIdString).matches()) {
+                    hiddenBlocks.put(targetBlock, true);
+                    return true;
+                }
+            }
+        }
+        hiddenBlocks.put(targetBlock, false);
         return false;
     }
 }

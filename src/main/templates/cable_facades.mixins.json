@@ -11,6 +11,7 @@
     "LevelRendererAccess"
   ],
   "client": [
+    "BlockHidingMixin"
   ],
   "injectors": {
     "defaultRequire": 1

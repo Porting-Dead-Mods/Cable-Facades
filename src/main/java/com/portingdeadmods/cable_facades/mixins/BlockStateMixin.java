@@ -19,7 +19,8 @@ import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(BlockState.class)
 public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase implements IBlockStateExtension {
-    @Shadow protected abstract BlockState asState();
+    @Shadow
+    protected abstract BlockState asState();
 
     // NEVER CONSTRUCT THIS
     private BlockStateMixin() {
@@ -31,7 +32,8 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
 
     @Override
     public BlockState getAppearance(BlockAndTintGetter blockGetter, BlockPos pos, Direction side, @Nullable BlockState queryState, @Nullable BlockPos queryPos) {
-        if (cable_facades$recursionGuard.get()) return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
+        if (cable_facades$recursionGuard.get())
+            return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
         cable_facades$recursionGuard.set(true);
         try {
             if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
@@ -92,6 +94,20 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
                 }
             }
             return super.getVisualShape(level, pos, context);
+        } finally {
+            cable_facades$recursionGuard.set(false);
+        }
+    }
+
+    @Override
+    public int getLightBlock(BlockGetter level, BlockPos pos) {
+        if (cable_facades$recursionGuard.get()) return super.getLightBlock(level, pos);
+        cable_facades$recursionGuard.set(true);
+        try {
+            if (FacadeUtils.hasFacade(level, pos) && level.getBlockState(pos).getBlock().asItem().getDescriptionId().contains("create")) {
+                return 0;
+            }
+            return super.getLightBlock(level, pos);
         } finally {
             cable_facades$recursionGuard.set(false);
         }

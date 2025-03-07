@@ -4,6 +4,7 @@ import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadePayload;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePayload;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.BlockGetter;
@@ -47,6 +48,10 @@ public class FacadeUtils {
             level.updateNeighborsAt(pos, state.getBlock());
 
             level.getLightEngine().checkBlock(pos);
+
+            if (level.isClientSide) {
+                Minecraft.getInstance().levelRenderer.setBlockDirty(pos,level.getBlockState(pos),level.getBlockState(pos));
+            }
         }
     }
 }

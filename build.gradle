@@ -131,6 +131,7 @@ dependencies {
 
     runtimeOnly "curse.maven:applied-energistics-2-223794:6006016"
 
+    runtimeOnly "curse.maven:create-328085:6271847"
     runtimeOnly "curse.maven:athena-841890:5431579"
     runtimeOnly "curse.maven:chipped-456956:5813117"
     runtimeOnly "curse.maven:resourceful-lib-570073:5681267"
