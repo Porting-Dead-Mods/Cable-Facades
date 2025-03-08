@@ -96,4 +96,18 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
             cable_facades$recursionGuard.set(false);
         }
     }
+
+    @Override
+    public int getLightBlock(BlockGetter level, BlockPos pos) {
+        if (cable_facades$recursionGuard.get()) return super.getLightBlock(level, pos);
+        cable_facades$recursionGuard.set(true);
+        try {
+            if (FacadeUtils.hasFacade(level, pos) && level.getBlockState(pos).getBlock().asItem().getDescriptionId().contains("create")) {
+                return 0;
+            }
+            return super.getLightBlock(level, pos);
+        } finally {
+            cable_facades$recursionGuard.set(false);
+        }
+    }
 }

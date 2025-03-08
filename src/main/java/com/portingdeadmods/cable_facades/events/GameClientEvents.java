@@ -22,6 +22,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -93,6 +94,7 @@ public final class GameClientEvents {
             return;
         }
 
+
         facadeTransparency = mc.player.getMainHandItem().is(CFItems.WRENCH.get()) ? 0.5f : 1;
 
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
@@ -103,6 +105,7 @@ public final class GameClientEvents {
         PoseStack poseStack = event.getPoseStack();
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+
 
         for (Map.Entry<BlockPos, BlockState> entry : visibleFacades) {
             BlockPos pos = entry.getKey();
@@ -115,9 +118,15 @@ public final class GameClientEvents {
             BlockRenderDispatcher blockRenderer = mc.getBlockRenderer();
             BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
             ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
-
+            Block facadedBlock = level.getBlockState(pos).getBlock();
             poseStack.pushPose();
             poseStack.translate(pos.getX(), pos.getY(), pos.getZ());
+
+            if(facadedBlock.asItem().getDescriptionId().contains("create")) {
+                poseStack.translate(0.5, 0.5, 0.5);
+                poseStack.scale(1.0005F, 1.0005F, 1.0005F);
+                poseStack.translate(-0.5, -0.5, -0.5);
+            }
 
             blockRenderer.renderBatched(facadeState, pos, level, poseStack, buffer, true, RANDOM, modelData, null);
 

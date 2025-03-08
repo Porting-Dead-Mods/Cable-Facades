@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades;
 
+import com.portingdeadmods.cable_facades.api.CableFacadesAPI;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -95,6 +96,7 @@ public class CFConfig {
         List<String> downloadedBlockStrings = downloadListFromGithub("whitelist");
         List<String> combinedBlockStrings = new ArrayList<>(BLOCK_STRINGS.get());
         combinedBlockStrings.addAll(downloadedBlockStrings);
+        combinedBlockStrings.addAll(CableFacadesAPI.getAdditionalAllowedBlocks());
 
         for (String blockName : combinedBlockStrings) {
             if (blockName.contains("*")) {
@@ -112,6 +114,7 @@ public class CFConfig {
         List<String> downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
         List<String> combinedNotAllowedBlockStrings = new ArrayList<>(NOT_ALLOWED_BLOCK_STRINGS.get());
         combinedNotAllowedBlockStrings.addAll(downloadedNotAllowedBlockStrings);
+        combinedNotAllowedBlockStrings.addAll(CableFacadesAPI.getAdditionalDisallowedBlocks());
 
         for (String blockName : combinedNotAllowedBlockStrings) {
             if (blockName.contains("*")) {

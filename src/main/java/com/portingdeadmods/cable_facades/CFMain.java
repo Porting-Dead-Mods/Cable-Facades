@@ -1,6 +1,7 @@
 package com.portingdeadmods.cable_facades;
 
 import com.mojang.logging.LogUtils;
+import com.portingdeadmods.cable_facades.api.CableFacadesAPI;
 import com.portingdeadmods.cable_facades.networking.CFMessages;
 import com.portingdeadmods.cable_facades.registries.CFCreativeTabs;
 import com.portingdeadmods.cable_facades.registries.CFItems;
@@ -27,6 +28,7 @@ public class CFMain {
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFConfig.SPEC);
 
+        CableFacadesAPI.initializeAPI();
     }
 
 }
