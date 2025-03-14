@@ -23,10 +23,62 @@ import java.util.regex.Pattern;
 public class CFConfig {
 
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
+
+    private static final ForgeConfigSpec.IntValue CONFIG_VERSION = BUILDER.comment("Config version. Increment to apply changes.")
+            .defineInRange("configVersion", 1, 1, Integer.MAX_VALUE);
+
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> BLOCK_STRINGS = BUILDER.comment("List of blocks that are allowed to be covered. Supports '*' as a wildcard.")
-            .defineListAllowEmpty("blocks", List.of("pipez:*_pipe","mekanism:*_cable","mekanism:*_conductor","mekanism:*_pipe","mekanism:*_tube","mekanism:*_transporter","mekanism_extras:*_cable","mekanism_extras:*_conductor","mekanism_extras:*_pipe","mekanism_extras:*_tube","mekanism_extras:*_transporter","thermal:*_duct","thermal:*_duct_windowed","computercraft:cable","powah:energy_cable_*","create:fluid_pipe","pneumaticcraft:*_tube","ppfluids:fluid_pipe","prettypipes:pipe","laserio:laser_*","cyclic:*_pipe","embers:*_pipe","embers:item_extractor","elementalcraft:elementpipe*","gtceu:*wire","gtceu:*pipe","enderio:conduit"), CFConfig::validateBlockName);
+            .defineListAllowEmpty("blocks", List.of(
+                    "pipez:*_pipe",
+                    "mekanism:*_cable",
+                    "mekanism:*_conductor",
+                    "mekanism:*_pipe",
+                    "mekanism:*_tube",
+                    "mekanism:*_transporter",
+                    "mekanism_extras:*_cable",
+                    "mekanism_extras:*_conductor",
+                    "mekanism_extras:*_pipe",
+                    "mekanism_extras:*_tube",
+                    "mekanism_extras:*_transporter",
+                    "thermal:*_duct",
+                    "thermal:*_duct_windowed",
+                    "computercraft:cable",
+                    "powah:energy_cable_*",
+                    "create:fluid_pipe",
+                    "pneumaticcraft:*_tube",
+                    "ppfluids:fluid_pipe",
+                    "prettypipes:pipe",
+                    "laserio:laser_*",
+                    "cyclic:*_pipe",
+                    "embers:*_pipe",
+                    "embers:item_extractor",
+                    "elementalcraft:elementpipe*",
+                    "gtceu:*wire",
+                    "gtceu:*pipe",
+                    "enderio:conduit"
+            ), CFConfig::validateBlockName);
+
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> ADDED_BLOCK_STRINGS = BUILDER.comment("List of additional blocks added in this version.")
+            .defineListAllowEmpty("added_blocks", List.of(
+                    "ae2:cable_bus",
+                    "refinedstorage:cable",
+                    "refinedstorage:importer",
+                    "refinedstorage:exporter",
+                    "toms_storage:inventory_cable",
+                    "industrialforegoingsouls:soul_network_pipe",
+                    "industrialforegoingsouls:soul_surge",
+                    "modern_industrialization:pipe"
+            ), CFConfig::validateBlockName);
+
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> LAST_VERSION_BLOCKS = BUILDER.comment("List of blocks from the previous version. Do not modify manually.")
+            .defineListAllowEmpty("last_version_blocks", new ArrayList<>(), CFConfig::validateBlockName);
+
+    private static final ForgeConfigSpec.IntValue LAST_CONFIG_VERSION = BUILDER.comment("Previous config version. Do not modify manually.")
+            .defineInRange("lastConfigVersion", 0, 0, Integer.MAX_VALUE);
+
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> NOT_ALLOWED_BLOCK_STRINGS = BUILDER.comment("List of blocks that are explicitly not allowed to be used as a cover. Supports '*' as a wildcard.")
             .defineListAllowEmpty("not_allowed_blocks", List.of(), CFConfig::validateBlockName);
+
     private static final ForgeConfigSpec.BooleanValue CONSUME_FACADE = BUILDER.comment("Whether the facade should be consumed when placed.")
             .define("consumeFacade", true);
 
@@ -40,6 +92,8 @@ public class CFConfig {
     private static final List<Pattern> blockPatterns = new ArrayList<>();
     private static final List<Pattern> notAllowedBlockPatterns = new ArrayList<>();
     public static boolean consumeFacade;
+    public static int configVersion;
+    private static int lastConfigVersion;
 
     private static boolean validateBlockName(final Object obj) {
         if (obj instanceof String blockName) {
@@ -61,6 +115,8 @@ public class CFConfig {
             URL url = new URL(githubUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
 
             if (connection.getResponseCode() == 200) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
@@ -71,30 +127,63 @@ public class CFConfig {
                         }
                     }
                 }
+                CFMain.LOGGER.info("Downloaded {} {} blocks from GitHub", downloadedList.size(), listType);
             } else {
-                CFMain.LOGGER.error("Failed to download {}. HTTP code: {}", listType, connection.getResponseCode());
+                CFMain.LOGGER.warn("Failed to download {}. HTTP code: {}", listType, connection.getResponseCode());
             }
         } catch (Exception e) {
-            CFMain.LOGGER.error("Error downloading {}: {}", listType, e.getMessage());
+            CFMain.LOGGER.warn("Error downloading {}: {}. Using local config only.", listType, e.getMessage());
         }
 
-        CFMain.LOGGER.info("Downloaded {} {} blocks from GitHub", downloadedList.size(), listType);
         return downloadedList;
     }
-
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
         consumeFacade = CONSUME_FACADE.get();
+        configVersion = CONFIG_VERSION.get();
+        lastConfigVersion = LAST_CONFIG_VERSION.get();
 
         allowedBlocks.clear();
         disallowedBlocks.clear();
         blockPatterns.clear();
         notAllowedBlockPatterns.clear();
 
-        // Download block lists from GitHub
-        List<String> downloadedBlockStrings = downloadListFromGithub("whitelist");
-        List<String> combinedBlockStrings = new ArrayList<>(BLOCK_STRINGS.get());
+        List<String> currentBlocks = new ArrayList<>(BLOCK_STRINGS.get());
+        List<String> addedBlocks = new ArrayList<>(ADDED_BLOCK_STRINGS.get());
+        List<String> lastVersionBlocks = new ArrayList<>(LAST_VERSION_BLOCKS.get());
+
+        if (configVersion > lastConfigVersion) {
+            CFMain.LOGGER.info("Config version changed from {} to {}. Merging changes...", lastConfigVersion, configVersion);
+
+            if (lastConfigVersion > 0) {
+                LAST_VERSION_BLOCKS.set(new ArrayList<>(currentBlocks));
+            }
+
+            for (String block : addedBlocks) {
+                if (!currentBlocks.contains(block)) {
+                    currentBlocks.add(block);
+                }
+            }
+
+            BLOCK_STRINGS.set(currentBlocks);
+            ADDED_BLOCK_STRINGS.set(new ArrayList<>());
+            LAST_CONFIG_VERSION.set(configVersion);
+
+            CFMain.LOGGER.info("Merged {} new blocks into config", addedBlocks.size());
+        }
+
+        List<String> downloadedBlockStrings = new ArrayList<>();
+        List<String> downloadedNotAllowedBlockStrings = new ArrayList<>();
+
+        try {
+            downloadedBlockStrings = downloadListFromGithub("whitelist");
+            downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
+        } catch (Exception e) {
+            CFMain.LOGGER.warn("Error downloading from GitHub: {}", e.getMessage());
+        }
+
+        List<String> combinedBlockStrings = new ArrayList<>(currentBlocks);
         combinedBlockStrings.addAll(downloadedBlockStrings);
         combinedBlockStrings.addAll(CableFacadesAPI.getAdditionalAllowedBlocks());
 
@@ -110,8 +199,6 @@ public class CFConfig {
             }
         }
 
-        // Download disallowed block lists from GitHub
-        List<String> downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
         List<String> combinedNotAllowedBlockStrings = new ArrayList<>(NOT_ALLOWED_BLOCK_STRINGS.get());
         combinedNotAllowedBlockStrings.addAll(downloadedNotAllowedBlockStrings);
         combinedNotAllowedBlockStrings.addAll(CableFacadesAPI.getAdditionalDisallowedBlocks());
@@ -130,14 +217,11 @@ public class CFConfig {
     }
 
     public static boolean isBlockAllowed(Block targetBlock) {
-
-        // Check if the block is already in the cache
         Boolean cached = allowedBlocks.get(targetBlock);
         if (cached != null) {
             return cached;
         }
 
-        // If the block is not in the cache, check if it matches any of the patterns
         ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(targetBlock);
         if (blockId != null) {
             String blockIdString = blockId.toString();
@@ -153,13 +237,11 @@ public class CFConfig {
     }
 
     public static boolean isBlockDisallowed(Block targetBlock) {
-        // Check if the block is already in the cache
         Boolean cached = disallowedBlocks.get(targetBlock);
         if (cached != null) {
             return cached;
         }
 
-        // If the block is not in the cache, check if it matches any of the patterns
         ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(targetBlock);
         if (blockId != null) {
             String blockIdString = blockId.toString();
