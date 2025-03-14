@@ -23,14 +23,39 @@ import java.util.regex.Pattern;
 public class CFConfig {
 
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+
+    private static final ModConfigSpec.IntValue CONFIG_VERSION = BUILDER.comment("Config version. Increment to apply changes.")
+            .defineInRange("configVersion", 1, 1, Integer.MAX_VALUE);
+
+    private static final ModConfigSpec.IntValue LAST_CONFIG_VERSION = BUILDER.comment("Previous config version. Do not modify manually.")
+            .defineInRange("lastConfigVersion", 0, 0, Integer.MAX_VALUE);
+
     private static final ModConfigSpec.ConfigValue<List<? extends String>> BLOCK_STRINGS = BUILDER.comment("List of blocks that are allowed to be covered. Supports '*' as a wildcard.")
-            .defineListAllowEmpty("blocks", List.of("pipez:*_pipe", "mekanism:*_cable", "mekanism:*_conductor", "mekanism:*_pipe", "mekanism:*_tube", "mekanism:*_transporter", "mekanism_extras:*_cable", "mekanism_extras:*_conductor", "mekanism_extras:*_pipe", "mekanism_extras:*_tube", "mekanism_extras:*_transporter", "thermal:*_duct", "thermal:*_duct_windowed", "computercraft:cable", "powah:energy_cable_*", "create:fluid_pipe", "pneumaticcraft:*_tube", "ppfluids:fluid_pipe", "prettypipes:pipe", "laserio:laser_*", "cyclic:*_pipe", "embers:*_pipe", "embers:item_extractor", "elementalcraft:elementpipe*", "gtceu:*wire", "gtceu:*pipe","oritech:*_pipe", "oritech:superconductor","enderio:conduit"), () -> "", CFConfig::validateBlockName);
+            .defineListAllowEmpty("blocks", List.of("pipez:*_pipe", "mekanism:*_cable", "mekanism:*_conductor", "mekanism:*_pipe", "mekanism:*_tube", "mekanism:*_transporter", "mekanism_extras:*_cable", "mekanism_extras:*_conductor", "mekanism_extras:*_pipe", "mekanism_extras:*_tube", "mekanism_extras:*_transporter", "thermal:*_duct", "thermal:*_duct_windowed", "computercraft:cable", "powah:energy_cable_*", "create:fluid_pipe", "pneumaticcraft:*_tube", "ppfluids:fluid_pipe", "prettypipes:pipe", "laserio:laser_*", "cyclic:*_pipe", "embers:*_pipe", "embers:item_extractor", "elementalcraft:elementpipe*", "gtceu:*wire", "gtceu:*pipe", "oritech:*_pipe", "oritech:superconductor", "enderio:conduit", "ae2:cable_bus"), () -> "", CFConfig::validateBlockName);
+
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> ADDED_BLOCK_STRINGS = BUILDER.comment("List of additional blocks added in this version.")
+            .defineListAllowEmpty("added_blocks", List.of(
+                    "refinedstorage:cable",
+                    "refinedstorage:importer",
+                    "refinedstorage:exporter",
+                    "toms_storage:inventory_cable",
+                    "industrialforegoingsouls:soul_network_pipe",
+                    "industrialforegoingsouls:soul_surge",
+                    "modern_industrialization:pipe"
+            ), () -> "", CFConfig::validateBlockName);
+
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> LAST_VERSION_BLOCKS = BUILDER.comment("List of blocks from the previous version. Do not modify manually.")
+            .defineListAllowEmpty("last_version_blocks", new ArrayList<>(), () -> "", CFConfig::validateBlockName);
+
     private static final ModConfigSpec.ConfigValue<List<? extends String>> NOT_ALLOWED_BLOCK_STRINGS = BUILDER.comment("List of blocks that are explicitly not allowed to be used as a cover. Supports '*' as a wildcard.")
             .defineListAllowEmpty("not_allowed_blocks", List.of(), () -> "", CFConfig::validateBlockName);
+
     private static final ModConfigSpec.ConfigValue<List<? extends String>> Z_FIGHTING = BUILDER.comment("List of blocks that need z-fighting fixes. Supports '*' as a wildcard.")
             .defineListAllowEmpty("z_fighting", List.of("ae2:cable_bus"), () -> "", CFConfig::validateBlockName);
+
     private static final ModConfigSpec.ConfigValue<List<? extends String>> HIDDEN_WHEN_FACADED = BUILDER.comment("List of blocks that should not render when covered by a facade. Supports '*' as a wildcard.")
             .defineListAllowEmpty("hidden_when_facaded", List.of(), () -> "", CFConfig::validateBlockName);
+
     private static final ModConfigSpec.BooleanValue CONSUME_FACADE = BUILDER.comment("Whether the facade should be consumed when placed.")
             .define("consumeFacade", true);
 
@@ -45,6 +70,8 @@ public class CFConfig {
     private static final List<Pattern> zFightingPatterns = new ArrayList<>();
     private static final List<Pattern> hiddenBlockPatterns = new ArrayList<>();
     public static boolean consumeFacade;
+    public static int configVersion;
+    private static int lastConfigVersion;
 
     private static boolean validateBlockName(final Object obj) {
         if (obj instanceof String blockName) {
@@ -73,6 +100,8 @@ public class CFConfig {
             URL url = new URL(githubUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
 
             if (connection.getResponseCode() == 200) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
@@ -83,31 +112,71 @@ public class CFConfig {
                         }
                     }
                 }
+                CFMain.LOGGER.info("Downloaded {} {} blocks from GitHub", downloadedList.size(), listType);
             } else {
-                CFMain.LOGGER.error("Failed to download {}. HTTP code: {}", listType, connection.getResponseCode());
+                CFMain.LOGGER.warn("Failed to download {}. HTTP code: {}", listType, connection.getResponseCode());
             }
         } catch (Exception e) {
-            CFMain.LOGGER.error("Error downloading {}: {}", listType, e.getMessage());
+            CFMain.LOGGER.warn("Error downloading {}: {}. Using local config only.", listType, e.getMessage());
         }
 
-        CFMain.LOGGER.info("Downloaded {} {} blocks from GitHub", downloadedList.size(), listType);
         return downloadedList;
     }
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
         consumeFacade = CONSUME_FACADE.get();
+        configVersion = CONFIG_VERSION.get();
+        lastConfigVersion = LAST_CONFIG_VERSION.get();
 
         allowedBlocks.clear();
         disallowedBlocks.clear();
         zFightingBlocks.clear();
+        hiddenBlocks.clear();
         blockPatterns.clear();
         notAllowedBlockPatterns.clear();
         zFightingPatterns.clear();
+        hiddenBlockPatterns.clear();
 
-        // Download and parse allowed blocks
-        List<String> downloadedBlockStrings = downloadListFromGithub("whitelist");
-        List<String> combinedBlockStrings = new ArrayList<>(BLOCK_STRINGS.get());
+        List<String> currentBlocks = new ArrayList<>(BLOCK_STRINGS.get());
+        List<String> addedBlocks = new ArrayList<>(ADDED_BLOCK_STRINGS.get());
+        List<String> lastVersionBlocks = new ArrayList<>(LAST_VERSION_BLOCKS.get());
+
+        if (configVersion > lastConfigVersion) {
+            CFMain.LOGGER.info("Config version changed from {} to {}. Merging changes...", lastConfigVersion, configVersion);
+
+            if (lastConfigVersion > 0) {
+                LAST_VERSION_BLOCKS.set(new ArrayList<>(currentBlocks));
+            }
+
+            for (String block : addedBlocks) {
+                if (!currentBlocks.contains(block)) {
+                    currentBlocks.add(block);
+                }
+            }
+
+            BLOCK_STRINGS.set(currentBlocks);
+            ADDED_BLOCK_STRINGS.set(new ArrayList<>());
+            LAST_CONFIG_VERSION.set(configVersion);
+
+            CFMain.LOGGER.info("Merged {} new blocks into config", addedBlocks.size());
+        }
+
+        List<String> downloadedBlockStrings = new ArrayList<>();
+        List<String> downloadedNotAllowedBlockStrings = new ArrayList<>();
+        List<String> downloadedZFightingStrings = new ArrayList<>();
+        List<String> downloadedHiddenStrings = new ArrayList<>();
+
+        try {
+            downloadedBlockStrings = downloadListFromGithub("whitelist");
+            downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
+            downloadedZFightingStrings = downloadListFromGithub("zfighting");
+            downloadedHiddenStrings = downloadListFromGithub("hidden_facaded");
+        } catch (Exception e) {
+            CFMain.LOGGER.warn("Error downloading from GitHub: {}", e.getMessage());
+        }
+
+        List<String> combinedBlockStrings = new ArrayList<>(currentBlocks);
         combinedBlockStrings.addAll(downloadedBlockStrings);
         combinedBlockStrings.addAll(CableFacadesAPI.getAdditionalAllowedBlocks());
 
@@ -123,8 +192,6 @@ public class CFConfig {
             }
         }
 
-        // Download and parse disallowed blocks
-        List<String> downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
         List<String> combinedNotAllowedBlockStrings = new ArrayList<>(NOT_ALLOWED_BLOCK_STRINGS.get());
         combinedNotAllowedBlockStrings.addAll(downloadedNotAllowedBlockStrings);
         combinedNotAllowedBlockStrings.addAll(CableFacadesAPI.getAdditionalDisallowedBlocks());
@@ -141,8 +208,6 @@ public class CFConfig {
             }
         }
 
-        // Download and parse z-fighting blocks
-        List<String> downloadedZFightingStrings = downloadListFromGithub("zfighting");
         List<String> combinedZFightingStrings = new ArrayList<>(Z_FIGHTING.get());
         combinedZFightingStrings.addAll(downloadedZFightingStrings);
         combinedZFightingStrings.addAll(CableFacadesAPI.getAdditionalZFightingBlocks());
@@ -159,7 +224,6 @@ public class CFConfig {
             }
         }
 
-        List<String> downloadedHiddenStrings = downloadListFromGithub("hidden_facaded");
         List<String> combinedHiddenStrings = new ArrayList<>(HIDDEN_WHEN_FACADED.get());
         combinedHiddenStrings.addAll(downloadedHiddenStrings);
         combinedHiddenStrings.addAll(CableFacadesAPI.getAdditionalHiddenBlocks());

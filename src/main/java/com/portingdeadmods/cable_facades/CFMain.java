@@ -25,5 +25,4 @@ public class CFMain {
         modContainer.registerConfig(ModConfig.Type.COMMON, CFConfig.SPEC);
         CableFacadesAPI.initializeAPI();
     }
-
 }
