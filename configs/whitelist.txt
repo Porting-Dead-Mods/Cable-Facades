@@ -1,9 +1,7 @@
 # Add only ONE block per line
 enderio:conduit
 ae2:cable_bus
-refinedstorage:cable
-refinedstorage:importer
-refinedstorage:exporter
+refinedstorage:*
 toms_storage:inventory_cable
 industrialforegoingsouls:soul_network_pipe
 industrialforegoingsouls:soul_surge
