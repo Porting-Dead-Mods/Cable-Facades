@@ -9,3 +9,4 @@ modern_industrialization:pipe
 create:*
 fluxnetworks:flux_point
 fluxnetworks:flux_plug
+oritech:*pipe*
