@@ -1,4 +1,4 @@
-package com.portingdeadmods.cable_facades.events;
+package com.portingdeadmods.cable_facades.events.client;
 
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.client.renderer.item.FacadeItemRenderer;
@@ -15,7 +15,7 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
 import org.jetbrains.annotations.NotNull;
 
 @EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
-public final class CFClientEvents {
+public final class ClientRegisterEvents {
     public static final FacadeItemRenderer FACADE_ITEM_RENDERER = new FacadeItemRenderer();
     public static final ModelResourceLocation FACADE_OUTLINE = ModelResourceLocation.standalone(
             ResourceLocation.fromNamespaceAndPath(CFMain.MODID, "item/facade_outline"));

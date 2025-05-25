@@ -4,8 +4,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.compat.iris.AlphaWrapperIris;
 import com.portingdeadmods.cable_facades.mixins.LevelRendererAccess;
 import com.portingdeadmods.cable_facades.registries.CFRenderTypes;
+import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -98,55 +100,52 @@ public final class GameClientEvents {
 
         if (actualBlocks.isEmpty()) return;
 
-        e.addRenderer(new AddSectionGeometryEvent.AdditionalSectionRenderer() {
-            @Override
-            public void render(AddSectionGeometryEvent.SectionRenderingContext sectionRenderingContext) {
-                RENDERING_FACADE.set(true);
-                BlockAndTintGetter level = sectionRenderingContext.getRegion();
-                RandomSource random = RANDOM.get();
+        e.addRenderer(sectionRenderingContext -> {
+            RENDERING_FACADE.set(true);
+            BlockAndTintGetter level = sectionRenderingContext.getRegion();
+            RandomSource random = RANDOM.get();
 
-                for (Map.Entry<BlockPos, @Nullable BlockState> blockPosBlockStateEntry : actualBlocks.entrySet()) {
-                    random.setSeed(42L);
-                    //System.out.println("Rendering facade at " + blockPosBlockStateEntry.getKey());
-                    BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
-                    BlockState facadeState = blockPosBlockStateEntry.getValue();
-                    BlockPos pos = blockPosBlockStateEntry.getKey();
-                    PoseStack poseStack = sectionRenderingContext.getPoseStack();
+            for (Map.Entry<BlockPos, @Nullable BlockState> blockPosBlockStateEntry : actualBlocks.entrySet()) {
+                random.setSeed(42L);
+                //System.out.println("Rendering facade at " + blockPosBlockStateEntry.getKey());
+                BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
+                BlockState facadeState = blockPosBlockStateEntry.getValue();
+                BlockPos pos = blockPosBlockStateEntry.getKey();
+                PoseStack poseStack = sectionRenderingContext.getPoseStack();
 
-                    BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
-                    ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
+                BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
+                ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
 
-                    poseStack.pushPose();
-                    poseStack.translate(SectionPos.sectionRelative(pos.getX()), SectionPos.sectionRelative(pos.getY()), SectionPos.sectionRelative(pos.getZ()));
+                poseStack.pushPose();
+                poseStack.translate(SectionPos.sectionRelative(pos.getX()), SectionPos.sectionRelative(pos.getY()), SectionPos.sectionRelative(pos.getZ()));
 
-                    Block facadedBlock = level.getBlockState(pos).getBlock();
+                Block facadedBlock = level.getBlockState(pos).getBlock();
 
-                    if(CFConfig.canPatchZFighting(facadedBlock)){
-                        poseStack.translate(0.5, 0.5, 0.5);
-                        poseStack.scale(0.99995F, 0.99995F, 0.99995F);
-                        poseStack.translate(-0.5, -0.5, -0.5);
-                    }
-
-                    if(facadedBlock.asItem().getDescriptionId().contains("create"))
-                    {
-                        poseStack.translate(0.5, 0.5, 0.5);
-                        poseStack.scale(1.0005F, 1.0005F, 1.0005F);
-                        poseStack.translate(-0.5, -0.5, -0.5);
-                    }
-
-                    for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
-                        VertexConsumer buffer = sectionRenderingContext.getOrCreateChunkBuffer(GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType);
-                        if (facadeTransparency) {
-                            buffer = new AlphaWrapper(buffer);
-                        }
-                        blockRenderer.renderBatched(facadeState, pos, level, poseStack, buffer, true, random, modelData, renderType);
-                    }
-
-                    poseStack.popPose();
+                if(CFConfig.canPatchZFighting(facadedBlock)){
+                    poseStack.translate(0.5, 0.5, 0.5);
+                    poseStack.scale(0.99995F, 0.99995F, 0.99995F);
+                    poseStack.translate(-0.5, -0.5, -0.5);
                 }
 
-                RENDERING_FACADE.set(false);
+                if(facadedBlock.asItem().getDescriptionId().contains("create"))
+                {
+                    poseStack.translate(0.5, 0.5, 0.5);
+                    poseStack.scale(1.0005F, 1.0005F, 1.0005F);
+                    poseStack.translate(-0.5, -0.5, -0.5);
+                }
+
+                for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+                    VertexConsumer buffer = sectionRenderingContext.getOrCreateChunkBuffer(GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType);
+                    if (facadeTransparency) {
+                        buffer = CFMain.isIrisLoaded() ? new AlphaWrapperIris(buffer) : new AlphaWrapper(buffer);
+                    }
+                    blockRenderer.renderBatched(facadeState, pos, level, poseStack, buffer, true, random, modelData, renderType);
+                }
+
+                poseStack.popPose();
             }
+
+            RENDERING_FACADE.set(false);
         });
     }
 

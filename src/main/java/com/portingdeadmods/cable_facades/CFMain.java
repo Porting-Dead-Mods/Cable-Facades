@@ -8,6 +8,7 @@ import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import org.slf4j.Logger;
@@ -24,5 +25,9 @@ public class CFMain {
         CFDataComponents.DATA_COMPONENTS.register(modEventBus);
         modContainer.registerConfig(ModConfig.Type.COMMON, CFConfig.SPEC);
         CableFacadesAPI.initializeAPI();
+    }
+
+    public static boolean isIrisLoaded() {
+        return ModList.get().isLoaded("iris");
     }
 }

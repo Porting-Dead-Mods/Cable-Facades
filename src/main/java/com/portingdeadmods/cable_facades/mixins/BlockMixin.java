@@ -1,8 +1,8 @@
 package com.portingdeadmods.cable_facades.mixins;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
+import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;

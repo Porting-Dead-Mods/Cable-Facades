@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
@@ -47,7 +48,7 @@ public abstract class BlockStateBaseMixin {
                             ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeState.getBlock());
                             FacadeUtils.removeFacade(level, blockPos);
 
-                            Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
+                            if(CFConfig.consumeFacade) Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
                         }
                     }
                     FacadeUtils.updateBlocks(level, blockPos);

@@ -1,7 +1,7 @@
 package com.portingdeadmods.cable_facades.client.renderer.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.portingdeadmods.cable_facades.events.CFClientEvents;
+import com.portingdeadmods.cable_facades.events.client.ClientRegisterEvents;
 import com.portingdeadmods.cable_facades.registries.CFDataComponents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -43,7 +43,7 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
 
             poseStack.translate(-(scaleFactor / 2), -(scaleFactor / 2), -(scaleFactor / 2));
             poseStack.scale(1 + scaleFactor, 1 + scaleFactor, 1 + scaleFactor);
-            var model = Minecraft.getInstance().getModelManager().getModel(CFClientEvents.FACADE_OUTLINE);
+            var model = Minecraft.getInstance().getModelManager().getModel(ClientRegisterEvents.FACADE_OUTLINE);
             Minecraft.getInstance().getItemRenderer().renderModelLists(
                     model,
                     stack,

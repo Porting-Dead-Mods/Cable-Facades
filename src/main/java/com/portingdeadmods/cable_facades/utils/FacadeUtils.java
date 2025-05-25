@@ -1,7 +1,6 @@
 package com.portingdeadmods.cable_facades.utils;
 
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
-import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadePayload;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePayload;
 import net.minecraft.client.Minecraft;
@@ -10,6 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
@@ -42,15 +42,26 @@ public class FacadeUtils {
     }
 
     public static void updateBlocks(Level level, BlockPos pos) {
-        if(level.isInWorldBounds(pos)){
+        if (level.isInWorldBounds(pos)) {
             BlockState state = level.getBlockState(pos);
-            level.sendBlockUpdated(pos, state, state, 3);
-            level.updateNeighborsAt(pos, state.getBlock());
 
-            level.getLightEngine().checkBlock(pos);
+            if (!level.isClientSide) {
+                if (level.getBlockEntity(pos) != null) {
+                    level.getBlockEntity(pos).setChanged();
+                    level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
+                }
 
-            if (level.isClientSide) {
-                Minecraft.getInstance().levelRenderer.setBlockDirty(pos,level.getBlockState(pos),level.getBlockState(pos));
+                level.updateNeighborsAt(pos, state.getBlock());
+                level.updateNeighborsAtExceptFromFacing(pos, state.getBlock(), null);
+
+                level.setBlock(pos, state, Block.UPDATE_ALL_IMMEDIATE);
+
+                level.getLightEngine().checkBlock(pos);
+
+                level.getChunkAt(pos).setUnsaved(true);
+            } else {
+                Minecraft.getInstance().levelRenderer.setBlockDirty(pos, state, state);
+                level.getLightEngine().checkBlock(pos);
             }
         }
     }

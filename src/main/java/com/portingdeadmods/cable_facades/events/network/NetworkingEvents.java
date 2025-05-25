@@ -1,4 +1,4 @@
-package com.portingdeadmods.cable_facades.events;
+package com.portingdeadmods.cable_facades.events.network;
 
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadePayload;

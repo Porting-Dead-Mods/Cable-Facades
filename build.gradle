@@ -127,8 +127,10 @@ dependencies {
     // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it
     localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 
-    runtimeOnly "curse.maven:pipez-443900:5757713"
+    runtimeOnly "curse.maven:sodium-394468:6382651"
+    implementation "curse.maven:irisshaders-455508:6213632"
 
+    runtimeOnly "curse.maven:pipez-443900:5757713"
     runtimeOnly "curse.maven:applied-energistics-2-223794:6006016"
 
     runtimeOnly "curse.maven:create-328085:6271847"

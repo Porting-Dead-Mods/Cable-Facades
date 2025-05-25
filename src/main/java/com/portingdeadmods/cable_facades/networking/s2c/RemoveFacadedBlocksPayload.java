@@ -1,7 +1,7 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
 import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.events.ClientFacadeManager;
+import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.CodecUtils;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;

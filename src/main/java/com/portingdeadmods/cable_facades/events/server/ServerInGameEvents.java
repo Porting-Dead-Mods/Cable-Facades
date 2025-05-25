@@ -1,5 +1,6 @@
-package com.portingdeadmods.cable_facades.events;
+package com.portingdeadmods.cable_facades.events.server;
 
+import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
@@ -34,7 +35,7 @@ import net.neoforged.neoforge.event.level.ChunkWatchEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(modid = CFMain.MODID)
-public final class GameEvents {
+public final class ServerInGameEvents {
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         Level level = event.getPlayer().level();
@@ -45,7 +46,7 @@ public final class GameEvents {
             if (FacadeUtils.hasFacade(level, pos)) {
                 BlockState facade = FacadeUtils.getFacade(level, pos);
                 FacadeUtils.removeFacade(level, pos);
-                if (!player.isCreative()) {
+                if (!player.isCreative() && CFConfig.consumeFacade) {
                     ItemStack facadeStack = CFItems.FACADE.get().createFacade(facade.getBlock());
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 }
@@ -69,7 +70,7 @@ public final class GameEvents {
             if (!level.isClientSide()) {
                 FacadeUtils.removeFacade(level, pos);
 
-                if (!player.isCreative()) {
+                if (!player.isCreative() && CFConfig.consumeFacade) {
                     ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeState.getBlock());
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 } else {

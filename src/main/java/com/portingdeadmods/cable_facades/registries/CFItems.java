@@ -1,6 +1,7 @@
 package com.portingdeadmods.cable_facades.registries;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.compat.iris.IrisUtil;
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import net.minecraft.ChatFormatting;
@@ -33,11 +34,19 @@ public class CFItems {
         @Override
         public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
             HitResult hitResult = player.pick(3D, 0.0F, false);
-            if (level.isClientSide && hitResult.getType().equals(HitResult.Type.MISS)) {
+            if (level.isClientSide && hitResult.getType().equals(HitResult.Type.MISS) && !player.isShiftKeyDown()) {
                 GameClientEvents.facadeTransparency = !GameClientEvents.facadeTransparency;
                 ChatFormatting messageColor = GameClientEvents.facadeTransparency ? ChatFormatting.GREEN : ChatFormatting.RED;
                 Component message = Component.literal("Facade transparency is now ").append(Component.literal(GameClientEvents.facadeTransparency ? "Enabled" : "Disabled").withStyle(messageColor));
-                player.displayClientMessage(message, true);
+                if(CFMain.isIrisLoaded()){
+                    if(IrisUtil.areShadersEnabled()){
+                        player.displayClientMessage(Component.literal("⚠ ").withStyle(ChatFormatting.YELLOW).append(Component.literal("Shaders Detected: ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD)).append(Component.literal("Facade transparency may not work properly").withStyle(ChatFormatting.GRAY)), true);
+                    } else {
+                        player.displayClientMessage(message, true);
+                    }
+                } else {
+                    player.displayClientMessage(message, true);
+                }
                 level.playSound(player, player.getX(), player.getY(), player.getZ(), SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.PLAYERS, 0.4f, GameClientEvents.facadeTransparency ? 0.01f : 0.09f);
             }
 
