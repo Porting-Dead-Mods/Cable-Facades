@@ -104,7 +104,7 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         if (cable_facades$recursionGuard.get()) return super.getLightBlock(level, pos);
         cable_facades$recursionGuard.set(true);
         try {
-            if (FacadeUtils.hasFacade(level, pos) && level.getBlockState(pos).getBlock().asItem().getDescriptionId().contains("create")) {
+            if (FacadeUtils.hasFacade(level, pos) && this.asState().getBlock().asItem().getDescriptionId().contains("create")) {
                 return 0;
             }
             return super.getLightBlock(level, pos);
