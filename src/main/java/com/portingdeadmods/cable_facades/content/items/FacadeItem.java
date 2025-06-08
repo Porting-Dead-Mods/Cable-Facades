@@ -92,8 +92,9 @@ public class FacadeItem extends Item {
         if (itemStack.hasTag()) {
             CompoundTag tag = itemStack.getTag();
             Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
-            BlockItem blockItem = (BlockItem) block.asItem();
-            return Component.literal("Facade - " + blockItem.getDescription().getString());
+            if (block.asItem() instanceof BlockItem blockItem) {
+                return Component.literal("Facade - " + blockItem.getDescription().getString());
+            }
         }
         return Component.literal("Facade - Empty");
     }
