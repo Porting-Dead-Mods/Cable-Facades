@@ -35,16 +35,6 @@ public class FacadeItem extends Item {
         super(properties);
     }
 
-    // DEBUGGING CODE
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level p_41432_, Player p_41433_, InteractionHand p_41434_) {
-        if (p_41432_.isClientSide()) {
-            CFMain.LOGGER.debug("Facades: {}", ClientFacadeManager.FACADED_BLOCKS);
-            CFMain.LOGGER.debug("Loaded: {}", ClientFacadeManager.LOADED_BLOCKS);
-        }
-        return super.use(p_41432_, p_41433_, p_41434_);
-    }
-
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
