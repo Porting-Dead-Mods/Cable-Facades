@@ -1,0 +1,23 @@
+{
+  "item.cable_facades.facade_wrench": "Гаечный ключ для фасадов",
+  
+  "cable_facades.tooltip.toggle_transparency": "Присесть + ПКМ - Снять фасад\nПКМ - Переключить прозрачность фасадов",
+  "cable_facades.tooltip.current_state": "Прозрачность: ",
+  "cable_facades.tooltip.enabled": "включена",
+  "cable_facades.tooltip.disabled": "отключена",
+  
+  "cable_facades.message.transparency_enabled": "Прозрачность фасадов: ",
+  "cable_facades.message.shaders_warning": "⚠ ",
+  "cable_facades.message.shaders_detected": "Обнаружены шейдеры: ",
+  "cable_facades.message.transparency_may_not_work": "Прозрачность фасадов может работать некорректно",
+  
+  "cable_facades.facade.name_prefix": "Фасад - ",
+  "cable_facades.facade.empty": "Пустой фасад",
+  "cable_facades.creative_tab": "Кабельные фасады",
+  
+  "cable_facades.error.cannot_facade_itself": "Нельзя использовать фасад на том же блоке",
+  "cable_facades.error.block_disabled": "Этот блок нельзя использовать как покрытие",
+  
+  "cable_facades.jei.facade_empty": "Пустой фасад",
+  "cable_facades.jei.empty": "Пустой"
+}

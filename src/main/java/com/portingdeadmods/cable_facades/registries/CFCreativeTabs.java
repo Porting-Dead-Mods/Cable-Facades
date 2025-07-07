@@ -16,7 +16,7 @@ public class CFCreativeTabs {
 
     public static final Supplier<CreativeModeTab> CF_TAB = CREATIVE_MODE_TABS.register("cf_tab", () -> CreativeModeTab.builder()
             .icon(() -> CFItems.WRENCH.get().getDefaultInstance())
-            .title(Component.literal("Cable Facades"))
+            .title(Component.translatable("cable_facades.creative_tab"))
             .displayItems((parameters, output) -> {
                 for (DeferredHolder<Item, ? extends Item> item : CFItems.ITEMS.getEntries()) {
                     output.accept(item.get());
