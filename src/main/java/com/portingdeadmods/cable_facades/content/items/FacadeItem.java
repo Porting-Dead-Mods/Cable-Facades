@@ -51,9 +51,9 @@ public class FacadeItem extends Item {
                 // Prevent block from being facaded with itself or if it's disallowed
                 if (targetBlock == block1 || CFConfig.isBlockDisallowed(block1)) {
                     if(targetBlock == block1){
-                        context.getPlayer().displayClientMessage(Component.literal("Cannot facade block with itself").withStyle(ChatFormatting.RED),true);
+                        context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED),true);
                     } else {
-                        context.getPlayer().displayClientMessage(Component.literal("This block cannot be used as a cover (disabled by config)").withStyle(ChatFormatting.RED),true);
+                        context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.block_disabled").withStyle(ChatFormatting.RED),true);
                     }
                     return InteractionResult.FAIL;
                 }
@@ -77,9 +77,9 @@ public class FacadeItem extends Item {
         Optional<Block> block = itemStack.get(CFDataComponents.FACADE_BLOCK);
         if (block.isPresent()) {
             BlockItem blockItem = (BlockItem) block.get().asItem();
-            return Component.literal("Facade - " + blockItem.getDescription().getString());
+            return Component.translatable("cable_facades.facade.name_prefix").append(blockItem.getDescription());
         }
-        return Component.literal("Facade - Empty");
+        return Component.translatable("cable_facades.facade.empty");
     }
 
     public ItemStack createFacade(Block block) {

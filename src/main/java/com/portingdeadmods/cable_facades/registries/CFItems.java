@@ -37,10 +37,10 @@ public class CFItems {
             if (level.isClientSide && hitResult.getType().equals(HitResult.Type.MISS) && !player.isShiftKeyDown()) {
                 GameClientEvents.facadeTransparency = !GameClientEvents.facadeTransparency;
                 ChatFormatting messageColor = GameClientEvents.facadeTransparency ? ChatFormatting.GREEN : ChatFormatting.RED;
-                Component message = Component.literal("Facade transparency is now ").append(Component.literal(GameClientEvents.facadeTransparency ? "Enabled" : "Disabled").withStyle(messageColor));
+                Component message = Component.translatable("cable_facades.message.transparency_enabled").append(Component.translatable(GameClientEvents.facadeTransparency ? "cable_facades.tooltip.enabled" : "cable_facades.tooltip.disabled").withStyle(messageColor));
                 if(CFMain.isIrisLoaded()){
                     if(IrisUtil.areShadersEnabled()){
-                        player.displayClientMessage(Component.literal("⚠ ").withStyle(ChatFormatting.YELLOW).append(Component.literal("Shaders Detected: ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD)).append(Component.literal("Facade transparency may not work properly").withStyle(ChatFormatting.GRAY)), true);
+                        player.displayClientMessage(Component.translatable("cable_facades.message.shaders_warning").withStyle(ChatFormatting.YELLOW).append(Component.translatable("cable_facades.message.shaders_detected").withStyle(ChatFormatting.RED, ChatFormatting.BOLD)).append(Component.translatable("cable_facades.message.transparency_may_not_work").withStyle(ChatFormatting.GRAY)), true);
                     } else {
                         player.displayClientMessage(message, true);
                     }
@@ -55,10 +55,10 @@ public class CFItems {
 
         @Override
         public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-            tooltipComponents.add(Component.literal("Right click to toggle/disable facade transparency").withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(Component.translatable("cable_facades.tooltip.toggle_transparency").withStyle(ChatFormatting.GRAY));
 
             ChatFormatting stateColor = GameClientEvents.facadeTransparency ? ChatFormatting.GREEN : ChatFormatting.RED;
-            tooltipComponents.add(Component.literal("Current state: ").append(Component.literal(GameClientEvents.facadeTransparency ? "Enabled" : "Disabled").withStyle(stateColor)));
+            tooltipComponents.add(Component.translatable("cable_facades.tooltip.current_state").append(Component.translatable(GameClientEvents.facadeTransparency ? "cable_facades.tooltip.enabled" : "cable_facades.tooltip.disabled").withStyle(stateColor)));
 
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         }

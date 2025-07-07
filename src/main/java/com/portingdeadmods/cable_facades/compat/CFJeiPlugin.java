@@ -35,10 +35,10 @@ public class CFJeiPlugin implements IModPlugin {
     public void registerRecipes(IRecipeRegistration registration) {
         ItemStack itemStack = new ItemStack(CFItems.FACADE.get());
         itemStack.set(CFDataComponents.FACADE_BLOCK, Optional.of(Blocks.COBBLESTONE));
-        itemStack.set(DataComponents.CUSTOM_NAME, Component.literal("Facade - Any Block").withStyle(ChatFormatting.RESET));
+        itemStack.set(DataComponents.CUSTOM_NAME, Component.translatable("cable_facades.jei.facade_empty").withStyle(ChatFormatting.RESET));
 
         ItemStack ingredientStack = new ItemStack(Blocks.COBBLESTONE);
-        ingredientStack.set(DataComponents.CUSTOM_NAME, Component.literal("Any Block").withStyle(ChatFormatting.RESET));
+        ingredientStack.set(DataComponents.CUSTOM_NAME, Component.translatable("cable_facades.jei.empty").withStyle(ChatFormatting.RESET));
 
         registration.addRecipes(RecipeTypes.CRAFTING, Collections.singletonList(new RecipeHolder<>(
                 ResourceLocation.fromNamespaceAndPath(CFMain.MODID, "facade_crafting"),
