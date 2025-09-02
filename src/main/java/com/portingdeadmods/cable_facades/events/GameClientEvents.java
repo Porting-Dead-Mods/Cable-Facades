@@ -22,7 +22,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -118,14 +120,17 @@ public final class GameClientEvents {
             if (pos == null || facadeBlock == null) {
                 continue;
             }
+
             BlockState facadeState = facadeBlock.defaultBlockState();
 
-            // Get the model and model data for the facade
+            if (facadeBlock instanceof SlabBlock) {
+                facadeState = facadeState.setValue(SlabBlock.TYPE, SlabType.TOP);
+            }
+
             BlockRenderDispatcher blockRenderer = mc.getBlockRenderer();
             BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
             ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
 
-            // Offset the pose stack for the facade position
             poseStack.pushPose();
             poseStack.translate(pos.getX(), pos.getY(), pos.getZ());
 
@@ -137,10 +142,8 @@ public final class GameClientEvents {
             poseStack.popPose();
         }
 
-        // Undo camera translation
         poseStack.popPose();
 
-        // Draw the buffer
         bufferSource.endBatch(FACADE_RENDER_TYPE);
     }
 

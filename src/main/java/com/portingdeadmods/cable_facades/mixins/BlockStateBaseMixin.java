@@ -10,8 +10,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.spongepowered.asm.mixin.Mixin;
@@ -70,7 +72,14 @@ public abstract class BlockStateBaseMixin {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
                 Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
                 if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getCollisionShape(blockGetter, BlockPos.ZERO, collisionContext));
+                    BlockState camoState = camoBlock.defaultBlockState();
+
+                    // Force slabs to use top slab collision shape
+                    if (camoBlock instanceof SlabBlock) {
+                        camoState = camoState.setValue(SlabBlock.TYPE, SlabType.TOP);
+                    }
+
+                    cir.setReturnValue(camoState.getCollisionShape(blockGetter, BlockPos.ZERO, collisionContext));
                 }
             }
         } finally {
@@ -90,7 +99,14 @@ public abstract class BlockStateBaseMixin {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
                 Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
                 if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getShape(blockGetter, BlockPos.ZERO, collisionContext));
+                    BlockState camoState = camoBlock.defaultBlockState();
+
+                    // Force slabs to use top slab selection shape
+                    if (camoBlock instanceof SlabBlock) {
+                        camoState = camoState.setValue(SlabBlock.TYPE, SlabType.TOP);
+                    }
+
+                    cir.setReturnValue(camoState.getShape(blockGetter, BlockPos.ZERO, collisionContext));
                 }
             }
         } finally {
@@ -110,7 +126,14 @@ public abstract class BlockStateBaseMixin {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
                 Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
                 if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getOcclusionShape(blockGetter, BlockPos.ZERO));
+                    BlockState camoState = camoBlock.defaultBlockState();
+
+                    // Force slabs to use top slab occlusion shape
+                    if (camoBlock instanceof SlabBlock) {
+                        camoState = camoState.setValue(SlabBlock.TYPE, SlabType.TOP);
+                    }
+
+                    cir.setReturnValue(camoState.getOcclusionShape(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
@@ -130,7 +153,14 @@ public abstract class BlockStateBaseMixin {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
                 Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
                 if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().getLightBlock(blockGetter, BlockPos.ZERO));
+                    BlockState camoState = camoBlock.defaultBlockState();
+
+                    // Force slabs to use top slab light blocking
+                    if (camoBlock instanceof SlabBlock) {
+                        camoState = camoState.setValue(SlabBlock.TYPE, SlabType.TOP);
+                    }
+
+                    cir.setReturnValue(camoState.getLightBlock(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
@@ -150,7 +180,14 @@ public abstract class BlockStateBaseMixin {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
                 Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
                 if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().propagatesSkylightDown(blockGetter, BlockPos.ZERO));
+                    BlockState camoState = camoBlock.defaultBlockState();
+
+                    // Force slabs to use top slab skylight propagation
+                    if (camoBlock instanceof SlabBlock) {
+                        camoState = camoState.setValue(SlabBlock.TYPE, SlabType.TOP);
+                    }
+
+                    cir.setReturnValue(camoState.propagatesSkylightDown(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {
@@ -170,7 +207,14 @@ public abstract class BlockStateBaseMixin {
             if (FacadeUtils.hasFacade(blockGetter, blockPos)) {
                 Block camoBlock = FacadeUtils.getFacade(blockGetter, blockPos);
                 if (camoBlock != null) {
-                    cir.setReturnValue(camoBlock.defaultBlockState().isSolidRender(blockGetter, BlockPos.ZERO));
+                    BlockState camoState = camoBlock.defaultBlockState();
+
+                    // Force slabs to use top slab solid render
+                    if (camoBlock instanceof SlabBlock) {
+                        camoState = camoState.setValue(SlabBlock.TYPE, SlabType.TOP);
+                    }
+
+                    cir.setReturnValue(camoState.isSolidRender(blockGetter, BlockPos.ZERO));
                 }
             }
         } finally {

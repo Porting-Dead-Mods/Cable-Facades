@@ -89,7 +89,7 @@ public class CableFacadeSavedData extends SavedData {
     }
 
     @Override
-    public @NotNull CompoundTag save(CompoundTag compoundTag) {
+    public CompoundTag save(CompoundTag compoundTag) {
         DataResult<Tag> tagDataResult = LevelFacadeMap.CODEC.encodeStart(NbtOps.INSTANCE, this.levelFacadeMap);
         tagDataResult
                 .resultOrPartial(err -> CFMain.LOGGER.error("Encoding error: {}", err))

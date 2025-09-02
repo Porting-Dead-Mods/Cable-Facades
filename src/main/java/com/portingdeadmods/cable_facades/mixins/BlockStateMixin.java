@@ -7,8 +7,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraftforge.common.extensions.IForgeBlockState;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -36,6 +38,11 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
                 Block camoBlock = ClientFacadeManager.FACADED_BLOCKS.get(pos);
                 if (camoBlock != null) {
                     BlockState camoState = camoBlock.defaultBlockState();
+
+                    if (camoBlock instanceof SlabBlock) {
+                        camoState = camoState.setValue(SlabBlock.TYPE, SlabType.TOP);
+                    }
+
                     return camoState.getBlock().getAppearance(camoState, blockGetter, pos, side, queryState, queryPos);
                 }
             }
