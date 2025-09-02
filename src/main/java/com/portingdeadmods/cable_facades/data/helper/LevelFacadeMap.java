@@ -2,7 +2,9 @@ package com.portingdeadmods.cable_facades.data.helper;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.AbstractMap;
 import java.util.HashMap;
@@ -43,5 +45,13 @@ public class LevelFacadeMap {
         return getChunkFacadeMaps().entrySet().stream()
                 .map(entry -> new AbstractMap.SimpleEntry<>(String.valueOf(entry.getKey().toLong()), entry.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
+    }
+
+    public Map<BlockPos, BlockState> getAllFacades() {
+        Map<BlockPos, BlockState> allFacades = new HashMap<>();
+        for (ChunkFacadeMap chunkMap : chunkFacadeMaps.values()) {
+            allFacades.putAll(chunkMap.getChunkMap());
+        }
+        return allFacades;
     }
 }

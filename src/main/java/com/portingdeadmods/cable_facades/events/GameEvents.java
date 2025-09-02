@@ -6,6 +6,7 @@ import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
 import com.portingdeadmods.cable_facades.networking.CFMessages;
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadedBlocksPacket;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadedBlocksPacket;
+import com.portingdeadmods.cable_facades.networking.s2c.SyncFacadedBlocks;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
@@ -28,6 +29,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkWatchEvent;
@@ -192,5 +194,17 @@ public final class GameEvents {
             case TOP -> SlabType.DOUBLE;
             case DOUBLE -> SlabType.BOTTOM;
         };
+    }
+
+    @SubscribeEvent
+    public static void onPlayerChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            ServerLevel newLevel = serverPlayer.serverLevel();
+            CableFacadeSavedData savedData = CableFacadeSavedData.get(newLevel);
+            
+            if (!savedData.isEmpty()) {
+                CFMessages.sendToPlayer(new SyncFacadedBlocks(savedData.getLevelFacadeMap().getAllFacades()), serverPlayer);
+            }
+        }
     }
 }
