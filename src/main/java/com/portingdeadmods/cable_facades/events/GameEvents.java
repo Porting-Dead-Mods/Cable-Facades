@@ -207,4 +207,16 @@ public final class GameEvents {
             }
         }
     }
+
+    @SubscribeEvent
+    public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            ServerLevel level = serverPlayer.serverLevel();
+            CableFacadeSavedData savedData = CableFacadeSavedData.get(level);
+
+            if (!savedData.isEmpty()) {
+                CFMessages.sendToPlayer(new SyncFacadedBlocks(savedData.getLevelFacadeMap().getAllFacades()), serverPlayer);
+            }
+        }
+    }
 }
