@@ -35,6 +35,14 @@ public class LevelFacadeMap {
 
     public static LevelFacadeMap levelFacadeMapFromString(Map<String, ChunkFacadeMap> chunkFacade) {
         return new LevelFacadeMap(chunkFacade.entrySet().stream()
+                .filter(entry -> {
+                    try {
+                        Long.parseLong(entry.getKey());
+                        return true;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                })
                 .map(entry -> new AbstractMap.SimpleEntry<>(new ChunkPos(Long.parseLong(entry.getKey())), entry.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue)));
     }

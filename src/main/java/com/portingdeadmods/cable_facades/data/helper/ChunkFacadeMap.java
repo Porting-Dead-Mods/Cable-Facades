@@ -6,13 +6,12 @@ import com.portingdeadmods.cable_facades.utils.CodecUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.NotImplementedException;
 
 public class ChunkFacadeMap {
     public static final Codec<ChunkFacadeMap> CODEC = RecordCodecBuilder.create(builder -> builder.group(
@@ -44,6 +43,14 @@ public class ChunkFacadeMap {
 
     private static ChunkFacadeMap chunkMapFromString(Map<String, BlockState> chunkFacade) {
         return new ChunkFacadeMap(chunkFacade.entrySet().stream()
+                .filter(entry -> {
+                    try {
+                        Long.parseLong(entry.getKey());
+                        return true;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                })
                 .map(entry -> new AbstractMap.SimpleEntry<>(BlockPos.of(Long.parseLong(entry.getKey())), entry.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue)));
     }
@@ -51,6 +58,14 @@ public class ChunkFacadeMap {
     //This method is used only if migration is required. Converts Blocks to BlockStates
     private static ChunkFacadeMap chunkMapFromOldString(Map<String, Block> chunkFacade) {
         return new ChunkFacadeMap(chunkFacade.entrySet().stream()
+                .filter(entry -> {
+                    try {
+                        Long.parseLong(entry.getKey());
+                        return true;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                })
                 .map(entry -> new AbstractMap.SimpleEntry<>(BlockPos.of(Long.parseLong(entry.getKey())), entry.getValue().defaultBlockState()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue)));
     }
