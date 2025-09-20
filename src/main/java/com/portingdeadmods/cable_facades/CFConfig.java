@@ -30,6 +30,9 @@ public class CFConfig {
     private static final ModConfigSpec.IntValue LAST_CONFIG_VERSION = BUILDER.comment("Previous config version. Do not modify manually.")
             .defineInRange("lastConfigVersion", 0, 0, Integer.MAX_VALUE);
 
+    private static final ModConfigSpec.BooleanValue AUTO_UPDATE_CONFIG = BUILDER.comment("Whether new blocks for the config should be fetched from the network.")
+            .define("auto_update_config", true);
+
     private static final ModConfigSpec.ConfigValue<List<? extends String>> BLOCK_STRINGS = BUILDER.comment("List of blocks that are allowed to be covered. Supports '*' as a wildcard.")
             .defineListAllowEmpty("blocks", List.of("pipez:*_pipe", "mekanism:*_cable", "mekanism:*_conductor", "mekanism:*_pipe", "mekanism:*_tube", "mekanism:*_transporter", "mekanism_extras:*_cable", "mekanism_extras:*_conductor", "mekanism_extras:*_pipe", "mekanism_extras:*_tube", "mekanism_extras:*_transporter", "thermal:*_duct", "thermal:*_duct_windowed", "computercraft:cable", "powah:energy_cable_*", "create:fluid_pipe", "pneumaticcraft:*_tube", "ppfluids:fluid_pipe", "prettypipes:pipe", "laserio:laser_*", "cyclic:*_pipe", "embers:*_pipe", "embers:item_extractor", "elementalcraft:elementpipe*", "gtceu:*wire", "gtceu:*pipe", "oritech:*_pipe", "oritech:superconductor", "enderio:conduit", "ae2:cable_bus"), () -> "", CFConfig::validateBlockName);
 
@@ -72,6 +75,7 @@ public class CFConfig {
     public static boolean consumeFacade;
     public static int configVersion;
     private static int lastConfigVersion;
+    private static boolean autoUpdateConfig;
 
     private static boolean validateBlockName(final Object obj) {
         if (obj instanceof String blockName) {
@@ -128,6 +132,7 @@ public class CFConfig {
         consumeFacade = CONSUME_FACADE.get();
         configVersion = CONFIG_VERSION.get();
         lastConfigVersion = LAST_CONFIG_VERSION.get();
+        autoUpdateConfig = AUTO_UPDATE_CONFIG.get();
 
         allowedBlocks.clear();
         disallowedBlocks.clear();
@@ -142,7 +147,7 @@ public class CFConfig {
         List<String> addedBlocks = new ArrayList<>(ADDED_BLOCK_STRINGS.get());
         List<String> lastVersionBlocks = new ArrayList<>(LAST_VERSION_BLOCKS.get());
 
-        if (configVersion > lastConfigVersion) {
+        if (autoUpdateConfig && configVersion > lastConfigVersion) {
             CFMain.LOGGER.info("Config version changed from {} to {}. Merging changes...", lastConfigVersion, configVersion);
 
             if (lastConfigVersion > 0) {
@@ -162,23 +167,37 @@ public class CFConfig {
             CFMain.LOGGER.info("Merged {} new blocks into config", addedBlocks.size());
         }
 
-        List<String> downloadedBlockStrings = new ArrayList<>();
-        List<String> downloadedNotAllowedBlockStrings = new ArrayList<>();
-        List<String> downloadedZFightingStrings = new ArrayList<>();
-        List<String> downloadedHiddenStrings = new ArrayList<>();
-
-        try {
-            downloadedBlockStrings = downloadListFromGithub("whitelist");
-            downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
-            downloadedZFightingStrings = downloadListFromGithub("zfighting");
-            downloadedHiddenStrings = downloadListFromGithub("hidden_facaded");
-        } catch (Exception e) {
-            CFMain.LOGGER.warn("Error downloading from GitHub: {}", e.getMessage());
-        }
 
         List<String> combinedBlockStrings = new ArrayList<>(currentBlocks);
-        combinedBlockStrings.addAll(downloadedBlockStrings);
+        List<String> combinedNotAllowedBlockStrings = new ArrayList<>(NOT_ALLOWED_BLOCK_STRINGS.get());
+        List<String> combinedZFightingStrings = new ArrayList<>(Z_FIGHTING.get());
+        List<String> combinedHiddenStrings = new ArrayList<>(HIDDEN_WHEN_FACADED.get());
+
+        if(autoUpdateConfig){
+            List<String> downloadedBlockStrings = new ArrayList<>();
+            List<String> downloadedNotAllowedBlockStrings = new ArrayList<>();
+            List<String> downloadedZFightingStrings = new ArrayList<>();
+            List<String> downloadedHiddenStrings = new ArrayList<>();
+
+            try {
+                downloadedBlockStrings = downloadListFromGithub("whitelist");
+                downloadedNotAllowedBlockStrings = downloadListFromGithub("blacklist");
+                downloadedZFightingStrings = downloadListFromGithub("zfighting");
+                downloadedHiddenStrings = downloadListFromGithub("hidden_facaded");
+            } catch (Exception e) {
+                CFMain.LOGGER.warn("Error downloading from GitHub: {}", e.getMessage());
+            }
+
+            combinedBlockStrings.addAll(downloadedBlockStrings);
+            combinedNotAllowedBlockStrings.addAll(downloadedNotAllowedBlockStrings);
+            combinedZFightingStrings.addAll(downloadedZFightingStrings);
+            combinedHiddenStrings.addAll(downloadedHiddenStrings);
+        }
+
         combinedBlockStrings.addAll(CableFacadesAPI.getAdditionalAllowedBlocks());
+        combinedNotAllowedBlockStrings.addAll(CableFacadesAPI.getAdditionalDisallowedBlocks());
+        combinedZFightingStrings.addAll(CableFacadesAPI.getAdditionalZFightingBlocks());
+        combinedHiddenStrings.addAll(CableFacadesAPI.getAdditionalHiddenBlocks());
 
         for (String blockName : combinedBlockStrings) {
             if (blockName.contains("*")) {
@@ -192,10 +211,6 @@ public class CFConfig {
             }
         }
 
-        List<String> combinedNotAllowedBlockStrings = new ArrayList<>(NOT_ALLOWED_BLOCK_STRINGS.get());
-        combinedNotAllowedBlockStrings.addAll(downloadedNotAllowedBlockStrings);
-        combinedNotAllowedBlockStrings.addAll(CableFacadesAPI.getAdditionalDisallowedBlocks());
-
         for (String blockName : combinedNotAllowedBlockStrings) {
             if (blockName.contains("*")) {
                 String regex = blockName.replace("*", ".*");
@@ -208,10 +223,6 @@ public class CFConfig {
             }
         }
 
-        List<String> combinedZFightingStrings = new ArrayList<>(Z_FIGHTING.get());
-        combinedZFightingStrings.addAll(downloadedZFightingStrings);
-        combinedZFightingStrings.addAll(CableFacadesAPI.getAdditionalZFightingBlocks());
-
         for (String blockName : combinedZFightingStrings) {
             if (blockName.contains("*")) {
                 String regex = blockName.replace("*", ".*");
@@ -223,10 +234,6 @@ public class CFConfig {
                 }
             }
         }
-
-        List<String> combinedHiddenStrings = new ArrayList<>(HIDDEN_WHEN_FACADED.get());
-        combinedHiddenStrings.addAll(downloadedHiddenStrings);
-        combinedHiddenStrings.addAll(CableFacadesAPI.getAdditionalHiddenBlocks());
 
         for (String blockName : combinedHiddenStrings) {
             if (blockName.contains("*")) {
