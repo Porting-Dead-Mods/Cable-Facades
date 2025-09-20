@@ -63,10 +63,18 @@ public final class ServerInGameEvents {
         BlockPos pos = event.getPos();
         InteractionHand hand = event.getHand();
 
+        if(player.isShiftKeyDown() && hand == InteractionHand.OFF_HAND && player.getItemInHand(InteractionHand.MAIN_HAND).is(CFItemTags.WRENCHES)){
+            // If we're holding a wrench in our main hand, don't try to do anything with the offhand.
+            event.setCanceled(true);
+        }
+
         BlockState facadeState = FacadeUtils.getFacade(level, pos);
-        if (player.isShiftKeyDown()
-                && player.getItemInHand(hand).is(CFItemTags.WRENCHES)
-                && facadeState != null) {
+
+        // This event isn't relevant to us if there's no facade or we're not holding a wrench.
+        if(facadeState == null || !player.getItemInHand(hand).is(CFItemTags.WRENCHES)) return;
+
+        if (player.isShiftKeyDown()) {
+            // Remove facade!
             if (!level.isClientSide()) {
                 FacadeUtils.removeFacade(level, pos);
 
@@ -77,16 +85,8 @@ public final class ServerInGameEvents {
                     level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
                             SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 }
-
             }
-            player.swing(hand);
-
-            updateBlocks(level, pos);
-            event.setCanceled(true);
-
-        }
-        else if (player.getItemInHand(hand).is(CFItemTags.WRENCHES)
-            && facadeState != null) {
+        } else {
             //Rotation!
             if (!level.isClientSide()) {
                 
@@ -133,17 +133,13 @@ public final class ServerInGameEvents {
                     //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
                     FacadeUtils.removeFacade(level, pos);
                     FacadeUtils.addFacade(level, pos, newFacadeState);
-
                 }
-
             }
-            player.swing(hand);
-
-            updateBlocks(level, pos);
-            event.setCanceled(true);
         }
 
-
+        player.swing(hand);
+        updateBlocks(level, pos);
+        event.setCanceled(true);
     }
 
     public static void updateBlocks(Level level, BlockPos pos) {
