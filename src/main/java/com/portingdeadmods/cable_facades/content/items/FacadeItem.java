@@ -8,6 +8,7 @@ import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -34,10 +35,27 @@ public class FacadeItem extends Item {
         if (!level.isClientSide()) {
             if (!FacadeUtils.hasFacade(level, pos)) {
                 Optional<Block> block = itemStack.get(CFDataComponents.FACADE_BLOCK);
-                if (block.isEmpty()) {
-                    return InteractionResult.FAIL;
+
+                ItemStack offhandItemStack = null;
+                Block block1;
+                if(block.isEmpty()){
+                    // If the player is holding an empty facade in their mainhand
+                    // and a block in their offhand, try to use that block.
+                    if (context.getHand() == InteractionHand.MAIN_HAND) {
+                        ItemStack offhand = context.getPlayer().getItemInHand(InteractionHand.OFF_HAND);
+                        Item item = offhand.getItem();
+                        if (item instanceof BlockItem blockItem) {
+                            offhandItemStack = offhand;
+                            block1 = blockItem.getBlock();
+                        } else {
+                            return InteractionResult.FAIL;
+                        }
+                    } else {
+                        return InteractionResult.FAIL;
+                    }
+                } else {
+                    block1 = block.get();
                 }
-                Block block1 = block.get();
 
                 Block targetBlock = context.getLevel().getBlockState(pos).getBlock();
 
@@ -50,10 +68,10 @@ public class FacadeItem extends Item {
 
                 // Prevent block from being facaded with itself or if it's disallowed
                 if (targetBlock == block1 || CFConfig.isBlockDisallowed(block1)) {
-                    if(targetBlock == block1){
-                        context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED),true);
+                    if (targetBlock == block1) {
+                        context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED), true);
                     } else {
-                        context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.block_disabled").withStyle(ChatFormatting.RED),true);
+                        context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.block_disabled").withStyle(ChatFormatting.RED), true);
                     }
                     return InteractionResult.FAIL;
                 }
@@ -62,6 +80,9 @@ public class FacadeItem extends Item {
 
                 if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
                     itemStack.shrink(1);
+                    if(offhandItemStack != null){
+                        offhandItemStack.shrink(1);
+                    }
                 }
             }
         }
