@@ -1,0 +1,23 @@
+{
+  "item.cable_facades.facade_wrench": "ケーブル外装レンチ",
+  
+  "cable_facades.tooltip.toggle_transparency": "右クリックしてケーブル外装の透明度を切り替え/無効にする",
+  "cable_facades.tooltip.current_state": "現在の状態: ",
+  "cable_facades.tooltip.enabled": "有効",
+  "cable_facades.tooltip.disabled": "無効",
+  
+  "cable_facades.message.transparency_enabled": "現在のケーブル外装の透明度:",
+  "cable_facades.message.shaders_warning": "⚠ ",
+  "cable_facades.message.shaders_detected": "検出されたシェーダー: ",
+  "cable_facades.message.transparency_may_not_work": "ケーブル外装の透明性が正しく機能しない可能性があります",
+  
+  "cable_facades.facade.name_prefix": "ケーブル外装 - ",
+  "cable_facades.facade.empty": "ケーブル外装 - 空",
+  "cable_facades.creative_tab": "Cable Facades",
+  
+  "cable_facades.error.cannot_facade_itself": "ブロック自体をケーブル外装化することはできません",
+  "cable_facades.error.block_disabled": "このブロックはカバーとして使用できません(Configにより無効になっています)",
+  
+  "cable_facades.jei.facade_any_block": "ケーブル外装 - 任意のブロック",
+  "cable_facades.jei.any_block": "任意のブロック"
+}
