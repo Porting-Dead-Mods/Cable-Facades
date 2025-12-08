@@ -36,11 +36,9 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
             return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
         cable_facades$recursionGuard.set(true);
         try {
-            if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
-                BlockState facadeState = ClientFacadeManager.FACADED_BLOCKS.get(pos);
-                if (facadeState != null) {
-                    return facadeState.getBlock().getAppearance(facadeState, blockGetter, pos, side, queryState, queryPos);
-                }
+            BlockState facadeState = ClientFacadeManager.FACADED_BLOCKS.get(pos);
+            if (facadeState != null) {
+                return facadeState.getBlock().getAppearance(facadeState, blockGetter, pos, side, queryState, queryPos);
             }
             return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
         } finally {
@@ -53,11 +51,9 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         if (cable_facades$recursionGuard.get()) return getBlock().getLightEmission(this.asState(), blockGetter, pos);
         cable_facades$recursionGuard.set(true);
         try {
-            if (FacadeUtils.hasFacade(blockGetter, pos)) {
-                BlockState facadeState = FacadeUtils.getFacade(blockGetter, pos);
-                if (facadeState != null) {
-                    return facadeState.getLightEmission();
-                }
+            BlockState facadeState = FacadeUtils.getFacade(blockGetter, pos);
+            if (facadeState != null) {
+                return facadeState.getLightEmission();
             }
             return getBlock().getLightEmission(this.asState(), blockGetter, pos);
         } finally {
@@ -70,11 +66,9 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         if (cable_facades$recursionGuard.get()) return super.isFaceSturdy(level, pos, direction, supportType);
         cable_facades$recursionGuard.set(true);
         try {
-            if (FacadeUtils.hasFacade(level, pos)) {
-                BlockState facadeState = FacadeUtils.getFacade(level, pos);
-                if (facadeState != null) {
-                    return facadeState.isFaceSturdy(level, BlockPos.ZERO, direction, supportType);
-                }
+            BlockState facadeState = FacadeUtils.getFacade(level, pos);
+            if (facadeState != null) {
+                return facadeState.isFaceSturdy(level, BlockPos.ZERO, direction, supportType);
             }
             return super.isFaceSturdy(level, pos, direction, supportType);
         } finally {
@@ -87,11 +81,9 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         if (cable_facades$recursionGuard.get()) return super.getVisualShape(level, pos, context);
         cable_facades$recursionGuard.set(true);
         try {
-            if (FacadeUtils.hasFacade(level, pos)) {
-                BlockState facadeState = FacadeUtils.getFacade(level, pos);
-                if (facadeState != null) {
-                    return facadeState.getVisualShape(level, BlockPos.ZERO, context);
-                }
+            BlockState facadeState = FacadeUtils.getFacade(level, pos);
+            if (facadeState != null) {
+                return facadeState.getVisualShape(level, BlockPos.ZERO, context);
             }
             return super.getVisualShape(level, pos, context);
         } finally {
@@ -104,7 +96,8 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         if (cable_facades$recursionGuard.get()) return super.getLightBlock(level, pos);
         cable_facades$recursionGuard.set(true);
         try {
-            if (FacadeUtils.hasFacade(level, pos) && this.asState().getBlock().asItem().getDescriptionId().contains("create")) {
+            BlockState facadeState = FacadeUtils.getFacade(level, pos);
+            if (facadeState != null && this.asState().getBlock().asItem().getDescriptionId().contains("create")) {
                 return 0;
             }
             return super.getLightBlock(level, pos);

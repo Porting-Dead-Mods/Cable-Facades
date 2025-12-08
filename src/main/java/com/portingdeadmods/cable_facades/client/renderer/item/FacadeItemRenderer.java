@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -24,11 +25,10 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.pushPose();
         {
             Optional<Block> optionalBlock = stack.get(CFDataComponents.FACADE_BLOCK);
-            if (optionalBlock.isPresent()) {
-                Block block = optionalBlock.get();
-                BlockState state = block.defaultBlockState();
+            if (optionalBlock.isPresent() && optionalBlock.get().asItem() instanceof BlockItem blockItem) {
+                BlockState state = optionalBlock.get().defaultBlockState();
 
-                ItemStack defaultInstance = state.getBlock().asItem().getDefaultInstance();
+                ItemStack defaultInstance = blockItem.getDefaultInstance();
 
                 poseStack.pushPose();
                 {

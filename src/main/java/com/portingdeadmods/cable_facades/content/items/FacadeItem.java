@@ -57,6 +57,11 @@ public class FacadeItem extends Item {
                     block1 = block.get();
                 }
 
+                // Validate that the facade block is valid (not air or non-BlockItem)
+                if (!(block1.asItem() instanceof BlockItem)) {
+                    return InteractionResult.FAIL;
+                }
+
                 Block targetBlock = context.getLevel().getBlockState(pos).getBlock();
 
                 boolean noFacadeTag = context.getLevel().getBlockState(pos).getTags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE));
@@ -96,8 +101,7 @@ public class FacadeItem extends Item {
     @Override
     public @NotNull Component getName(ItemStack itemStack) {
         Optional<Block> block = itemStack.get(CFDataComponents.FACADE_BLOCK);
-        if (block.isPresent()) {
-            BlockItem blockItem = (BlockItem) block.get().asItem();
+        if (block.isPresent() && block.get().asItem() instanceof BlockItem blockItem) {
             return Component.translatable("cable_facades.facade.name_prefix").append(blockItem.getDescription());
         }
         return Component.translatable("cable_facades.facade.empty");
@@ -105,7 +109,10 @@ public class FacadeItem extends Item {
 
     public ItemStack createFacade(Block block) {
         ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
-        facadeStack.set(CFDataComponents.FACADE_BLOCK, Optional.of(block));
+        // Only set the facade block if it's a valid BlockItem (not air or other non-block items)
+        if (block != null && block.asItem() instanceof BlockItem) {
+            facadeStack.set(CFDataComponents.FACADE_BLOCK, Optional.of(block));
+        }
         return facadeStack;
     }
 

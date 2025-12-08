@@ -83,9 +83,9 @@ public class FacadeCraftingRecipe extends CustomRecipe {
             return stack;
         } else if (!facadeStack.isEmpty()) {
             Optional<Block> optionalBlock = facadeStack.get(CFDataComponents.FACADE_BLOCK);
-            if (optionalBlock.isPresent()) {
+            if (optionalBlock.isPresent() && optionalBlock.get().asItem() instanceof BlockItem blockItem) {
                 originalFacadeStack.set(CFDataComponents.HAS_FACADE_REMAINDER, true);
-                return optionalBlock.get().asItem().getDefaultInstance();
+                return blockItem.getDefaultInstance();
             }
         }
 

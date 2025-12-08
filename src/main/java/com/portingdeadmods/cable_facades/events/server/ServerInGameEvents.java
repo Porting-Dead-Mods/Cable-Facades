@@ -43,8 +43,8 @@ public final class ServerInGameEvents {
         Player player = event.getPlayer();
 
         if (!level.isClientSide()) {
-            if (FacadeUtils.hasFacade(level, pos)) {
-                BlockState facade = FacadeUtils.getFacade(level, pos);
+            BlockState facade = FacadeUtils.getFacade(level, pos);
+            if (facade != null) {
                 FacadeUtils.removeFacade(level, pos);
                 if (!player.isCreative() && CFConfig.consumeFacade) {
                     ItemStack facadeStack = CFItems.FACADE.get().createFacade(facade.getBlock());
