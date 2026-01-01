@@ -5,13 +5,13 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "cable_facades.refmap.json",
   "mixins": [
-    "BlockMixin",
     "BlockStateBaseMixin",
     "BlockStateMixin",
     "StructureTemplateMixin"
   ],
   "client": [
     "BlockHidingMixin",
+    "BlockMixin",
     "LevelRendererAccess"
   ],
   "injectors": {
