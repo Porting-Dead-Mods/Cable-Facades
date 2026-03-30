@@ -20,4 +20,5 @@
   
   "cable_facades.jei.facade_any_block": "ケーブル外装 - 任意のブロック",
   "cable_facades.jei.any_block": "任意のブロック"
+  ,"cable_facades.message.directional_facade_update": "Cable Facades 2.0 adds directional facades. This message only shows once, check them out."
 }
