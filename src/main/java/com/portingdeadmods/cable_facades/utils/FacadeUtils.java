@@ -6,10 +6,8 @@ import com.portingdeadmods.cable_facades.networking.s2c.AddDirectionalFacadePayl
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadePayload;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveDirectionalFacadePayload;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePayload;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
@@ -93,20 +91,8 @@ public class FacadeUtils {
             level.getLightEngine().checkBlock(pos);
             level.getChunkAt(pos).setUnsaved(true);
         } else {
-            markSectionDirty(pos);
+            level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
             level.getLightEngine().checkBlock(pos);
         }
-    }
-
-    public static void updateClientBlock(BlockPos pos) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != null) {
-            updateBlocks(minecraft.level, pos);
-        }
-    }
-
-    public static void markSectionDirty(BlockPos pos) {
-        SectionPos section = SectionPos.of(pos);
-        Minecraft.getInstance().levelRenderer.setSectionDirty(section.x(), section.y(), section.z());
     }
 }

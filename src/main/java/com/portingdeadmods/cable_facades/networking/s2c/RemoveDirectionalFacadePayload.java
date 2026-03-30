@@ -1,8 +1,8 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.client.FacadeClientUtils;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
-import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -26,7 +26,7 @@ public record RemoveDirectionalFacadePayload(BlockPos pos, Direction face) imple
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             ClientFacadeManager.removeDirectionalFacade(pos, face);
-            FacadeUtils.updateClientBlock(pos);
+            FacadeClientUtils.updateClientBlock(pos);
         });
     }
 

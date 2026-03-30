@@ -1,9 +1,9 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.client.FacadeClientUtils;
 import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
-import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -24,7 +24,7 @@ public record AddFacadePayload(BlockPos facadePos, FacadeData facadeData) implem
     public boolean handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             ClientFacadeManager.put(facadePos, facadeData);
-            FacadeUtils.updateClientBlock(facadePos);
+            FacadeClientUtils.updateClientBlock(facadePos);
         });
         return true;
     }

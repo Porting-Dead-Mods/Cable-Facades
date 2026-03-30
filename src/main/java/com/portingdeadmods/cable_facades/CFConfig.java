@@ -90,10 +90,39 @@ public final class CFConfig {
         if (!(obj instanceof String blockName)) {
             return false;
         }
-        if (blockName.contains("*")) {
-            return true;
+        if (blockName.isBlank()) {
+            return false;
         }
-        return BuiltInRegistries.BLOCK.containsKey(ResourceLocation.parse(blockName));
+
+        if (blockName.contains("*")) {
+            if (blockName.equals("*")) {
+                return true;
+            }
+
+            String sanitized = blockName.replace('*', 'a');
+            if (sanitized.contains(":")) {
+                try {
+                    ResourceLocation.parse(sanitized);
+                    return true;
+                } catch (Exception ignored) {
+                    return false;
+                }
+            }
+
+            return !sanitized.isBlank();
+        }
+
+        String[] parts = blockName.split(":", 2);
+        if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+            return false;
+        }
+
+        try {
+            ResourceLocation.parse(blockName.replace('*', 'a'));
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     public static List<String> downloadListFromGithub(String listType) {
@@ -101,7 +130,6 @@ public final class CFConfig {
             case "whitelist" -> "whitelist.txt";
             case "blacklist" -> "blacklist.txt";
             case "zfighting" -> "zfighting.txt";
-            case "hidden_facaded" -> "hidden_facaded.txt";
             default -> throw new IllegalArgumentException("Invalid list type: " + listType);
         };
 
@@ -170,7 +198,7 @@ public final class CFConfig {
         );
         HIDDEN_RULES.reload(
                 copyStrings(HIDDEN_WHEN_FACADED.get()),
-                autoUpdateConfig ? downloadListFromGithub("hidden_facaded") : List.of(),
+                List.of(),
                 CableFacadesAPI::getAdditionalHiddenBlocks
         );
         SCALE_UP_RULES.reload(

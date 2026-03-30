@@ -1,9 +1,9 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.client.FacadeClientUtils;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.CodecUtils;
-import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -30,7 +30,7 @@ public record AddDirectionalFacadePayload(BlockPos pos, Direction face, BlockSta
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             ClientFacadeManager.addDirectionalFacade(pos, face, state);
-            FacadeUtils.updateClientBlock(pos);
+            FacadeClientUtils.updateClientBlock(pos);
         });
     }
 

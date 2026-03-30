@@ -1,10 +1,10 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.client.FacadeClientUtils;
 import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.CodecUtils;
-import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -35,7 +35,7 @@ public record AddFacadedBlocksPayload(ChunkPos chunkPos,
                 ClientFacadeManager.putAll(facadedBlocks);
                 ClientFacadeManager.trackChunk(chunkPos, facadedBlocks.keySet().stream().toList());
                 for (BlockPos pos : facadedBlocks.keySet()) {
-                    FacadeUtils.updateClientBlock(pos);
+                    FacadeClientUtils.updateClientBlock(pos);
                 }
             }
         });
