@@ -33,21 +33,37 @@ public class CFJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        ItemStack itemStack = new ItemStack(CFItems.FACADE.get());
-        itemStack.set(CFDataComponents.FACADE_BLOCK, Optional.of(Blocks.COBBLESTONE));
-        itemStack.set(DataComponents.CUSTOM_NAME, Component.translatable("cable_facades.jei.facade_empty").withStyle(ChatFormatting.RESET));
-
         ItemStack ingredientStack = new ItemStack(Blocks.COBBLESTONE);
         ingredientStack.set(DataComponents.CUSTOM_NAME, Component.translatable("cable_facades.jei.empty").withStyle(ChatFormatting.RESET));
 
+        ItemStack facadeResult = new ItemStack(CFItems.FACADE.get());
+        facadeResult.set(CFDataComponents.FACADE_BLOCK, Optional.of(Blocks.COBBLESTONE));
+        facadeResult.set(DataComponents.CUSTOM_NAME, Component.translatable("cable_facades.jei.facade_empty").withStyle(ChatFormatting.RESET));
+
         registration.addRecipes(RecipeTypes.CRAFTING, Collections.singletonList(new RecipeHolder<>(
                 ResourceLocation.fromNamespaceAndPath(CFMain.MODID, "facade_crafting"),
-                new ShapelessRecipe(
-                        "facades",
-                        CraftingBookCategory.BUILDING,
-                        itemStack,
-                        NonNullList.of(Ingredient.EMPTY, Ingredient.of(CFItems.FACADE.get()), Ingredient.of(ingredientStack))
-                )
+                new ShapelessRecipe("facades", CraftingBookCategory.BUILDING, facadeResult,
+                        NonNullList.of(Ingredient.EMPTY, Ingredient.of(CFItems.FACADE.get()), Ingredient.of(ingredientStack)))
+        )));
+
+        ItemStack directionalResult = new ItemStack(CFItems.DIRECTIONAL_FACADE.get());
+        directionalResult.set(CFDataComponents.FACADE_BLOCK, Optional.of(Blocks.COBBLESTONE));
+
+        registration.addRecipes(RecipeTypes.CRAFTING, Collections.singletonList(new RecipeHolder<>(
+                ResourceLocation.fromNamespaceAndPath(CFMain.MODID, "directional_facade_crafting"),
+                new ShapelessRecipe("facades", CraftingBookCategory.BUILDING, directionalResult,
+                        NonNullList.of(Ingredient.EMPTY, Ingredient.of(CFItems.DIRECTIONAL_FACADE.get()), Ingredient.of(ingredientStack)))
+        )));
+
+        ItemStack conversionResult = new ItemStack(CFItems.DIRECTIONAL_FACADE.get(), 6);
+        conversionResult.set(CFDataComponents.FACADE_BLOCK, Optional.of(Blocks.COBBLESTONE));
+        ItemStack conversionInput = new ItemStack(CFItems.FACADE.get());
+        conversionInput.set(CFDataComponents.FACADE_BLOCK, Optional.of(Blocks.COBBLESTONE));
+
+        registration.addRecipes(RecipeTypes.CRAFTING, Collections.singletonList(new RecipeHolder<>(
+                ResourceLocation.fromNamespaceAndPath(CFMain.MODID, "facade_to_directional"),
+                new ShapelessRecipe("facades", CraftingBookCategory.BUILDING, conversionResult,
+                        NonNullList.of(Ingredient.EMPTY, Ingredient.of(conversionInput)))
         )));
     }
 }

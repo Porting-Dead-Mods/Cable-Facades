@@ -1,7 +1,9 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
@@ -18,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +32,7 @@ public class StructureTemplateMixin {
     private static final String FACADES_TAG = "cable_facades";
 
     @Unique
-    private final Map<BlockPos, BlockState> facadeMap = new HashMap<>();
+    private final Map<BlockPos, FacadeData> facadeMap = new HashMap<>();
 
     @Inject(
             method = "fillFromWorld",
@@ -39,10 +42,10 @@ public class StructureTemplateMixin {
         facadeMap.clear();
 
         BlockPos.betweenClosed(pos, pos.offset(size).offset(-1, -1, -1)).forEach(blockPos -> {
-            BlockState facade = FacadeUtils.getFacade(level, blockPos);
-            if (facade != null) {
+            FacadeData data = FacadeUtils.getFacadeData(level, blockPos);
+            if (data != null) {
                 BlockPos relativePos = blockPos.subtract(pos);
-                facadeMap.put(relativePos, facade);
+                facadeMap.put(relativePos, data);
             }
         });
     }
@@ -55,10 +58,21 @@ public class StructureTemplateMixin {
         if (!facadeMap.isEmpty()) {
             ListTag facadesTag = new ListTag();
 
-            facadeMap.forEach((pos, state) -> {
+            facadeMap.forEach((pos, data) -> {
                 CompoundTag facadeTag = new CompoundTag();
                 facadeTag.put("pos", NbtUtils.writeBlockPos(pos));
-                facadeTag.put("state", NbtUtils.writeBlockState(state));
+
+                if (data.isFullBlock()) {
+                    facadeTag.putString("facade_type", "full");
+                    facadeTag.put("state", NbtUtils.writeBlockState(data.getFullBlock()));
+                } else if (data.isDirectional()) {
+                    facadeTag.putString("facade_type", "directional");
+                    CompoundTag facesTag = new CompoundTag();
+                    data.directional().forEach((dir, state) ->
+                            facesTag.put(dir.getSerializedName(), NbtUtils.writeBlockState(state)));
+                    facadeTag.put("faces", facesTag);
+                }
+
                 facadesTag.add(facadeTag);
             });
 
@@ -79,10 +93,27 @@ public class StructureTemplateMixin {
             for (int i = 0; i < facadesTag.size(); i++) {
                 CompoundTag facadeTag = facadesTag.getCompound(i);
                 Optional<BlockPos> posOpt = NbtUtils.readBlockPos(facadeTag, "pos");
-                if (posOpt.isPresent()) {
-                    BlockPos pos = posOpt.get();
+                if (posOpt.isEmpty()) continue;
+
+                BlockPos pos = posOpt.get();
+                String facadeType = facadeTag.getString("facade_type");
+
+                if ("directional".equals(facadeType)) {
+                    CompoundTag facesTag = facadeTag.getCompound("faces");
+                    EnumMap<Direction, BlockState> faces = new EnumMap<>(Direction.class);
+                    for (Direction dir : Direction.values()) {
+                        String key = dir.getSerializedName();
+                        if (facesTag.contains(key)) {
+                            BlockState state = NbtUtils.readBlockState(blockGetter, facesTag.getCompound(key));
+                            faces.put(dir, state);
+                        }
+                    }
+                    if (!faces.isEmpty()) {
+                        facadeMap.put(pos, FacadeData.directional(faces));
+                    }
+                } else {
                     BlockState state = NbtUtils.readBlockState(blockGetter, facadeTag.getCompound("state"));
-                    facadeMap.put(pos, state);
+                    facadeMap.put(pos, FacadeData.fullBlock(state));
                 }
             }
         }
@@ -94,15 +125,23 @@ public class StructureTemplateMixin {
     )
     private void onPlaceInWorld(ServerLevelAccessor level, BlockPos offset, BlockPos pos, StructurePlaceSettings settings, RandomSource random, int flags, CallbackInfoReturnable<Boolean> cir) {
         if (!facadeMap.isEmpty() && cir.getReturnValue()) {
-            facadeMap.forEach((relativePos, facadeState) -> {
+            facadeMap.forEach((relativePos, facadeData) -> {
                 BlockPos transformedPos = StructureTemplate.calculateRelativePosition(settings, relativePos);
                 BlockPos actualPos = transformedPos.offset(offset);
 
-                BlockState transformedState = facadeState
-                        .mirror(settings.getMirror())
-                        .rotate(settings.getRotation());
-
-                FacadeUtils.addFacade(level.getLevel(), actualPos, transformedState);
+                if (facadeData.isFullBlock()) {
+                    BlockState transformedState = facadeData.getFullBlock()
+                            .mirror(settings.getMirror())
+                            .rotate(settings.getRotation());
+                    FacadeUtils.addFacade(level.getLevel(), actualPos, transformedState);
+                } else if (facadeData.isDirectional()) {
+                    facadeData.directional().forEach((dir, state) -> {
+                        BlockState transformedState = state
+                                .mirror(settings.getMirror())
+                                .rotate(settings.getRotation());
+                        FacadeUtils.addDirectionalFacade(level.getLevel(), actualPos, dir, transformedState);
+                    });
+                }
             });
         }
     }

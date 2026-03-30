@@ -3,14 +3,18 @@ package com.portingdeadmods.cable_facades.events.server;
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
+import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
 import com.portingdeadmods.cable_facades.networking.s2c.AddFacadedBlocksPayload;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadedBlocksPayload;
+import com.portingdeadmods.cable_facades.registries.CFAttachments;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -27,15 +31,52 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.SlabType;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkWatchEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
+import java.time.Instant;
+
 @EventBusSubscriber(modid = CFMain.MODID)
 public final class ServerInGameEvents {
+    private static final Duration NEW_WORLD_GRACE_PERIOD = Duration.ofMinutes(10);
+    private static final long NEW_WORLD_FALLBACK_GAME_TIME = 20L * 60L * 10L;
+
+    @SubscribeEvent
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+
+        if (serverPlayer.getData(CFAttachments.SEEN_DIRECTIONAL_FACADE_UPDATE_MESSAGE.get())) {
+            return;
+        }
+
+        ServerLevel overworld = serverPlayer.getServer() != null ? serverPlayer.getServer().getLevel(Level.OVERWORLD) : null;
+        if (overworld == null) {
+            return;
+        }
+
+        if (shouldSuppressDirectionalFacadeUpdateMessage(overworld)) {
+            serverPlayer.setData(CFAttachments.SEEN_DIRECTIONAL_FACADE_UPDATE_MESSAGE.get(), true);
+            return;
+        }
+
+        serverPlayer.sendSystemMessage(Component.translatable("cable_facades.message.directional_facade_update").withStyle(ChatFormatting.YELLOW));
+        serverPlayer.setData(CFAttachments.SEEN_DIRECTIONAL_FACADE_UPDATE_MESSAGE.get(), true);
+    }
+
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         Level level = event.getPlayer().level();
@@ -43,14 +84,27 @@ public final class ServerInGameEvents {
         Player player = event.getPlayer();
 
         if (!level.isClientSide()) {
-            BlockState facade = FacadeUtils.getFacade(level, pos);
-            if (facade != null) {
-                FacadeUtils.removeFacade(level, pos);
-                if (!player.isCreative() && CFConfig.consumeFacade) {
-                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facade.getBlock());
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+            FacadeData facadeData = FacadeUtils.getFacadeData(level, pos);
+            if (facadeData != null) {
+                if (facadeData.isFullBlock()) {
+                    FacadeUtils.removeFacade(level, pos);
+                    if (!player.isCreative() && CFConfig.consumeFacade) {
+                        ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeData.getFullBlock().getBlock());
+                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+                    }
+                    event.setCanceled(true);
+                } else if (facadeData.isDirectional()) {
+                    Direction hitFace = getPlayerLookingFace(player, pos);
+                    if (facadeData.hasFace(hitFace)) {
+                        BlockState faceState = facadeData.getFace(hitFace);
+                        FacadeUtils.removeDirectionalFacade(level, pos, hitFace);
+                        if (!player.isCreative() && CFConfig.consumeFacade) {
+                            ItemStack facadeStack = CFItems.DIRECTIONAL_FACADE.get().createFacade(faceState.getBlock());
+                            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+                        }
+                        event.setCanceled(true);
+                    }
                 }
-                event.setCanceled(true);
             }
         }
         FacadeUtils.updateBlocks(level, pos);
@@ -63,96 +117,111 @@ public final class ServerInGameEvents {
         BlockPos pos = event.getPos();
         InteractionHand hand = event.getHand();
 
-        if(player.isShiftKeyDown() && hand == InteractionHand.OFF_HAND && player.getItemInHand(InteractionHand.MAIN_HAND).is(CFItemTags.WRENCHES)){
-            // If we're holding a wrench in our main hand, don't try to do anything with the offhand.
+        if (player.isShiftKeyDown() && hand == InteractionHand.OFF_HAND && player.getItemInHand(InteractionHand.MAIN_HAND).is(CFItemTags.WRENCHES)) {
             event.setCanceled(true);
         }
 
-        BlockState facadeState = FacadeUtils.getFacade(level, pos);
+        FacadeData facadeData = FacadeUtils.getFacadeData(level, pos);
+        if (facadeData == null || !player.getItemInHand(hand).is(CFItemTags.WRENCHES)) return;
 
-        // This event isn't relevant to us if there's no facade or we're not holding a wrench.
-        if(facadeState == null || !player.getItemInHand(hand).is(CFItemTags.WRENCHES)) return;
-
-        if (player.isShiftKeyDown()) {
-            // Remove facade!
-            if (!level.isClientSide()) {
-                FacadeUtils.removeFacade(level, pos);
-
-                if (!player.isCreative() && CFConfig.consumeFacade) {
-                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeState.getBlock());
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
-                } else {
-                    level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
-                            SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-                }
-            }
-        } else {
-            //Rotation!
-            if (!level.isClientSide()) {
-                
-                //This is a very rudimentary rotation, and some further work will be required for things like stairs and slabs..
-                //But this would work with a furnace, chest etc as-is.
-
-                if (facadeState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-                    Direction direction = facadeState.getValue(HorizontalDirectionalBlock.FACING);    
-                    //Init variable here so we can adjust it as we see fit when checking things like stairs and slabs.
-                    BlockState newFacadeState = facadeState;
-                    
-                    //This, in vanilla, is technically explicit support for stairs - but should play nicely with modded blocks too.
-                    if (facadeState.hasProperty(BlockStateProperties.HALF) && direction == Direction.WEST) {
-                        Half half = facadeState.getValue(BlockStateProperties.HALF);
-                        //Inverts the HALF.
-                        newFacadeState = newFacadeState.setValue(BlockStateProperties.HALF, half == Half.BOTTOM ? Half.TOP : Half.BOTTOM);
-                    }
-                                   
-                    //We only need to rotate the block horizontally here, so this works well.
-                    newFacadeState = newFacadeState.setValue(HorizontalDirectionalBlock.FACING, direction.getClockWise());
-
-                    //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
-                    FacadeUtils.removeFacade(level, pos);
-                    FacadeUtils.addFacade(level, pos, newFacadeState);
-                }
-
-                //The same as above, but for blocks that can face up/down too.
-                else if (facadeState.hasProperty(DirectionalBlock.FACING)) {
-                    Direction direction = facadeState.getValue(DirectionalBlock.FACING);
-
-                    //Here however, we can't just go clockwise. We need to also account for up / down.
-                    BlockState newFacadeState = facadeState.setValue(DirectionalBlock.FACING, rotate(direction));
-
-                    //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
-                    FacadeUtils.removeFacade(level, pos);
-                    FacadeUtils.addFacade(level, pos, newFacadeState);
-                }
-
-                //Basically explicit slab support. But it works on anything utilising SLAB_TYPE
-                else if (facadeState.hasProperty(BlockStateProperties.SLAB_TYPE)) {
-                    SlabType slab = facadeState.getValue(BlockStateProperties.SLAB_TYPE);
-                    //Inverts the SlabType.
-                    BlockState newFacadeState = facadeState.setValue(BlockStateProperties.SLAB_TYPE, nextSlab(slab));
-                    //Readding the facade is a simple easy way to update it both in the chunkmap and for clients.
-                    FacadeUtils.removeFacade(level, pos);
-                    FacadeUtils.addFacade(level, pos, newFacadeState);
-                }
+        if (facadeData.isFullBlock()) {
+            BlockState facadeState = facadeData.getFullBlock();
+            handleWrenchOnFullBlock(player, level, pos, hand, facadeState);
+        } else if (facadeData.isDirectional()) {
+            Direction hitFace = event.getHitVec() != null ? event.getHitVec().getDirection() : getPlayerLookingFace(player, pos);
+            if (facadeData.hasFace(hitFace)) {
+                BlockState facadeState = facadeData.getFace(hitFace);
+                handleWrenchOnDirectionalFace(player, level, pos, hand, hitFace, facadeState);
             }
         }
 
         player.swing(hand);
-        updateBlocks(level, pos);
+        FacadeUtils.updateBlocks(level, pos);
         event.setCanceled(true);
     }
 
-    public static void updateBlocks(Level level, BlockPos pos) {
-        level.getLightEngine().checkBlock(pos);
-        BlockState state = level.getBlockState(pos);
-        level.sendBlockUpdated(pos, state, state, 3);
-        level.updateNeighborsAt(pos, state.getBlock());
+    private static void handleWrenchOnFullBlock(Player player, Level level, BlockPos pos, InteractionHand hand, BlockState facadeState) {
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide()) {
+                FacadeUtils.removeFacade(level, pos);
+                if (!player.isCreative() && CFConfig.consumeFacade) {
+                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeState.getBlock());
+                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+                } else {
+                    playPickupSound(level, player);
+                }
+            }
+        } else {
+            if (!level.isClientSide()) {
+                BlockState newState = rotateFacadeState(facadeState);
+                if (newState != facadeState) {
+                    FacadeUtils.removeFacade(level, pos);
+                    FacadeUtils.addFacade(level, pos, newState);
+                }
+            }
+        }
+    }
+
+    private static void handleWrenchOnDirectionalFace(Player player, Level level, BlockPos pos, InteractionHand hand, Direction face, BlockState facadeState) {
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide()) {
+                FacadeUtils.removeDirectionalFacade(level, pos, face);
+                if (!player.isCreative() && CFConfig.consumeFacade) {
+                    ItemStack facadeStack = CFItems.DIRECTIONAL_FACADE.get().createFacade(facadeState.getBlock());
+                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
+                } else {
+                    playPickupSound(level, player);
+                }
+            }
+        } else {
+            if (!level.isClientSide()) {
+                BlockState newState = rotateFacadeState(facadeState);
+                if (newState != facadeState) {
+                    FacadeUtils.removeDirectionalFacade(level, pos, face);
+                    FacadeUtils.addDirectionalFacade(level, pos, face, newState);
+                }
+            }
+        }
+    }
+
+    private static BlockState rotateFacadeState(BlockState facadeState) {
+        if (facadeState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            Direction direction = facadeState.getValue(HorizontalDirectionalBlock.FACING);
+            BlockState newState = facadeState;
+
+            if (facadeState.hasProperty(BlockStateProperties.HALF) && direction == Direction.WEST) {
+                Half half = facadeState.getValue(BlockStateProperties.HALF);
+                newState = newState.setValue(BlockStateProperties.HALF, half == Half.BOTTOM ? Half.TOP : Half.BOTTOM);
+            }
+
+            return newState.setValue(HorizontalDirectionalBlock.FACING, direction.getClockWise());
+        } else if (facadeState.hasProperty(DirectionalBlock.FACING)) {
+            Direction direction = facadeState.getValue(DirectionalBlock.FACING);
+            return facadeState.setValue(DirectionalBlock.FACING, rotate(direction));
+        } else if (facadeState.hasProperty(BlockStateProperties.SLAB_TYPE)) {
+            SlabType slab = facadeState.getValue(BlockStateProperties.SLAB_TYPE);
+            return facadeState.setValue(BlockStateProperties.SLAB_TYPE, nextSlab(slab));
+        }
+        return facadeState;
+    }
+
+    private static void playPickupSound(Level level, Player player) {
+        level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
+                SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F,
+                ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+    }
+
+    private static Direction getPlayerLookingFace(Player player, BlockPos pos) {
+        HitResult hit = player.pick(5.0, 0.0F, false);
+        if (hit instanceof BlockHitResult blockHit && blockHit.getBlockPos().equals(pos)) {
+            return blockHit.getDirection();
+        }
+        return Direction.UP;
     }
 
     @SubscribeEvent
     public static void loadChunk(ChunkWatchEvent.Sent event) {
         ChunkPos chunkPos = event.getPos();
-        ServerPlayer serverPlayer = event.getPlayer();
         ServerLevel serverLevel = event.getLevel();
 
         CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
@@ -170,27 +239,42 @@ public final class ServerInGameEvents {
         PacketDistributor.sendToPlayer(serverPlayer, new RemoveFacadedBlocksPayload(chunkPos));
     }
 
-
-    //TODO: Possibly move to another spot?
-    //Used to rotate a direction more nicely, as the default order when allowing for up / down would feel clunky.
     private static Direction rotate(Direction direction) {
-        return switch(direction) {
+        return switch (direction) {
             case DOWN -> Direction.NORTH;
             case EAST -> Direction.SOUTH;
             case NORTH -> Direction.EAST;
             case SOUTH -> Direction.WEST;
             case UP -> Direction.DOWN;
             case WEST -> Direction.UP;
-            //Impossible to hit...
-            default -> direction;
         };
     }
 
     private static SlabType nextSlab(SlabType slab) {
-        return switch(slab) {
+        return switch (slab) {
             case BOTTOM -> SlabType.TOP;
             case TOP -> SlabType.DOUBLE;
             case DOUBLE -> SlabType.BOTTOM;
         };
+    }
+
+    private static boolean shouldSuppressDirectionalFacadeUpdateMessage(ServerLevel level) {
+        if (level.hasData(CFAttachments.SUPPRESS_DIRECTIONAL_FACADE_UPDATE_MESSAGE.get())) {
+            return level.getData(CFAttachments.SUPPRESS_DIRECTIONAL_FACADE_UPDATE_MESSAGE.get());
+        }
+
+        boolean suppress = isNewlyCreatedWorld(level);
+        level.setData(CFAttachments.SUPPRESS_DIRECTIONAL_FACADE_UPDATE_MESSAGE.get(), suppress);
+        return suppress;
+    }
+
+    private static boolean isNewlyCreatedWorld(ServerLevel level) {
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(level.getServer().getWorldPath(LevelResource.LEVEL_DATA_FILE), BasicFileAttributes.class);
+            return attributes.creationTime().toInstant().isAfter(Instant.now().minus(NEW_WORLD_GRACE_PERIOD));
+        } catch (IOException exception) {
+            CFMain.LOGGER.debug("Falling back to game-time check for update message gating", exception);
+            return level.getGameTime() <= NEW_WORLD_FALLBACK_GAME_TIME && CableFacadeSavedData.get(level).isEmpty();
+        }
     }
 }
