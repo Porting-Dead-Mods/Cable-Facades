@@ -14,7 +14,10 @@ public class LevelFacadeMap {
             Codec.unboundedMap(Codec.STRING, ChunkFacadeMap.CODEC).fieldOf("chunks_map").forGetter(LevelFacadeMap::levelFacadeMapToString)
     ).apply(builder, LevelFacadeMap::levelFacadeMapFromString));
 
-    //This codec will be used to attempt migration
+    public static final Codec<LevelFacadeMap> V2_MIGRATION_CODEC = RecordCodecBuilder.create(builder -> builder.group(
+            Codec.unboundedMap(Codec.STRING, ChunkFacadeMap.V2_MIGRATION_CODEC).fieldOf("chunks_map").forGetter(LevelFacadeMap::levelFacadeMapToString)
+    ).apply(builder, LevelFacadeMap::levelFacadeMapFromString));
+
     public static final Codec<LevelFacadeMap> MIGRATION_CODEC = RecordCodecBuilder.create(builder -> builder.group(
             Codec.unboundedMap(Codec.STRING, ChunkFacadeMap.MIGRATION_CODEC).fieldOf("chunks_map").forGetter(LevelFacadeMap::levelFacadeMapToString)
     ).apply(builder, LevelFacadeMap::levelFacadeMapFromString));
@@ -52,7 +55,6 @@ public class LevelFacadeMap {
                 .map(entry -> new AbstractMap.SimpleEntry<>(String.valueOf(entry.getKey().toLong()), entry.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
     }
-
 
     @Override
     public String toString() {

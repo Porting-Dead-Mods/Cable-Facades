@@ -2,6 +2,7 @@ package com.portingdeadmods.cable_facades.registries;
 
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.compat.iris.IrisUtil;
+import com.portingdeadmods.cable_facades.content.items.DirectionalFacadeItem;
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import net.minecraft.ChatFormatting;
@@ -27,6 +28,10 @@ public class CFItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(CFMain.MODID);
 
     public static final DeferredItem<FacadeItem> FACADE = ITEMS.register("facade", () -> new FacadeItem(new Item.Properties()
+            .component(CFDataComponents.FACADE_BLOCK, Optional.empty())
+            .component(CFDataComponents.HAS_FACADE_REMAINDER, false)));
+
+    public static final DeferredItem<DirectionalFacadeItem> DIRECTIONAL_FACADE = ITEMS.register("directional_facade", () -> new DirectionalFacadeItem(new Item.Properties()
             .component(CFDataComponents.FACADE_BLOCK, Optional.empty())
             .component(CFDataComponents.HAS_FACADE_REMAINDER, false)));
 

@@ -4,8 +4,16 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.client.render.CoverQuadRenderer;
+import com.portingdeadmods.cable_facades.client.render.FacadeQuadLighter;
 import com.portingdeadmods.cable_facades.compat.iris.AlphaWrapperIris;
+import com.portingdeadmods.cable_facades.compat.iris.IrisUtil;
+import com.portingdeadmods.cable_facades.content.items.DirectionalFacadeItem;
+import com.portingdeadmods.cable_facades.content.items.FacadeItem;
+import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.mixins.LevelRendererAccess;
+import com.portingdeadmods.cable_facades.registries.CFDataComponents;
+import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFRenderTypes;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
@@ -14,11 +22,19 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -34,21 +50,38 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT)
 public final class GameClientEvents {
 
     public static final ThreadLocal<Boolean> RENDERING_FACADE = ThreadLocal.withInitial(() -> false);
+
+    private static final long TRANSPARENCY_TIMEOUT_MS = 120_000L;
+    private static final float ZFIGHTING_SCALE = 0.99995F;
+    private static final float SCALE_UP_FACTOR = 1.0005F;
+    private static final int ALPHA_MASK = 0x88FFFFFF;
+    private static final int PREVIEW_ALPHA = 0x99000000;
+    private static final long FACADE_RENDER_SEED = 42L;
+    private static final float PX = 1f / 16f;
+
     public static boolean facadeTransparency = false;
     public static boolean setFacadeTransparency = false;
     private static final ThreadLocal<RandomSource> RANDOM = ThreadLocal.withInitial(RandomSource::create);
-    private static Timer resetTimer;
+    private static final ScheduledExecutorService TIMER = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "Cable Facades Reset Timer");
+        t.setDaemon(true);
+        return t;
+    });
+    private static ScheduledFuture<?> resetFuture;
 
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
@@ -60,28 +93,21 @@ public final class GameClientEvents {
             setFacadeTransparency = facadeTransparency;
             Set<SectionPos> sections = new ObjectOpenHashSet<>();
 
-            ClientFacadeManager.FACADED_BLOCKS.keySet().forEach(k -> {
-                sections.add(SectionPos.of(k));
-            });
+            ClientFacadeManager.forEach((pos, data) -> sections.add(SectionPos.of(pos)));
 
             for (SectionPos section : sections) {
                 Minecraft.getInstance().levelRenderer.setSectionDirty(section.x(), section.y(), section.z());
             }
 
             if (facadeTransparency) {
-                if (resetTimer != null) resetTimer.cancel();
-
-                resetTimer = new Timer("Cable Facades Reset Timer");
-
-                resetTimer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        CFMain.LOGGER.info("Facades made opaque due to timeout");
-                        facadeTransparency = false;
-                    }
-                }, 120000);
-            } else {
-                resetTimer.cancel();
+                if (resetFuture != null) resetFuture.cancel(false);
+                resetFuture = TIMER.schedule(() -> {
+                    CFMain.LOGGER.info("Facades made opaque due to timeout");
+                    facadeTransparency = false;
+                }, TRANSPARENCY_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            } else if (resetFuture != null) {
+                resetFuture.cancel(false);
+                resetFuture = null;
             }
         }
     }
@@ -90,74 +116,148 @@ public final class GameClientEvents {
     public static void geometryEvent(AddSectionGeometryEvent e) {
         SectionPos section = SectionPos.of(e.getSectionOrigin());
 
-        if (ClientFacadeManager.FACADED_BLOCKS.isEmpty()) return;
+        if (ClientFacadeManager.isEmpty()) return;
 
-        Map<BlockPos, @Nullable BlockState> actualBlocks = new Object2ObjectOpenHashMap<>();
+        Map<BlockPos, FacadeData> sectionFacades = new Object2ObjectOpenHashMap<>();
 
-        ClientFacadeManager.FACADED_BLOCKS.entrySet().stream().filter(p -> SectionPos.of(p.getKey()).equals(section)).forEachOrdered(bp -> {
-            if (bp.getValue() != null) actualBlocks.put(bp.getKey(), bp.getValue());
-        });
+        ClientFacadeManager.entryStream()
+                .filter(p -> SectionPos.of(p.getKey()).equals(section))
+                .forEach(bp -> {
+                    if (bp.getValue() != null) sectionFacades.put(bp.getKey(), bp.getValue());
+                });
 
-        if (actualBlocks.isEmpty()) return;
+        if (sectionFacades.isEmpty()) return;
 
         e.addRenderer(sectionRenderingContext -> {
             RENDERING_FACADE.set(true);
             BlockAndTintGetter level = sectionRenderingContext.getRegion();
             RandomSource random = RANDOM.get();
 
-            for (Map.Entry<BlockPos, @Nullable BlockState> blockPosBlockStateEntry : actualBlocks.entrySet()) {
-                random.setSeed(42L);
-                //System.out.println("Rendering facade at " + blockPosBlockStateEntry.getKey());
-                BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
-                BlockState facadeState = blockPosBlockStateEntry.getValue();
-                BlockPos pos = blockPosBlockStateEntry.getKey();
-                PoseStack poseStack = sectionRenderingContext.getPoseStack();
+            for (Map.Entry<BlockPos, FacadeData> entry : sectionFacades.entrySet()) {
+                BlockPos pos = entry.getKey();
+                FacadeData facadeData = entry.getValue();
 
-                BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
-                ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
-
-                poseStack.pushPose();
-                poseStack.translate(SectionPos.sectionRelative(pos.getX()), SectionPos.sectionRelative(pos.getY()), SectionPos.sectionRelative(pos.getZ()));
-
-                Block facadedBlock = level.getBlockState(pos).getBlock();
-
-                if(CFConfig.canPatchZFighting(facadedBlock)){
-                    poseStack.translate(0.5, 0.5, 0.5);
-                    poseStack.scale(0.99995F, 0.99995F, 0.99995F);
-                    poseStack.translate(-0.5, -0.5, -0.5);
+                if (facadeData.isFullBlock()) {
+                    renderFullBlockFacade(sectionRenderingContext, level, random, pos, facadeData.getFullBlock());
+                } else if (facadeData.isDirectional()) {
+                    facadeData.directional().forEach((dir, state) ->
+                            renderDirectionalFacade(sectionRenderingContext, level, random, pos, dir, state));
                 }
-
-                if(facadedBlock.asItem().getDescriptionId().contains("create"))
-                {
-                    poseStack.translate(0.5, 0.5, 0.5);
-                    poseStack.scale(1.0005F, 1.0005F, 1.0005F);
-                    poseStack.translate(-0.5, -0.5, -0.5);
-                }
-
-                for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
-                    VertexConsumer buffer = sectionRenderingContext.getOrCreateChunkBuffer(GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType);
-                    if (facadeTransparency) {
-                        buffer = CFMain.isIrisLoaded() ? new AlphaWrapperIris(buffer) : new AlphaWrapper(buffer);
-                    }
-                    blockRenderer.renderBatched(facadeState, pos, level, poseStack, buffer, true, random, modelData, renderType);
-                }
-
-                poseStack.popPose();
             }
 
             RENDERING_FACADE.set(false);
         });
     }
 
-    // From Immersive Engineering. Thank you blu, for figuring out this fix <3
+    private static void renderFullBlockFacade(AddSectionGeometryEvent.SectionRenderingContext ctx,
+                                               BlockAndTintGetter level, RandomSource random,
+                                               BlockPos pos, BlockState facadeState) {
+        random.setSeed(FACADE_RENDER_SEED);
+        BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
+        PoseStack poseStack = ctx.getPoseStack();
+
+        BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
+        ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
+
+        poseStack.pushPose();
+        poseStack.translate(SectionPos.sectionRelative(pos.getX()), SectionPos.sectionRelative(pos.getY()), SectionPos.sectionRelative(pos.getZ()));
+
+        Block facadedBlock = level.getBlockState(pos).getBlock();
+
+        if (CFConfig.canPatchZFighting(facadedBlock)) {
+            poseStack.translate(0.5, 0.5, 0.5);
+            poseStack.scale(ZFIGHTING_SCALE, ZFIGHTING_SCALE, ZFIGHTING_SCALE);
+            poseStack.translate(-0.5, -0.5, -0.5);
+        }
+
+        if (CFConfig.isScaleUpBlock(facadedBlock)) {
+            poseStack.translate(0.5, 0.5, 0.5);
+            poseStack.scale(SCALE_UP_FACTOR, SCALE_UP_FACTOR, SCALE_UP_FACTOR);
+            poseStack.translate(-0.5, -0.5, -0.5);
+        }
+
+        renderModel(ctx, level, random, pos, facadeState, facadeModel, modelData, poseStack);
+
+        poseStack.popPose();
+    }
+
+    private static void renderDirectionalFacade(AddSectionGeometryEvent.SectionRenderingContext ctx,
+                                                 BlockAndTintGetter level, RandomSource random,
+                                                 BlockPos pos, Direction face, BlockState facadeState) {
+        random.setSeed(FACADE_RENDER_SEED);
+        BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
+        PoseStack poseStack = ctx.getPoseStack();
+
+        BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
+        ModelData modelData = facadeModel.getModelData(level, pos, facadeState, ModelData.EMPTY);
+        boolean useAo = Minecraft.useAmbientOcclusion()
+                && facadeState.getLightEmission() == 0
+                && facadeModel.useAmbientOcclusion();
+
+        List<BakedQuad> slicedQuads = CoverQuadRenderer.sliceQuads(facadeState, pos, facadeModel, face, modelData);
+
+        poseStack.pushPose();
+        poseStack.translate(SectionPos.sectionRelative(pos.getX()), SectionPos.sectionRelative(pos.getY()), SectionPos.sectionRelative(pos.getZ()));
+
+        for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+            VertexConsumer buffer = ctx.getOrCreateChunkBuffer(facadeTransparency ? RenderType.translucent() : renderType);
+            if (facadeTransparency) {
+                buffer = CFMain.isIrisLoaded() ? new AlphaWrapperIris(buffer) : new AlphaWrapper(buffer);
+            }
+
+            if (CFMain.isIrisLoaded()) {
+                IrisUtil.beginBlock(buffer, facadeState, pos);
+            }
+            for (BakedQuad quad : slicedQuads) {
+                float r = 1f, g = 1f, b = 1f;
+                if (quad.getTintIndex() != -1) {
+                    int color = Minecraft.getInstance().getBlockColors().getColor(facadeState, level, pos, quad.getTintIndex());
+                    r = (color >> 16 & 0xFF) / 255f;
+                    g = (color >> 8 & 0xFF) / 255f;
+                    b = (color & 0xFF) / 255f;
+                }
+                FacadeQuadLighter.renderQuad(level, facadeState, pos, poseStack.last(), buffer, quad, r, g, b,
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, useAo);
+            }
+            if (CFMain.isIrisLoaded()) {
+                IrisUtil.endBlock(buffer);
+            }
+        }
+
+        poseStack.popPose();
+    }
+
+    private static void renderModel(AddSectionGeometryEvent.SectionRenderingContext ctx,
+                                     BlockAndTintGetter level, RandomSource random,
+                                     BlockPos pos, BlockState facadeState,
+                                     BakedModel facadeModel, ModelData modelData, PoseStack poseStack) {
+        BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
+
+        for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+            VertexConsumer buffer = ctx.getOrCreateChunkBuffer(facadeTransparency ? RenderType.translucent() : renderType);
+            if (facadeTransparency) {
+                buffer = CFMain.isIrisLoaded() ? new AlphaWrapperIris(buffer) : new AlphaWrapper(buffer);
+            }
+            if (CFMain.isIrisLoaded()) {
+                IrisUtil.beginBlock(buffer, facadeState, pos);
+            }
+            blockRenderer.renderBatched(facadeState, pos, level, poseStack, buffer, true, random, modelData, renderType);
+            if (CFMain.isIrisLoaded()) {
+                IrisUtil.endBlock(buffer);
+            }
+        }
+    }
+
     @SubscribeEvent
     public static void renderOutline(RenderHighlightEvent.Block event) {
         if (event.getCamera().getEntity() instanceof LivingEntity living) {
             Level world = living.level();
             BlockHitResult rtr = event.getTarget();
+            renderPlacementPreview(event, world, rtr, living);
             BlockPos pos = rtr.getBlockPos();
             Vec3 renderView = event.getCamera().getPosition();
             BlockState targetBlock = world.getBlockState(rtr.getBlockPos());
+
             if (FacadeUtils.hasFacade(world, pos)) {
                 ((LevelRendererAccess) event.getLevelRenderer()).callRenderHitOutline(
                         event.getPoseStack(), event.getMultiBufferSource().getBuffer(CFRenderTypes.LINES_NONTRANSLUCENT),
@@ -169,20 +269,183 @@ public final class GameClientEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-        ClientFacadeManager.FACADED_BLOCKS.clear();
+    private static void renderPlacementPreview(RenderHighlightEvent.Block event, Level world, BlockHitResult hit, LivingEntity living) {
+        if (!(living instanceof Player player)) {
+            return;
+        }
+
+        PlacementPreview preview = getPlacementPreview(player, hit);
+        if (preview == null) {
+            return;
+        }
+
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+
+        poseStack.pushPose();
+        poseStack.translate(
+                preview.pos().getX() - camera.x,
+                preview.pos().getY() - camera.y,
+                preview.pos().getZ() - camera.z
+        );
+
+        Block facadedBlock = world.getBlockState(preview.pos()).getBlock();
+        if (CFConfig.canPatchZFighting(facadedBlock)) {
+            poseStack.translate(0.5, 0.5, 0.5);
+            poseStack.scale(ZFIGHTING_SCALE, ZFIGHTING_SCALE, ZFIGHTING_SCALE);
+            poseStack.translate(-0.5, -0.5, -0.5);
+        }
+
+        if (CFConfig.isScaleUpBlock(facadedBlock)) {
+            poseStack.translate(0.5, 0.5, 0.5);
+            poseStack.scale(SCALE_UP_FACTOR, SCALE_UP_FACTOR, SCALE_UP_FACTOR);
+            poseStack.translate(-0.5, -0.5, -0.5);
+        }
+
+        if (preview.directional()) {
+            renderDirectionalPreview(event, world, preview.pos(), preview.face(), preview.facadeState(), poseStack);
+        } else {
+            renderFullBlockPreview(event, world, preview.pos(), preview.facadeState(), poseStack);
+        }
+        poseStack.popPose();
     }
 
-    private static class AlphaWrapper extends VertexConsumerWrapper {
+    private static void renderFullBlockPreview(RenderHighlightEvent.Block event, Level world, BlockPos pos,
+                                               BlockState facadeState, PoseStack poseStack) {
+        RandomSource random = RandomSource.create(FACADE_RENDER_SEED);
+        BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
+        BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
+        ModelData modelData = facadeModel.getModelData(world, pos, facadeState, ModelData.EMPTY);
+
+        for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+            VertexConsumer buffer = new PreviewAlphaWrapper(event.getMultiBufferSource().getBuffer(RenderType.translucent()));
+            blockRenderer.renderBatched(facadeState, pos, world, poseStack, buffer, true, random, modelData, renderType);
+        }
+    }
+
+    private static void renderDirectionalPreview(RenderHighlightEvent.Block event, Level world, BlockPos pos,
+                                                 Direction face, BlockState facadeState, PoseStack poseStack) {
+        RandomSource random = RandomSource.create(FACADE_RENDER_SEED);
+        BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
+        BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
+        ModelData modelData = facadeModel.getModelData(world, pos, facadeState, ModelData.EMPTY);
+        boolean useAo = Minecraft.useAmbientOcclusion()
+                && facadeState.getLightEmission() == 0
+                && facadeModel.useAmbientOcclusion();
+        List<BakedQuad> slicedQuads = CoverQuadRenderer.sliceQuads(facadeState, pos, facadeModel, face, modelData);
+
+        for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+            VertexConsumer buffer = new PreviewAlphaWrapper(event.getMultiBufferSource().getBuffer(RenderType.translucent()));
+            for (BakedQuad quad : slicedQuads) {
+                float r = 1f;
+                float g = 1f;
+                float b = 1f;
+                if (quad.getTintIndex() != -1) {
+                    int color = Minecraft.getInstance().getBlockColors().getColor(facadeState, world, pos, quad.getTintIndex());
+                    r = (color >> 16 & 0xFF) / 255f;
+                    g = (color >> 8 & 0xFF) / 255f;
+                    b = (color & 0xFF) / 255f;
+                }
+                FacadeQuadLighter.renderQuad(world, facadeState, pos, poseStack.last(), buffer, quad, r, g, b,
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, useAo);
+            }
+        }
+    }
+
+    private static PlacementPreview getPlacementPreview(Player player, BlockHitResult hit) {
+        PlacementPreview preview = getPlacementPreview(player, InteractionHand.MAIN_HAND, hit);
+        return preview != null ? preview : getPlacementPreview(player, InteractionHand.OFF_HAND, hit);
+    }
+
+    private static PlacementPreview getPlacementPreview(Player player, InteractionHand hand, BlockHitResult hit) {
+        ItemStack stack = player.getItemInHand(hand);
+        boolean directional = stack.getItem() instanceof DirectionalFacadeItem;
+        if (!(stack.getItem() instanceof FacadeItem) && !directional) {
+            return null;
+        }
+
+        Level level = player.level();
+        BlockPos pos = hit.getBlockPos();
+        Direction face = hit.getDirection();
+        BlockState existingFullFacade = FacadeUtils.getFacade(level, pos);
+        BlockState existingDirectionalFace = FacadeUtils.getDirectionalFacade(level, pos, face);
+
+        if (!directional && FacadeUtils.hasFacade(level, pos)) {
+            return null;
+        }
+        if (directional && (existingFullFacade != null || existingDirectionalFace != null)) {
+            return null;
+        }
+
+        Block facadeBlock = resolveFacadeBlock(player, hand, stack);
+        if (facadeBlock == null || !(facadeBlock.asItem() instanceof BlockItem)) {
+            return null;
+        }
+
+        Block targetBlock = level.getBlockState(pos).getBlock();
+        boolean noFacadeTag = level.getBlockState(pos).getTags()
+                .noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE));
+
+        if (!CFConfig.isBlockAllowed(targetBlock) && noFacadeTag) {
+            return null;
+        }
+        if (targetBlock == facadeBlock || CFConfig.isBlockDisallowed(facadeBlock)) {
+            return null;
+        }
+
+        BlockState previewState = facadeBlock.getStateForPlacement(new BlockPlaceContext(new UseOnContext(player, hand, hit)));
+        if (previewState == null) {
+            previewState = facadeBlock.defaultBlockState();
+        }
+
+        return new PlacementPreview(pos, face, previewState, directional);
+    }
+
+    private static Block resolveFacadeBlock(Player player, InteractionHand hand, ItemStack stack) {
+        Optional<Block> block = stack.get(CFDataComponents.FACADE_BLOCK);
+        if (block != null && block.isPresent()) {
+            return block.get();
+        }
+        if (hand != InteractionHand.MAIN_HAND) {
+            return null;
+        }
+
+        ItemStack offhand = player.getItemInHand(InteractionHand.OFF_HAND);
+        if (offhand.getItem() instanceof BlockItem blockItem) {
+            return blockItem.getBlock();
+        }
+        return null;
+    }
+
+    @SubscribeEvent
+    public static void onChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        ClientFacadeManager.clear();
+    }
+
+    static class AlphaWrapper extends VertexConsumerWrapper {
         public AlphaWrapper(VertexConsumer consumer) {
             super(consumer);
         }
 
         @Override
         public VertexConsumer setColor(int color) {
-            super.setColor(color & 0x88FFFFFF);
+            super.setColor(color & ALPHA_MASK);
             return this;
         }
+    }
+
+    static class PreviewAlphaWrapper extends VertexConsumerWrapper {
+        public PreviewAlphaWrapper(VertexConsumer consumer) {
+            super(consumer);
+        }
+
+        @Override
+        public VertexConsumer setColor(int color) {
+            super.setColor((color & 0x00FFFFFF) | PREVIEW_ALPHA);
+            return this;
+        }
+    }
+
+    private record PlacementPreview(BlockPos pos, Direction face, BlockState facadeState, boolean directional) {
     }
 }

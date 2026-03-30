@@ -27,11 +27,13 @@ public final class ClientRegisterEvents {
 
     @SubscribeEvent
     public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
-        event.registerItem(new IClientItemExtensions() {
+        IClientItemExtensions facadeExtension = new IClientItemExtensions() {
             @Override
             public @NotNull BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 return FACADE_ITEM_RENDERER;
             }
-        }, CFItems.FACADE);
+        };
+        event.registerItem(facadeExtension, CFItems.FACADE);
+        event.registerItem(facadeExtension, CFItems.DIRECTIONAL_FACADE);
     }
 }

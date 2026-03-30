@@ -2,7 +2,7 @@ package com.portingdeadmods.cable_facades.networking.s2c;
 
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
-import com.portingdeadmods.cable_facades.utils.ClientFacadeUtils;
+import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.codec.StreamCodec;
@@ -16,8 +16,8 @@ public record RemoveFacadePayload(BlockPos facadePos) implements CustomPacketPay
 
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
-            ClientFacadeManager.FACADED_BLOCKS.remove(this.facadePos);
-            ClientFacadeUtils.updateBlocks(this.facadePos);
+            ClientFacadeManager.remove(facadePos);
+            FacadeUtils.updateClientBlock(facadePos);
         });
     }
 
