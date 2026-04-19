@@ -1,4 +1,23 @@
 {
-  "item.cable_facades.facade_wrench": "Llave De Fachada"
-  ,"cable_facades.message.directional_facade_update": "Cable Facades 2.0 adds directional facades. This message only shows once, check them out."
+  "item.cable_facades.facade_wrench": "Llave De Fachada",
+
+  "cable_facades.tooltip.toggle_transparency": "Click derecho para activar o desactivar la transparencia",
+  "cable_facades.tooltip.current_state": "Estado Actual: ",
+  "cable_facades.tooltip.enabled": "Activado",
+  "cable_facades.tooltip.disabled": "Desactivado",
+  
+  "cable_facades.message.transparency_enabled": "Transparencia de la fachada activada ",
+  "cable_facades.message.shaders_warning": "⚠ Advertencia ⚠",
+  "cable_facades.message.shaders_detected": "Shaders Detectados: ",
+  "cable_facades.message.transparency_may_not_work": "La transparencia de la fachada no trabaja correctamente",
+  
+  "cable_facades.facade.name_prefix": "Fachada - ",
+  "cable_facades.facade.empty": "Fachada - Vacia",
+  "cable_facades.creative_tab": "Fachadas Para Cables",
+  
+  "cable_facades.error.cannot_facade_itself": "No se puede bloquear la fachada consigo mismo.",
+  "cable_facades.error.block_disabled": "Este bloque no se puede usar para cubrir (desactivado en la configuración)",
+  
+  "cable_facades.jei.facade_any_block": "Fachada Para cualquier bloque",
+  "cable_facades.jei.any_block": "Cualquier bloque"
 }
