@@ -1,8 +1,10 @@
 package com.portingdeadmods.cable_facades.utils;
 
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
 import com.portingdeadmods.cable_facades.data.FacadeData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -81,11 +83,15 @@ public final class ClientFacadeManager {
     }
 
     public static void addDirectionalFacade(BlockPos pos, Direction face, BlockState state) {
+        addDirectionalFacade(pos, face, state, FacadeTypes.DEFAULT_ID);
+    }
+
+    public static void addDirectionalFacade(BlockPos pos, Direction face, BlockState state, ResourceLocation facadeType) {
         FACADED_BLOCKS.compute(pos, (k, existing) -> {
             if (existing != null && existing.isDirectional()) {
                 return existing.withFace(face, state);
             }
-            return FacadeData.directional(face, state);
+            return FacadeData.directional(facadeType, face, state);
         });
     }
 

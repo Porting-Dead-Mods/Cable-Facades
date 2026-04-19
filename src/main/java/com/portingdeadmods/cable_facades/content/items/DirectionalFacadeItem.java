@@ -1,9 +1,9 @@
 package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeType;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
 import com.portingdeadmods.cable_facades.registries.CFDataComponents;
-import com.portingdeadmods.cable_facades.registries.CFItemTags;
-import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -21,10 +21,24 @@ import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class DirectionalFacadeItem extends Item {
+
+    private final Supplier<FacadeType> facadeType;
+
     public DirectionalFacadeItem(Properties properties) {
+        this(properties, FacadeTypes::defaultType);
+    }
+
+    public DirectionalFacadeItem(Properties properties, Supplier<FacadeType> facadeType) {
         super(properties);
+        this.facadeType = facadeType;
+    }
+
+    public FacadeType getFacadeType() {
+        FacadeType type = facadeType.get();
+        return type != null ? type : FacadeTypes.defaultType();
     }
 
     @Override
@@ -67,12 +81,12 @@ public class DirectionalFacadeItem extends Item {
                 return InteractionResult.FAIL;
             }
 
-            Block targetBlock = level.getBlockState(pos).getBlock();
-            boolean noFacadeTag = level.getBlockState(pos).getTags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE));
-
-            if (!CFConfig.isBlockAllowed(targetBlock) && noFacadeTag) {
+            FacadeType type = getFacadeType();
+            if (!type.canApplyOn().test(level.getBlockState(pos))) {
                 return InteractionResult.FAIL;
             }
+
+            Block targetBlock = level.getBlockState(pos).getBlock();
 
             if (targetBlock == facadeBlock || CFConfig.isBlockDisallowed(facadeBlock)) {
                 if (targetBlock == facadeBlock) {
@@ -83,7 +97,7 @@ public class DirectionalFacadeItem extends Item {
                 return InteractionResult.FAIL;
             }
 
-            FacadeUtils.addDirectionalFacade(level, pos, clickedFace, facadeBlock.getStateForPlacement(new BlockPlaceContext(context)));
+            FacadeUtils.addDirectionalFacade(level, pos, clickedFace, facadeBlock.getStateForPlacement(new BlockPlaceContext(context)), type.id());
 
             if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
                 itemStack.shrink(1);
@@ -107,7 +121,7 @@ public class DirectionalFacadeItem extends Item {
     }
 
     public ItemStack createFacade(Block block) {
-        ItemStack stack = new ItemStack(CFItems.DIRECTIONAL_FACADE.get());
+        ItemStack stack = new ItemStack(this);
         if (block != null && block.asItem() instanceof BlockItem) {
             stack.set(CFDataComponents.FACADE_BLOCK, Optional.of(block));
         }

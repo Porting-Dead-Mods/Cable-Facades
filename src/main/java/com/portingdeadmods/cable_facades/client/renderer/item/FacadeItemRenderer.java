@@ -2,10 +2,13 @@ package com.portingdeadmods.cable_facades.client.renderer.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeType;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
 import com.portingdeadmods.cable_facades.client.render.CoverQuadRenderer;
+import com.portingdeadmods.cable_facades.content.items.DirectionalFacadeItem;
+import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.events.client.ClientRegisterEvents;
 import com.portingdeadmods.cable_facades.registries.CFDataComponents;
-import com.portingdeadmods.cable_facades.registries.CFItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -14,10 +17,13 @@ import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -40,9 +46,11 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
     public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
         poseStack.pushPose();
         {
+            Item itemType = stack.getItem();
+            boolean isDirectional = itemType instanceof DirectionalFacadeItem;
             Optional<Block> optionalBlock = stack.get(CFDataComponents.FACADE_BLOCK);
             if (optionalBlock.isPresent() && optionalBlock.get().asItem() instanceof BlockItem blockItem) {
-                if (stack.is(CFItems.DIRECTIONAL_FACADE.get())) {
+                if (isDirectional) {
                     renderDirectionalFacadeItem(optionalBlock.get().defaultBlockState(), stack, poseStack, buffer, combinedLight, combinedOverlay);
                 } else {
                     ItemStack defaultInstance = blockItem.getDefaultInstance();
@@ -57,7 +65,7 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
                 }
             }
 
-            renderOutline(stack, poseStack, buffer, combinedLight);
+            renderOutline(stack, poseStack, buffer, combinedLight, isDirectional);
         }
         poseStack.popPose();
     }
@@ -90,12 +98,13 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.popPose();
     }
 
-    private void renderOutline(ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, int combinedLight) {
-        var model = Minecraft.getInstance().getModelManager().getModel(ClientRegisterEvents.FACADE_OUTLINE);
+    private void renderOutline(ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, boolean isDirectional) {
+        ModelResourceLocation outlineId = resolveOutlineModel(stack);
+        var model = Minecraft.getInstance().getModelManager().getModel(outlineId);
 
         poseStack.pushPose();
         {
-            if (stack.is(CFItems.DIRECTIONAL_FACADE.get())) {
+            if (isDirectional) {
                 poseStack.translate(0.5F, 0.5F, 0.5F);
                 poseStack.scale(1.0F + OUTLINE_SCALE_EPSILON, 1.0F + OUTLINE_SCALE_EPSILON, FLAT_THICKNESS_SCALE + OUTLINE_SCALE_EPSILON);
                 poseStack.translate(-0.5F, -0.5F, -0.5F);
@@ -114,5 +123,23 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
             );
         }
         poseStack.popPose();
+    }
+
+    private static ModelResourceLocation resolveOutlineModel(ItemStack stack) {
+        Item item = stack.getItem();
+        FacadeType type = null;
+        if (item instanceof FacadeItem facade) {
+            type = facade.getFacadeType();
+        } else if (item instanceof DirectionalFacadeItem directional) {
+            type = directional.getFacadeType();
+        }
+        if (type == null) {
+            type = FacadeTypes.defaultType();
+        }
+        ResourceLocation outline = type != null ? type.outlineModel() : null;
+        if (outline == null) {
+            return ClientRegisterEvents.FACADE_OUTLINE;
+        }
+        return ModelResourceLocation.standalone(outline);
     }
 }

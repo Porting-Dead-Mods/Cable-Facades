@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades.utils;
 
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.networking.s2c.AddDirectionalFacadePayload;
@@ -8,6 +9,7 @@ import com.portingdeadmods.cable_facades.networking.s2c.RemoveDirectionalFacadeP
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadePayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
@@ -47,16 +49,25 @@ public class FacadeUtils {
     }
 
     public static void addFacade(Level level, BlockPos pos, BlockState blockState) {
+        addFacade(level, pos, blockState, FacadeTypes.DEFAULT_ID);
+    }
+
+    public static void addFacade(Level level, BlockPos pos, BlockState blockState, ResourceLocation facadeType) {
         if (level instanceof ServerLevel serverLevel) {
-            CableFacadeSavedData.get(serverLevel).addFacade(pos, blockState);
-            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new AddFacadePayload(pos, FacadeData.fullBlock(blockState)));
+            FacadeData data = FacadeData.fullBlock(facadeType, blockState);
+            CableFacadeSavedData.get(serverLevel).addFacade(pos, data);
+            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new AddFacadePayload(pos, data));
         }
     }
 
     public static void addDirectionalFacade(Level level, BlockPos pos, Direction face, BlockState blockState) {
+        addDirectionalFacade(level, pos, face, blockState, FacadeTypes.DEFAULT_ID);
+    }
+
+    public static void addDirectionalFacade(Level level, BlockPos pos, Direction face, BlockState blockState, ResourceLocation facadeType) {
         if (level instanceof ServerLevel serverLevel) {
-            CableFacadeSavedData.get(serverLevel).addDirectionalFacade(pos, face, blockState);
-            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new AddDirectionalFacadePayload(pos, face, blockState));
+            CableFacadeSavedData.get(serverLevel).addDirectionalFacade(pos, face, blockState, facadeType);
+            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new AddDirectionalFacadePayload(pos, face, blockState, facadeType));
         }
     }
 

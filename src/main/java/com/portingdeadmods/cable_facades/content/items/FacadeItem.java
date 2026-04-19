@@ -1,9 +1,9 @@
 package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeType;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
 import com.portingdeadmods.cable_facades.registries.CFDataComponents;
-import com.portingdeadmods.cable_facades.registries.CFItemTags;
-import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -20,10 +20,24 @@ import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class FacadeItem extends Item {
+
+    private final Supplier<FacadeType> facadeType;
+
     public FacadeItem(Properties properties) {
+        this(properties, FacadeTypes::defaultType);
+    }
+
+    public FacadeItem(Properties properties, Supplier<FacadeType> facadeType) {
         super(properties);
+        this.facadeType = facadeType;
+    }
+
+    public FacadeType getFacadeType() {
+        FacadeType type = facadeType.get();
+        return type != null ? type : FacadeTypes.defaultType();
     }
 
     @Override
@@ -39,8 +53,6 @@ public class FacadeItem extends Item {
                 ItemStack offhandItemStack = null;
                 Block block1;
                 if(block.isEmpty()){
-                    // If the player is holding an empty facade in their mainhand
-                    // and a block in their offhand, try to use that block.
                     if (context.getHand() == InteractionHand.MAIN_HAND) {
                         ItemStack offhand = context.getPlayer().getItemInHand(InteractionHand.OFF_HAND);
                         Item item = offhand.getItem();
@@ -57,21 +69,17 @@ public class FacadeItem extends Item {
                     block1 = block.get();
                 }
 
-                // Validate that the facade block is valid (not air or non-BlockItem)
                 if (!(block1.asItem() instanceof BlockItem)) {
                     return InteractionResult.FAIL;
                 }
 
-                Block targetBlock = context.getLevel().getBlockState(pos).getBlock();
-
-                boolean noFacadeTag = context.getLevel().getBlockState(pos).getTags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE));
-
-                // Check that the block is part of the config or has the tag
-                if (!CFConfig.isBlockAllowed(targetBlock) && noFacadeTag) {
+                FacadeType type = getFacadeType();
+                if (!type.canApplyOn().test(level.getBlockState(pos))) {
                     return InteractionResult.FAIL;
                 }
 
-                // Prevent block from being facaded with itself or if it's disallowed
+                Block targetBlock = level.getBlockState(pos).getBlock();
+
                 if (targetBlock == block1 || CFConfig.isBlockDisallowed(block1)) {
                     if (targetBlock == block1) {
                         context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED), true);
@@ -81,7 +89,7 @@ public class FacadeItem extends Item {
                     return InteractionResult.FAIL;
                 }
 
-                FacadeUtils.addFacade(level, pos, block1.getStateForPlacement(new BlockPlaceContext(context)));
+                FacadeUtils.addFacade(level, pos, block1.getStateForPlacement(new BlockPlaceContext(context)), type.id());
 
                 if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
                     itemStack.shrink(1);
@@ -108,8 +116,7 @@ public class FacadeItem extends Item {
     }
 
     public ItemStack createFacade(Block block) {
-        ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
-        // Only set the facade block if it's a valid BlockItem (not air or other non-block items)
+        ItemStack facadeStack = new ItemStack(this);
         if (block != null && block.asItem() instanceof BlockItem) {
             facadeStack.set(CFDataComponents.FACADE_BLOCK, Optional.of(block));
         }

@@ -1,5 +1,8 @@
 package com.portingdeadmods.cable_facades.api;
 
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeType;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -118,6 +121,18 @@ public class CableFacadesAPI {
         initialized = true;
         pendingCallbacks.forEach(callback -> callback.accept(getInstance()));
         pendingCallbacks.clear();
+    }
+
+    /**
+     * Register a facade type. A facade type bundles the apply-predicate and
+     * outline model used by downstream items. The default {@code cable_facades:facade}
+     * type is registered automatically during mod init.
+     *
+     * @param type the facade type to register
+     * @return the registered type (for call chaining)
+     */
+    public static FacadeType registerFacadeType(FacadeType type) {
+        return FacadeTypes.register(type);
     }
 
     private static class SingletonHolder {

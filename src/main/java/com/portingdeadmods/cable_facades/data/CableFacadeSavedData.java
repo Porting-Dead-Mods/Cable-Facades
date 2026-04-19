@@ -3,6 +3,7 @@ package com.portingdeadmods.cable_facades.data;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.DataResult;
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
 import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
 import com.portingdeadmods.cable_facades.data.helper.LevelFacadeMap;
 import net.minecraft.core.BlockPos;
@@ -11,6 +12,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -69,13 +71,17 @@ public class CableFacadeSavedData extends SavedData {
     }
 
     public void addDirectionalFacade(BlockPos blockPos, Direction direction, BlockState blockState) {
+        addDirectionalFacade(blockPos, direction, blockState, FacadeTypes.DEFAULT_ID);
+    }
+
+    public void addDirectionalFacade(BlockPos blockPos, Direction direction, BlockState blockState, ResourceLocation facadeType) {
         ChunkFacadeMap chunkMap = getOrCreateFacadeMapForPos(blockPos);
         FacadeData existing = chunkMap.getChunkMap().get(blockPos);
         FacadeData updated;
         if (existing != null && existing.isDirectional()) {
             updated = existing.withFace(direction, blockState);
         } else {
-            updated = FacadeData.directional(direction, blockState);
+            updated = FacadeData.directional(facadeType, direction, blockState);
         }
         chunkMap.getChunkMap().put(blockPos, updated);
         setDirty();
