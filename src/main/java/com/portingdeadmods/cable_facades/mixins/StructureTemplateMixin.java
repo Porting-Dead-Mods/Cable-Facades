@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
 import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
@@ -8,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
@@ -61,6 +63,7 @@ public class StructureTemplateMixin {
             facadeMap.forEach((pos, data) -> {
                 CompoundTag facadeTag = new CompoundTag();
                 facadeTag.put("pos", NbtUtils.writeBlockPos(pos));
+                facadeTag.putString("facade_type_id", data.facadeType().toString());
 
                 if (data.isFullBlock()) {
                     facadeTag.putString("facade_type", "full");
@@ -97,6 +100,9 @@ public class StructureTemplateMixin {
 
                 BlockPos pos = posOpt.get();
                 String facadeType = facadeTag.getString("facade_type");
+                ResourceLocation typeId = facadeTag.contains("facade_type_id")
+                        ? ResourceLocation.parse(facadeTag.getString("facade_type_id"))
+                        : FacadeTypes.DEFAULT_ID;
 
                 if ("directional".equals(facadeType)) {
                     CompoundTag facesTag = facadeTag.getCompound("faces");
@@ -109,11 +115,11 @@ public class StructureTemplateMixin {
                         }
                     }
                     if (!faces.isEmpty()) {
-                        facadeMap.put(pos, FacadeData.directional(faces));
+                        facadeMap.put(pos, FacadeData.directional(typeId, faces));
                     }
                 } else {
                     BlockState state = NbtUtils.readBlockState(blockGetter, facadeTag.getCompound("state"));
-                    facadeMap.put(pos, FacadeData.fullBlock(state));
+                    facadeMap.put(pos, FacadeData.fullBlock(typeId, state));
                 }
             }
         }
@@ -133,13 +139,13 @@ public class StructureTemplateMixin {
                     BlockState transformedState = facadeData.getFullBlock()
                             .mirror(settings.getMirror())
                             .rotate(settings.getRotation());
-                    FacadeUtils.addFacade(level.getLevel(), actualPos, transformedState);
+                    FacadeUtils.addFacade(level.getLevel(), actualPos, transformedState, facadeData.facadeType());
                 } else if (facadeData.isDirectional()) {
                     facadeData.directional().forEach((dir, state) -> {
                         BlockState transformedState = state
                                 .mirror(settings.getMirror())
                                 .rotate(settings.getRotation());
-                        FacadeUtils.addDirectionalFacade(level.getLevel(), actualPos, dir, transformedState);
+                        FacadeUtils.addDirectionalFacade(level.getLevel(), actualPos, dir, transformedState, facadeData.facadeType());
                     });
                 }
             });

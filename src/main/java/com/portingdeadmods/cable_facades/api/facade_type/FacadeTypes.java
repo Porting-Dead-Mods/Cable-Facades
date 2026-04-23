@@ -1,7 +1,10 @@
 package com.portingdeadmods.cable_facades.api.facade_type;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.content.items.DirectionalFacadeItem;
+import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,5 +39,31 @@ public final class FacadeTypes {
 
     public static Collection<FacadeType> all() {
         return Collections.unmodifiableCollection(REGISTRY.values());
+    }
+
+    @Nullable
+    public static FacadeItem fullItemFor(ResourceLocation id) {
+        FacadeType type = get(id);
+        if (type != null && type.fullItem() != null) {
+            return type.fullItem().get();
+        }
+        FacadeType fallback = defaultType();
+        if (fallback != null && fallback.fullItem() != null) {
+            return fallback.fullItem().get();
+        }
+        return null;
+    }
+
+    @Nullable
+    public static DirectionalFacadeItem directionalItemFor(ResourceLocation id) {
+        FacadeType type = get(id);
+        if (type != null && type.directionalItem() != null) {
+            return type.directionalItem().get();
+        }
+        FacadeType fallback = defaultType();
+        if (fallback != null && fallback.directionalItem() != null) {
+            return fallback.directionalItem().get();
+        }
+        return null;
     }
 }

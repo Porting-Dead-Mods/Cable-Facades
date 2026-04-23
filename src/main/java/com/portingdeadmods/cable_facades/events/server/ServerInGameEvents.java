@@ -2,6 +2,9 @@ package com.portingdeadmods.cable_facades.events.server;
 
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
+import com.portingdeadmods.cable_facades.content.items.DirectionalFacadeItem;
+import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
@@ -87,9 +90,11 @@ public final class ServerInGameEvents {
             FacadeData facadeData = FacadeUtils.getFacadeData(level, pos);
             if (facadeData != null) {
                 if (facadeData.isFullBlock()) {
+                    FacadeItem fullItem = FacadeTypes.fullItemFor(facadeData.facadeType());
+                    if (fullItem == null) fullItem = CFItems.FACADE.get();
                     FacadeUtils.removeFacade(level, pos);
                     if (!player.isCreative() && CFConfig.consumeFacade) {
-                        ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeData.getFullBlock().getBlock());
+                        ItemStack facadeStack = fullItem.createFacade(facadeData.getFullBlock().getBlock());
                         Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                     }
                     event.setCanceled(true);
@@ -97,9 +102,11 @@ public final class ServerInGameEvents {
                     Direction hitFace = getPlayerLookingFace(player, pos);
                     if (facadeData.hasFace(hitFace)) {
                         BlockState faceState = facadeData.getFace(hitFace);
+                        DirectionalFacadeItem directionalItem = FacadeTypes.directionalItemFor(facadeData.facadeType());
+                        if (directionalItem == null) directionalItem = CFItems.DIRECTIONAL_FACADE.get();
                         FacadeUtils.removeDirectionalFacade(level, pos, hitFace);
                         if (!player.isCreative() && CFConfig.consumeFacade) {
-                            ItemStack facadeStack = CFItems.DIRECTIONAL_FACADE.get().createFacade(faceState.getBlock());
+                            ItemStack facadeStack = directionalItem.createFacade(faceState.getBlock());
                             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                         }
                         event.setCanceled(true);
@@ -143,9 +150,12 @@ public final class ServerInGameEvents {
     private static void handleWrenchOnFullBlock(Player player, Level level, BlockPos pos, InteractionHand hand, BlockState facadeState) {
         if (player.isShiftKeyDown()) {
             if (!level.isClientSide()) {
+                FacadeData existing = FacadeUtils.getFacadeData(level, pos);
+                FacadeItem fullItem = existing != null ? FacadeTypes.fullItemFor(existing.facadeType()) : null;
+                if (fullItem == null) fullItem = CFItems.FACADE.get();
                 FacadeUtils.removeFacade(level, pos);
                 if (!player.isCreative() && CFConfig.consumeFacade) {
-                    ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeState.getBlock());
+                    ItemStack facadeStack = fullItem.createFacade(facadeState.getBlock());
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 } else {
                     playPickupSound(level, player);
@@ -165,9 +175,12 @@ public final class ServerInGameEvents {
     private static void handleWrenchOnDirectionalFace(Player player, Level level, BlockPos pos, InteractionHand hand, Direction face, BlockState facadeState) {
         if (player.isShiftKeyDown()) {
             if (!level.isClientSide()) {
+                FacadeData existing = FacadeUtils.getFacadeData(level, pos);
+                DirectionalFacadeItem directionalItem = existing != null ? FacadeTypes.directionalItemFor(existing.facadeType()) : null;
+                if (directionalItem == null) directionalItem = CFItems.DIRECTIONAL_FACADE.get();
                 FacadeUtils.removeDirectionalFacade(level, pos, face);
                 if (!player.isCreative() && CFConfig.consumeFacade) {
-                    ItemStack facadeStack = CFItems.DIRECTIONAL_FACADE.get().createFacade(facadeState.getBlock());
+                    ItemStack facadeStack = directionalItem.createFacade(facadeState.getBlock());
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                 } else {
                     playPickupSound(level, player);

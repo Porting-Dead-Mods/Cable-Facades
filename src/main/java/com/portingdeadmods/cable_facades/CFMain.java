@@ -37,7 +37,9 @@ public class CFMain {
         FacadeTypes.register(new FacadeType(
                 FacadeTypes.DEFAULT_ID,
                 CFMain::defaultCanApply,
-                DEFAULT_OUTLINE_MODEL
+                DEFAULT_OUTLINE_MODEL,
+                CFItems.FACADE::get,
+                CFItems.DIRECTIONAL_FACADE::get
         ));
     }
 

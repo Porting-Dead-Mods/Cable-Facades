@@ -1,11 +1,15 @@
 package com.portingdeadmods.cable_facades.mixins;
 
 import com.portingdeadmods.cable_facades.CFConfig;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
+import com.portingdeadmods.cable_facades.content.items.DirectionalFacadeItem;
+import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.multipart.MultipartShapeBuilder;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
@@ -44,14 +48,19 @@ public abstract class BlockStateBaseMixin {
             if (facadeData != null && !blockState.is(getBlock())) {
                 if (level instanceof ServerLevel) {
                     if (facadeData.isFullBlock()) {
-                        ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeData.getFullBlock().getBlock());
+                        FacadeItem fullItem = FacadeTypes.fullItemFor(facadeData.facadeType());
+                        if (fullItem == null) fullItem = CFItems.FACADE.get();
+                        ItemStack facadeStack = fullItem.createFacade(facadeData.getFullBlock().getBlock());
                         FacadeUtils.removeFacade(level, blockPos);
                         if (CFConfig.consumeFacade) Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
                     } else if (facadeData.isDirectional()) {
+                        ResourceLocation typeId = facadeData.facadeType();
+                        DirectionalFacadeItem directionalLookup = FacadeTypes.directionalItemFor(typeId);
+                        final DirectionalFacadeItem directionalItem = directionalLookup != null ? directionalLookup : CFItems.DIRECTIONAL_FACADE.get();
                         FacadeUtils.removeFacade(level, blockPos);
                         if (CFConfig.consumeFacade) {
                             facadeData.directional().forEach((dir, state) -> {
-                                ItemStack stack = CFItems.DIRECTIONAL_FACADE.get().createFacade(state.getBlock());
+                                ItemStack stack = directionalItem.createFacade(state.getBlock());
                                 Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), stack);
                             });
                         }
