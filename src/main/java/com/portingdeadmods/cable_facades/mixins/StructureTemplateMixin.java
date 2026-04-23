@@ -1,5 +1,6 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.portingdeadmods.cable_facades.api.StructureTemplateFacadeAccess;
 import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
 import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
@@ -28,13 +29,18 @@ import java.util.Map;
 import java.util.Optional;
 
 @Mixin(StructureTemplate.class)
-public class StructureTemplateMixin {
+public class StructureTemplateMixin implements StructureTemplateFacadeAccess {
 
     @Unique
     private static final String FACADES_TAG = "cable_facades";
 
     @Unique
     private final Map<BlockPos, FacadeData> facadeMap = new HashMap<>();
+
+    @Override
+    public Map<BlockPos, FacadeData> cableFacades$getFacadeMap() {
+        return facadeMap;
+    }
 
     @Inject(
             method = "fillFromWorld",
