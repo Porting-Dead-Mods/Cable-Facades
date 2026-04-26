@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +57,10 @@ public final class ClientFacadeManager {
 
     public static Stream<Map.Entry<BlockPos, FacadeData>> entryStream() {
         return FACADED_BLOCKS.entrySet().stream();
+    }
+
+    public static Iterable<Map.Entry<BlockPos, FacadeData>> entryIterator() {
+        return FACADED_BLOCKS.entrySet();
     }
 
     public static void clear() {

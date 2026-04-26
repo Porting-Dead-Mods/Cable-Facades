@@ -42,13 +42,13 @@ public final class MultipartShapeBuilder {
         return getCoverOnlyShape(facadeData);
     }
 
-    public static VoxelShape buildOcclusionShape(BlockGetter level, BlockPos pos, FacadeData facadeData) {
-        if (facadeData.isFullBlock()) {
-            return facadeData.getFullBlock().getOcclusionShape(level, BlockPos.ZERO);
-        }
-
-        return Shapes.empty();
-    }
+//    public static VoxelShape buildOcclusionShape(BlockGetter level, BlockPos pos, FacadeData facadeData) {
+//        if (facadeData.isFullBlock()) {
+//            return facadeData.getFullBlock().getOcclusionShape(level, BlockPos.ZERO);
+//        }
+//
+//        return Shapes.empty();
+//    }
 
     public static VoxelShape getCoverOnlyShape(FacadeData facadeData) {
         if (facadeData.isFullBlock()) {

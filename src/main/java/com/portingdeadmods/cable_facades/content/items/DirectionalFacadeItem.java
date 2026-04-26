@@ -11,14 +11,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -68,7 +67,7 @@ public class DirectionalFacadeItem extends Item {
             }
 
             Block targetBlock = level.getBlockState(pos).getBlock();
-            boolean noFacadeTag = level.getBlockState(pos).getTags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE));
+            boolean noFacadeTag = level.getBlockState(pos).tags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE));
 
             if (!CFConfig.isBlockAllowed(targetBlock) && noFacadeTag) {
                 return InteractionResult.FAIL;
@@ -76,9 +75,9 @@ public class DirectionalFacadeItem extends Item {
 
             if (targetBlock == facadeBlock || CFConfig.isBlockDisallowed(facadeBlock)) {
                 if (targetBlock == facadeBlock) {
-                    context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED), true);
+                    context.getPlayer().sendOverlayMessage(Component.translatable("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED));
                 } else {
-                    context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.block_disabled").withStyle(ChatFormatting.RED), true);
+                    context.getPlayer().sendOverlayMessage(Component.translatable("cable_facades.error.block_disabled").withStyle(ChatFormatting.RED));
                 }
                 return InteractionResult.FAIL;
             }
@@ -94,14 +93,17 @@ public class DirectionalFacadeItem extends Item {
         }
 
         FacadeUtils.updateBlocks(level, pos);
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        if (!level.isClientSide()) {
+            return InteractionResult.SUCCESS_SERVER;
+        }
+        return InteractionResult.FAIL;
     }
 
     @Override
     public @NotNull Component getName(ItemStack itemStack) {
         Optional<Block> block = itemStack.get(CFDataComponents.FACADE_BLOCK);
         if (block != null && block.isPresent() && block.get().asItem() instanceof BlockItem blockItem) {
-            return Component.translatable("cable_facades.directional_facade.name_prefix").append(blockItem.getDescription());
+            return Component.translatable("cable_facades.directional_facade.name_prefix");//.append(blockItem.getDescription());
         }
         return Component.translatable("cable_facades.directional_facade.empty");
     }
@@ -114,16 +116,24 @@ public class DirectionalFacadeItem extends Item {
         return stack;
     }
 
-    @Override
-    public boolean hasCraftingRemainingItem(ItemStack stack) {
-        return true;
-    }
+//    @Override
+//    public boolean hasCraftingRemainingItem(ItemStack stack) {
+//        return true;
+//    }
+//
+//    @Override
+//    public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
+//        if (Boolean.TRUE.equals(itemStack.get(CFDataComponents.HAS_FACADE_REMAINDER))) {
+//            return this.getDefaultInstance();
+//        }
+//        return ItemStack.EMPTY;
+//    }
 
     @Override
-    public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
-        if (Boolean.TRUE.equals(itemStack.get(CFDataComponents.HAS_FACADE_REMAINDER))) {
-            return this.getDefaultInstance();
+    public @Nullable ItemStackTemplate getCraftingRemainder(ItemInstance instance) {
+        if (Boolean.TRUE.equals(instance.get(CFDataComponents.HAS_FACADE_REMAINDER))) {
+            return new ItemStackTemplate(this);
         }
-        return ItemStack.EMPTY;
+        return super.getCraftingRemainder();
     }
 }

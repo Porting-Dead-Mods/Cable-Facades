@@ -1,27 +1,32 @@
 package com.portingdeadmods.cable_facades.content.recipes;
 
+import com.mojang.serialization.MapCodec;
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.registries.CFDataComponents;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
+import net.minecraft.world.item.crafting.PlacementInfo;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 
 public class FacadeCraftingRecipe extends CustomRecipe {
-    public FacadeCraftingRecipe(CraftingBookCategory category) {
-        super(category);
-    }
+    public static final FacadeCraftingRecipe INSTANCE = new FacadeCraftingRecipe();
+    public static final MapCodec<FacadeCraftingRecipe> CODEC = MapCodec.unit(INSTANCE);
+    public static final StreamCodec<RegistryFriendlyByteBuf, FacadeCraftingRecipe> STREAM_CODEC = StreamCodec.unit(INSTANCE);
+    public static final RecipeSerializer<FacadeCraftingRecipe> SERIALIZER = new RecipeSerializer<>(FacadeCraftingRecipe.CODEC, FacadeCraftingRecipe.STREAM_CODEC);
 
     @Override
     public boolean matches(CraftingInput craftingInput, Level level) {
@@ -60,7 +65,7 @@ public class FacadeCraftingRecipe extends CustomRecipe {
     }
 
     @Override
-    public @NotNull ItemStack assemble(CraftingInput craftingInput, HolderLookup.Provider registryAccess) {
+    public @NotNull ItemStack assemble(CraftingInput craftingInput) {
         Block facadeBlock = null;
         ItemStack originalFacadeStack = ItemStack.EMPTY;
         ItemStack facadeStack = ItemStack.EMPTY;
@@ -68,7 +73,7 @@ public class FacadeCraftingRecipe extends CustomRecipe {
             ItemStack item = craftingInput.getItem(i);
             if (item.getItem() instanceof BlockItem blockItem) {
                 facadeBlock = blockItem.getBlock();
-                if(facadeBlock.defaultBlockState().getRenderShape() == RenderShape.ENTITYBLOCK_ANIMATED){
+                if(facadeBlock.defaultBlockState().getRenderShape() == RenderShape.INVISIBLE){
                     return ItemStack.EMPTY;
                 }
             } else if (item.getItem() instanceof FacadeItem) {
@@ -93,12 +98,7 @@ public class FacadeCraftingRecipe extends CustomRecipe {
     }
 
     @Override
-    public boolean canCraftInDimensions(int i, int i1) {
-        return true;
-    }
-
-    @Override
-    public @NotNull RecipeSerializer<?> getSerializer() {
-        return CFRecipes.FACADE.get();
+    public @NonNull RecipeSerializer<? extends CustomRecipe> getSerializer() {
+        return SERIALIZER;
     }
 }

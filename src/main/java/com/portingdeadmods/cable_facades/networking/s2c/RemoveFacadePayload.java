@@ -7,11 +7,11 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record RemoveFacadePayload(BlockPos facadePos) implements CustomPacketPayload {
-    public static final Type<RemoveFacadePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(CFMain.MODID, "remove_facade"));
+    public static final Type<RemoveFacadePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(CFMain.MODID, "remove_facade"));
     public static final StreamCodec<ByteBuf, RemoveFacadePayload> STREAM_CODEC = BlockPos.STREAM_CODEC.map(RemoveFacadePayload::new, RemoveFacadePayload::facadePos);
 
     public void handle(IPayloadContext context) {

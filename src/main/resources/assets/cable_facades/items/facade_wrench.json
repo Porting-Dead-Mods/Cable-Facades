@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "cable_facades:item/facade_wrench"
+  }
+}

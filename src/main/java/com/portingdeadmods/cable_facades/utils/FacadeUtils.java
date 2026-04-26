@@ -49,28 +49,28 @@ public class FacadeUtils {
     public static void addFacade(Level level, BlockPos pos, BlockState blockState) {
         if (level instanceof ServerLevel serverLevel) {
             CableFacadeSavedData.get(serverLevel).addFacade(pos, blockState);
-            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new AddFacadePayload(pos, FacadeData.fullBlock(blockState)));
+            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, ChunkPos.containing(pos), new AddFacadePayload(pos, FacadeData.fullBlock(blockState)));
         }
     }
 
     public static void addDirectionalFacade(Level level, BlockPos pos, Direction face, BlockState blockState) {
         if (level instanceof ServerLevel serverLevel) {
             CableFacadeSavedData.get(serverLevel).addDirectionalFacade(pos, face, blockState);
-            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new AddDirectionalFacadePayload(pos, face, blockState));
+            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, ChunkPos.containing(pos), new AddDirectionalFacadePayload(pos, face, blockState));
         }
     }
 
     public static void removeFacade(Level level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
             CableFacadeSavedData.get(serverLevel).removeFacade(pos);
-            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new RemoveFacadePayload(pos));
+            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, ChunkPos.containing(pos), new RemoveFacadePayload(pos));
         }
     }
 
     public static void removeDirectionalFacade(Level level, BlockPos pos, Direction face) {
         if (level instanceof ServerLevel serverLevel) {
             CableFacadeSavedData.get(serverLevel).removeDirectionalFacade(pos, face);
-            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(pos), new RemoveDirectionalFacadePayload(pos, face));
+            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, ChunkPos.containing(pos), new RemoveDirectionalFacadePayload(pos, face));
         }
     }
 
@@ -79,17 +79,18 @@ public class FacadeUtils {
 
         BlockState state = level.getBlockState(pos);
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) != null) {
                 level.getBlockEntity(pos).setChanged();
                 level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
             }
 
             level.updateNeighborsAt(pos, state.getBlock());
-            level.updateNeighborsAtExceptFromFacing(pos, state.getBlock(), null);
+            // FIXME: Reenable
+            //level.updateNeighborsAtExceptFromFacing(pos, state.getBlock(), null);
             level.setBlock(pos, state, Block.UPDATE_ALL_IMMEDIATE);
             level.getLightEngine().checkBlock(pos);
-            level.getChunkAt(pos).setUnsaved(true);
+            level.getChunkAt(pos).markUnsaved();
         } else {
             level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
             level.getLightEngine().checkBlock(pos);

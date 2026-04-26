@@ -1,14 +1,17 @@
 package com.portingdeadmods.cable_facades.client.render;
 
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.ArrayListDeque;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.quad.MutableQuad;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,15 +40,20 @@ public final class CoverQuadRenderer {
     private CoverQuadRenderer() {
     }
 
-    public static List<BakedQuad> sliceQuads(BlockState state, BlockPos pos, BakedModel model,
-                                             Direction side, ModelData modelData) {
+    public static List<BakedQuad> sliceQuads(BlockAndTintGetter level, BlockState state, BlockPos pos, BlockStateModel model,
+                                             Direction side) {
         long seed = state.getSeed(pos);
         AABB bounds = COVER_BOXES[side.ordinal()];
         List<BakedQuad> sourceQuads = new ArrayList<>();
 
-        sourceQuads.addAll(model.getQuads(state, null, RandomSource.create(seed), modelData, null));
-        for (Direction face : Direction.values()) {
-            sourceQuads.addAll(model.getQuads(state, face, RandomSource.create(seed), modelData, null));
+        List<BlockStateModelPart> parts = new ArrayList<>();
+        model.collectParts(level, pos, state, RandomSource.create(seed), parts);
+
+        for (BlockStateModelPart part : parts) {
+            sourceQuads.addAll(part.getQuads(null));
+            for (Direction face : Direction.values()) {
+                sourceQuads.addAll(part.getQuads(face));
+            }
         }
 
         List<BakedQuad> result = new ArrayList<>(sourceQuads.size());
@@ -56,8 +64,9 @@ public final class CoverQuadRenderer {
     }
 
     private static BakedQuad sliceQuad(BakedQuad sourceQuad, Direction side, AABB bounds) {
-        MutableQuad quad = new MutableQuad(sourceQuad);
-        Direction originalDirection = sourceQuad.getDirection();
+        MutableQuad quad = new MutableQuad();
+        quad.setFrom(sourceQuad);
+        Direction originalDirection = sourceQuad.direction();
         int sideIndex = side.ordinal();
         int coverAxis = COVER_AXIS_BY_SIDE[sideIndex];
         float softBound = COVER_SOFT_BOUNDS[sideIndex];
@@ -70,9 +79,9 @@ public final class CoverQuadRenderer {
         float[] first = new float[3];
 
         for (int vertex = 0; vertex < 4; vertex++) {
-            positions[vertex][0] = quad.getPosition(vertex, 0);
-            positions[vertex][1] = quad.getPosition(vertex, 1);
-            positions[vertex][2] = quad.getPosition(vertex, 2);
+            positions[vertex][0] = quad.positionComponent(vertex, 0);
+            positions[vertex][1] = quad.positionComponent(vertex, 1);
+            positions[vertex][2] = quad.positionComponent(vertex, 2);
 
             if (vertex == 0) {
                 first[0] = positions[vertex][0];
@@ -114,18 +123,20 @@ public final class CoverQuadRenderer {
                 }
             }
 
-            quad.setPosition(vertex, 0, positions[vertex][0]);
-            quad.setPosition(vertex, 1, positions[vertex][1]);
-            quad.setPosition(vertex, 2, positions[vertex][2]);
+            quad.setPositionComponent(vertex, 0, positions[vertex][0]);
+            quad.setPositionComponent(vertex, 1, positions[vertex][1]);
+            quad.setPositionComponent(vertex, 2, positions[vertex][2]);
 
             if (slicedAxis != -1) {
+                TextureAtlasSprite sprite = sourceQuad.materialInfo().sprite();
                 float[] uv = remapFaceUv(originalDirection, positions[vertex][0], positions[vertex][1], positions[vertex][2]);
-                quad.setUv(vertex, quad.sprite.getU(clamp01(uv[0])), quad.sprite.getV(clamp01(uv[1])));
+                quad.setUv(vertex, sprite.getU(clamp01(uv[0])), sprite.getV(clamp01(uv[1])));
             }
         }
 
-        quad.recalculateOrientationAndNormal();
-        return quad.bake();
+        //quad.recalculateOrientationAndNormal();
+        //quad.recalculateWinding();
+        return quad.toBakedQuad();
     }
 
     private static boolean sameValue(float a, float b) {
@@ -193,78 +204,79 @@ public final class CoverQuadRenderer {
         return packed & 0xFF;
     }
 
-    private static final class MutableQuad {
-        private final int[] vertices;
-        private int tintIndex;
-        private Direction direction;
-        private final TextureAtlasSprite sprite;
-        private final boolean shade;
-
-        private MutableQuad(BakedQuad quad) {
-            this.vertices = quad.getVertices().clone();
-            this.tintIndex = quad.getTintIndex();
-            this.direction = quad.getDirection();
-            this.sprite = quad.getSprite();
-            this.shade = quad.isShade();
-        }
-
-        private float getPosition(int vertex, int axis) {
-            return Float.intBitsToFloat(vertices[vertex * VERTEX_STRIDE + axis]);
-        }
-
-        private void setPosition(int vertex, int axis, float value) {
-            vertices[vertex * VERTEX_STRIDE + axis] = Float.floatToRawIntBits(value);
-        }
-
-        private void setUv(int vertex, float u, float v) {
-            int baseIndex = vertex * VERTEX_STRIDE;
-            vertices[baseIndex + TEXTURE_U] = Float.floatToRawIntBits(u);
-            vertices[baseIndex + TEXTURE_V] = Float.floatToRawIntBits(v);
-        }
-
-        private void recalculateOrientationAndNormal() {
-            float x0 = getPosition(0, 0);
-            float y0 = getPosition(0, 1);
-            float z0 = getPosition(0, 2);
-            float x1 = getPosition(1, 0);
-            float y1 = getPosition(1, 1);
-            float z1 = getPosition(1, 2);
-            float x2 = getPosition(2, 0);
-            float y2 = getPosition(2, 1);
-            float z2 = getPosition(2, 2);
-            float x3 = getPosition(3, 0);
-            float y3 = getPosition(3, 1);
-            float z3 = getPosition(3, 2);
-
-            float v1x = x3 - x1;
-            float v1y = y3 - y1;
-            float v1z = z3 - z1;
-            float v2x = x2 - x0;
-            float v2y = y2 - y0;
-            float v2z = z2 - z0;
-
-            float normalX = v2y * v1z - v2z * v1y;
-            float normalY = v2z * v1x - v2x * v1z;
-            float normalZ = v2x * v1y - v2y * v1x;
-            float lengthSquared = normalX * normalX + normalY * normalY + normalZ * normalZ;
-            if (lengthSquared <= FLOAT_EPSILON) {
-                return;
-            }
-
-            float inverseLength = (float) (1.0D / Math.sqrt(lengthSquared));
-            normalX *= inverseLength;
-            normalY *= inverseLength;
-            normalZ *= inverseLength;
-            direction = Direction.getNearest(normalX, normalY, normalZ);
-
-            int packedNormal = packNormal(normalX, normalY, normalZ);
-            for (int vertex = 0; vertex < 4; vertex++) {
-                vertices[vertex * VERTEX_STRIDE + NORMAL] = packedNormal;
-            }
-        }
-
-        private BakedQuad bake() {
-            return new BakedQuad(vertices, tintIndex, direction, sprite, shade);
-        }
-    }
+//    private static final class MutableQuad {
+//        private final int[] vertices;
+//        private int tintIndex;
+//        private Direction direction;
+//        private final TextureAtlasSprite sprite;
+//        private final boolean shade;
+//
+//        private MutableQuad(BakedQuad quad) {
+//            net.neoforged.neoforge.client.model.quad.MutableQuad
+//            this.vertices = quad.getVertices().clone();
+//            this.tintIndex = quad.getTintIndex();
+//            this.direction = quad.getDirection();
+//            this.sprite = quad.getSprite();
+//            this.shade = quad.isShade();
+//        }
+//
+//        private float getPosition(int vertex, int axis) {
+//            return Float.intBitsToFloat(vertices[vertex * VERTEX_STRIDE + axis]);
+//        }
+//
+//        private void setPosition(int vertex, int axis, float value) {
+//            vertices[vertex * VERTEX_STRIDE + axis] = Float.floatToRawIntBits(value);
+//        }
+//
+//        private void setUv(int vertex, float u, float v) {
+//            int baseIndex = vertex * VERTEX_STRIDE;
+//            vertices[baseIndex + TEXTURE_U] = Float.floatToRawIntBits(u);
+//            vertices[baseIndex + TEXTURE_V] = Float.floatToRawIntBits(v);
+//        }
+//
+//        private void recalculateOrientationAndNormal() {
+//            float x0 = getPosition(0, 0);
+//            float y0 = getPosition(0, 1);
+//            float z0 = getPosition(0, 2);
+//            float x1 = getPosition(1, 0);
+//            float y1 = getPosition(1, 1);
+//            float z1 = getPosition(1, 2);
+//            float x2 = getPosition(2, 0);
+//            float y2 = getPosition(2, 1);
+//            float z2 = getPosition(2, 2);
+//            float x3 = getPosition(3, 0);
+//            float y3 = getPosition(3, 1);
+//            float z3 = getPosition(3, 2);
+//
+//            float v1x = x3 - x1;
+//            float v1y = y3 - y1;
+//            float v1z = z3 - z1;
+//            float v2x = x2 - x0;
+//            float v2y = y2 - y0;
+//            float v2z = z2 - z0;
+//
+//            float normalX = v2y * v1z - v2z * v1y;
+//            float normalY = v2z * v1x - v2x * v1z;
+//            float normalZ = v2x * v1y - v2y * v1x;
+//            float lengthSquared = normalX * normalX + normalY * normalY + normalZ * normalZ;
+//            if (lengthSquared <= FLOAT_EPSILON) {
+//                return;
+//            }
+//
+//            float inverseLength = (float) (1.0D / Math.sqrt(lengthSquared));
+//            normalX *= inverseLength;
+//            normalY *= inverseLength;
+//            normalZ *= inverseLength;
+//            direction = Direction.getNearest(normalX, normalY, normalZ);
+//
+//            int packedNormal = packNormal(normalX, normalY, normalZ);
+//            for (int vertex = 0; vertex < 4; vertex++) {
+//                vertices[vertex * VERTEX_STRIDE + NORMAL] = packedNormal;
+//            }
+//        }
+//
+//        private BakedQuad bake() {
+//            return new BakedQuad(vertices, tintIndex, direction, sprite, shade);
+//        }
+//    }
 }

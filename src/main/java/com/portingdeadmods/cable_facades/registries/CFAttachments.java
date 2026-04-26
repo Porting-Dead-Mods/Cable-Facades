@@ -12,12 +12,12 @@ public final class CFAttachments {
 
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Boolean>> SEEN_DIRECTIONAL_FACADE_UPDATE_MESSAGE = ATTACHMENTS.register(
             "seen_directional_facade_update_message",
-            () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build()
+            () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL.fieldOf("seen_directional_facade_update_message")).copyOnDeath().build()
     );
 
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Boolean>> SUPPRESS_DIRECTIONAL_FACADE_UPDATE_MESSAGE = ATTACHMENTS.register(
             "suppress_directional_facade_update_message",
-            () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build()
+            () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL.fieldOf("suppress_directional_facade_update_message")).build()
     );
 
     private CFAttachments() {

@@ -33,31 +33,31 @@ public abstract class BlockStateBaseMixin {
     private static final ThreadLocal<Boolean> cable_facades$recursionGuard = ThreadLocal.withInitial(() -> false);
 
     @Inject(
-            method = "onRemove",
+            method = "affectNeighborsAfterRemoval",
             at = @At("HEAD")
     )
-    private void onRemove(Level level, BlockPos blockPos, BlockState blockState, boolean isMoving, CallbackInfo ci) {
+    private void onRemove(ServerLevel level, BlockPos pos, boolean movedByPiston, CallbackInfo ci) {
         if (cable_facades$recursionGuard.get()) return;
         cable_facades$recursionGuard.set(true);
         try {
-            FacadeData facadeData = FacadeUtils.getFacadeData(level, blockPos);
-            if (facadeData != null && !blockState.is(getBlock())) {
+            FacadeData facadeData = FacadeUtils.getFacadeData(level, pos);
+            if (facadeData != null) {
                 if (level instanceof ServerLevel) {
                     if (facadeData.isFullBlock()) {
                         ItemStack facadeStack = CFItems.FACADE.get().createFacade(facadeData.getFullBlock().getBlock());
-                        FacadeUtils.removeFacade(level, blockPos);
-                        if (CFConfig.consumeFacade) Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), facadeStack);
+                        FacadeUtils.removeFacade(level, pos);
+                        if (CFConfig.consumeFacade) Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), facadeStack);
                     } else if (facadeData.isDirectional()) {
-                        FacadeUtils.removeFacade(level, blockPos);
+                        FacadeUtils.removeFacade(level, pos);
                         if (CFConfig.consumeFacade) {
                             facadeData.directional().forEach((dir, state) -> {
                                 ItemStack stack = CFItems.DIRECTIONAL_FACADE.get().createFacade(state.getBlock());
-                                Containers.dropItemStack(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), stack);
+                                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);
                             });
                         }
                     }
                 }
-                FacadeUtils.updateBlocks(level, blockPos);
+                FacadeUtils.updateBlocks(level, pos);
             }
         } finally {
             cable_facades$recursionGuard.set(false);
@@ -102,87 +102,88 @@ public abstract class BlockStateBaseMixin {
         }
     }
 
-    @Inject(
-            method = "getOcclusionShape",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void getOcclusionShape(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<VoxelShape> cir) {
-        if (cable_facades$recursionGuard.get()) return;
-        cable_facades$recursionGuard.set(true);
-        try {
-            FacadeData facadeData = FacadeUtils.getFacadeData(blockGetter, blockPos);
-            if (facadeData != null) {
-                cir.setReturnValue(MultipartShapeBuilder.buildOcclusionShape(blockGetter, blockPos, facadeData));
-            }
-        } finally {
-            cable_facades$recursionGuard.set(false);
-        }
-    }
+    // TODO: Reenable
+//    @Inject(
+//            method = "getOcclusionShape",
+//            at = @At("HEAD"),
+//            cancellable = true
+//    )
+//    private void getOcclusionShape(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<VoxelShape> cir) {
+//        if (cable_facades$recursionGuard.get()) return;
+//        cable_facades$recursionGuard.set(true);
+//        try {
+//            FacadeData facadeData = FacadeUtils.getFacadeData(blockGetter, blockPos);
+//            if (facadeData != null) {
+//                cir.setReturnValue(MultipartShapeBuilder.buildOcclusionShape(blockGetter, blockPos, facadeData));
+//            }
+//        } finally {
+//            cable_facades$recursionGuard.set(false);
+//        }
+//    }
 
-    @Inject(
-            method = "getLightBlock",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void getLightBlock(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Integer> cir) {
-        if (cable_facades$recursionGuard.get()) return;
-        cable_facades$recursionGuard.set(true);
-        try {
-            FacadeData facadeData = FacadeUtils.getFacadeData(blockGetter, blockPos);
-            if (facadeData != null) {
-                if (facadeData.isFullBlock()) {
-                    cir.setReturnValue(facadeData.getFullBlock().getLightBlock(blockGetter, BlockPos.ZERO));
-                } else {
-                    cir.setReturnValue(0);
-                }
-            }
-        } finally {
-            cable_facades$recursionGuard.set(false);
-        }
-    }
+//    @Inject(
+//            method = "getLightBlock",
+//            at = @At("HEAD"),
+//            cancellable = true
+//    )
+//    private void getLightBlock(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Integer> cir) {
+//        if (cable_facades$recursionGuard.get()) return;
+//        cable_facades$recursionGuard.set(true);
+//        try {
+//            FacadeData facadeData = FacadeUtils.getFacadeData(blockGetter, blockPos);
+//            if (facadeData != null) {
+//                if (facadeData.isFullBlock()) {
+//                    cir.setReturnValue(facadeData.getFullBlock().getLightBlock(blockGetter, BlockPos.ZERO));
+//                } else {
+//                    cir.setReturnValue(0);
+//                }
+//            }
+//        } finally {
+//            cable_facades$recursionGuard.set(false);
+//        }
+//    }
 
-    @Inject(
-            method = "propagatesSkylightDown",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void propagatesSkylightDown(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
-        if (cable_facades$recursionGuard.get()) return;
-        cable_facades$recursionGuard.set(true);
-        try {
-            FacadeData facadeData = FacadeUtils.getFacadeData(blockGetter, blockPos);
-            if (facadeData != null) {
-                if (facadeData.isFullBlock()) {
-                    cir.setReturnValue(facadeData.getFullBlock().propagatesSkylightDown(blockGetter, BlockPos.ZERO));
-                } else {
-                    cir.setReturnValue(true);
-                }
-            }
-        } finally {
-            cable_facades$recursionGuard.set(false);
-        }
-    }
+//    @Inject(
+//            method = "propagatesSkylightDown",
+//            at = @At("HEAD"),
+//            cancellable = true
+//    )
+//    private void propagatesSkylightDown(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
+//        if (cable_facades$recursionGuard.get()) return;
+//        cable_facades$recursionGuard.set(true);
+//        try {
+//            FacadeData facadeData = FacadeUtils.getFacadeData(blockGetter, blockPos);
+//            if (facadeData != null) {
+//                if (facadeData.isFullBlock()) {
+//                    cir.setReturnValue(facadeData.getFullBlock().propagatesSkylightDown(blockGetter, BlockPos.ZERO));
+//                } else {
+//                    cir.setReturnValue(true);
+//                }
+//            }
+//        } finally {
+//            cable_facades$recursionGuard.set(false);
+//        }
+//    }
 
-    @Inject(
-            method = "isSolidRender",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
-        if (cable_facades$recursionGuard.get()) return;
-        cable_facades$recursionGuard.set(true);
-        try {
-            FacadeData facadeData = FacadeUtils.getFacadeData(blockGetter, blockPos);
-            if (facadeData != null) {
-                if (facadeData.isFullBlock()) {
-                    cir.setReturnValue(facadeData.getFullBlock().isSolidRender(blockGetter, BlockPos.ZERO));
-                } else {
-                    cir.setReturnValue(false);
-                }
-            }
-        } finally {
-            cable_facades$recursionGuard.set(false);
-        }
-    }
+//    @Inject(
+//            method = "isSolidRender",
+//            at = @At("HEAD"),
+//            cancellable = true
+//    )
+//    private void isSolidRender(BlockGetter blockGetter, BlockPos blockPos, CallbackInfoReturnable<Boolean> cir) {
+//        if (cable_facades$recursionGuard.get()) return;
+//        cable_facades$recursionGuard.set(true);
+//        try {
+//            FacadeData facadeData = FacadeUtils.getFacadeData(blockGetter, blockPos);
+//            if (facadeData != null) {
+//                if (facadeData.isFullBlock()) {
+//                    cir.setReturnValue(facadeData.getFullBlock().isSolidRender(blockGetter, BlockPos.ZERO));
+//                } else {
+//                    cir.setReturnValue(false);
+//                }
+//            }
+//        } finally {
+//            cable_facades$recursionGuard.set(false);
+//        }
+//    }
 }

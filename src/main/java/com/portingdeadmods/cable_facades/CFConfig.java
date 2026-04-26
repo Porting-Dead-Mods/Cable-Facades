@@ -1,8 +1,9 @@
 package com.portingdeadmods.cable_facades;
 
 import com.portingdeadmods.cable_facades.api.CableFacadesAPI;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -14,14 +15,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-@EventBusSubscriber(modid = CFMain.MODID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = CFMain.MODID)
 public final class CFConfig {
 
     private static final String GITHUB_CONFIG_BASE_URL =
@@ -102,7 +100,7 @@ public final class CFConfig {
             String sanitized = blockName.replace('*', 'a');
             if (sanitized.contains(":")) {
                 try {
-                    ResourceLocation.parse(sanitized);
+                    Identifier.parse(sanitized);
                     return true;
                 } catch (Exception ignored) {
                     return false;
@@ -118,7 +116,7 @@ public final class CFConfig {
         }
 
         try {
-            ResourceLocation.parse(blockName.replace('*', 'a'));
+            Identifier.parse(blockName.replace('*', 'a'));
             return true;
         } catch (Exception ignored) {
             return false;
@@ -285,10 +283,8 @@ public final class CFConfig {
             }
 
             try {
-                Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(blockName));
-                if (block != null) {
-                    cache.put(block, true);
-                }
+                Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(blockName));
+                block.ifPresent(ref -> cache.put(ref.value(), true));
             } catch (Exception e) {
                 CFMain.LOGGER.warn("Ignoring invalid block config entry '{}': {}", blockName, e.getMessage());
             }
@@ -300,7 +296,7 @@ public final class CFConfig {
                 return cached;
             }
 
-            ResourceLocation blockId = BuiltInRegistries.BLOCK.getKey(block);
+            Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
             if (blockId != null) {
                 String blockIdString = blockId.toString();
                 for (Pattern pattern : patterns) {

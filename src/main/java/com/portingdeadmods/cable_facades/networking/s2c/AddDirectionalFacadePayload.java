@@ -10,12 +10,12 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record AddDirectionalFacadePayload(BlockPos pos, Direction face, BlockState state) implements CustomPacketPayload {
-    public static final Type<AddDirectionalFacadePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(CFMain.MODID, "add_directional_facade"));
+    public static final Type<AddDirectionalFacadePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(CFMain.MODID, "add_directional_facade"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, AddDirectionalFacadePayload> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC,

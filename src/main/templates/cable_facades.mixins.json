@@ -10,9 +10,7 @@
     "StructureTemplateMixin"
   ],
   "client": [
-    "BlockHidingMixin",
-    "BlockMixin",
-    "LevelRendererAccess"
+    "ModelBlockRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

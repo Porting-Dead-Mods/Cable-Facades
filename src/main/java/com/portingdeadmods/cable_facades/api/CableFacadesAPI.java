@@ -22,7 +22,7 @@ public class CableFacadesAPI {
      * Register blocks that can be covered by facades.
      * This should be called during mod initialization.
      *
-     * @param blocks ResourceLocations of blocks or patterns (supports wildcards)
+     * @param blocks Identifiers of blocks or patterns (supports wildcards)
      */
     public void registerAllowedBlocks(String... blocks) {
         additionalAllowedBlocks.addAll(Arrays.asList(blocks));
@@ -32,7 +32,7 @@ public class CableFacadesAPI {
      * Register blocks that cannot be covered by facades.
      * This will override allowedBlocks if the same block is in both lists.
      *
-     * @param blocks ResourceLocations of blocks or patterns (supports wildcards)
+     * @param blocks Identifiers of blocks or patterns (supports wildcards)
      */
     public void registerDisallowedBlocks(String... blocks) {
         additionalDisallowedBlocks.addAll(Arrays.asList(blocks));
@@ -41,7 +41,7 @@ public class CableFacadesAPI {
     /**
      * Register blocks that need z-fighting fixes.
      *
-     * @param blocks ResourceLocations of blocks or patterns (supports wildcards)
+     * @param blocks Identifiers of blocks or patterns (supports wildcards)
      */
     public void registerZFightingBlocks(String... blocks) {
         additionalZFightingBlocks.addAll(Arrays.asList(blocks));
@@ -50,7 +50,7 @@ public class CableFacadesAPI {
     /**
      * Register blocks that should be hidden when covered by a facade.
      *
-     * @param blocks ResourceLocations of blocks or patterns (supports wildcards)
+     * @param blocks Identifiers of blocks or patterns (supports wildcards)
      */
     public void registerHiddenBlocks(String... blocks) {
         additionalHiddenBlocks.addAll(Arrays.asList(blocks));

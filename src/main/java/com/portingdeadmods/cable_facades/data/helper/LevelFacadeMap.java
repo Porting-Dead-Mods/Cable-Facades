@@ -46,13 +46,13 @@ public class LevelFacadeMap {
                         return false;
                     }
                 })
-                .map(entry -> new AbstractMap.SimpleEntry<>(new ChunkPos(Long.parseLong(entry.getKey())), entry.getValue()))
+                .map(entry -> new AbstractMap.SimpleEntry<>(ChunkPos.unpack(Long.parseLong(entry.getKey())), entry.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue)));
     }
 
     public Map<String, ChunkFacadeMap> levelFacadeMapToString() {
         return getChunkFacadeMaps().entrySet().stream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(String.valueOf(entry.getKey().toLong()), entry.getValue()))
+                .map(entry -> new AbstractMap.SimpleEntry<>(String.valueOf(entry.getKey().pack()), entry.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
     }
 

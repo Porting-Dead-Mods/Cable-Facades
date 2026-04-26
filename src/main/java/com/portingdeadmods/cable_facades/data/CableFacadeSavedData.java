@@ -1,7 +1,9 @@
 package com.portingdeadmods.cable_facades.data;
 
 import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
 import com.portingdeadmods.cable_facades.data.helper.LevelFacadeMap;
@@ -11,17 +13,21 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
 public class CableFacadeSavedData extends SavedData {
-    public static final String ID = "cable_facades_saved_data";
+    public static final CableFacadeSavedData EMPTY = new CableFacadeSavedData();
+    private static final Codec<CableFacadeSavedData> CODEC = LevelFacadeMap.CODEC.xmap(CableFacadeSavedData::new, CableFacadeSavedData::getLevelFacadeMap);
+    public static final SavedDataType<CableFacadeSavedData> TYPE = new SavedDataType<>(Identifier.fromNamespaceAndPath(CFMain.MODID, "cable_facades_saved_data"), () -> CableFacadeSavedData.EMPTY, CableFacadeSavedData.CODEC);
 
     private final LevelFacadeMap levelFacadeMap;
 
@@ -52,11 +58,11 @@ public class CableFacadeSavedData extends SavedData {
     }
 
     public @NotNull ChunkFacadeMap getOrCreateFacadeMapForPos(BlockPos blockPos) {
-        return getOrCreateFacadeMapForChunk(new ChunkPos(blockPos));
+        return getOrCreateFacadeMapForChunk(ChunkPos.containing(blockPos));
     }
 
     public @Nullable ChunkFacadeMap getFacadeMapForPos(BlockPos blockPos) {
-        return getFacadeMapForChunk(new ChunkPos(blockPos));
+        return getFacadeMapForChunk(ChunkPos.containing(blockPos));
     }
 
     public void addFacade(BlockPos blockPos, BlockState blockState) {
@@ -119,53 +125,42 @@ public class CableFacadeSavedData extends SavedData {
         return data != null ? data.getFullBlock() : null;
     }
 
-    @Override
-    public CompoundTag save(CompoundTag compoundTag, HolderLookup.Provider provider) {
-        DataResult<Tag> tagDataResult = LevelFacadeMap.CODEC.encodeStart(NbtOps.INSTANCE, this.levelFacadeMap);
-        tagDataResult
-                .resultOrPartial(err -> CFMain.LOGGER.error("Encoding error: {}", err))
-                .ifPresent(tag -> compoundTag.put(ID, tag));
-        return compoundTag;
-    }
-
-    private static CableFacadeSavedData load(CompoundTag compoundTag, ServerLevel serverLevel) {
-        DataResult<Pair<LevelFacadeMap, Tag>> dataResult = LevelFacadeMap.CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
-        Optional<Pair<LevelFacadeMap, Tag>> mapTagPair = dataResult
-                .resultOrPartial(err -> CFMain.LOGGER.error("Decoding error: {}", err));
-
-        if (dataResult.error().isPresent()) {
-            CFMain.LOGGER.error("Data may be outdated - attempting V2 migration (BlockState format)!");
-            dataResult = LevelFacadeMap.V2_MIGRATION_CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
-            mapTagPair = dataResult
-                    .resultOrPartial(err -> CFMain.LOGGER.error("V2 migration error: {}", err));
-        }
-
-        if (dataResult.error().isPresent()) {
-            CFMain.LOGGER.error("V2 migration failed - attempting V1 migration (Block format)!");
-            dataResult = LevelFacadeMap.MIGRATION_CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
-            mapTagPair = dataResult
-                    .resultOrPartial(err -> CFMain.LOGGER.error("V1 migration failed: {}", err));
-        }
-
-        if (mapTagPair.isPresent()) {
-            LevelFacadeMap facadeMap = mapTagPair.get().getFirst();
-            return new CableFacadeSavedData(facadeMap);
-        }
-        return new CableFacadeSavedData();
-    }
+//    @Override
+//    public CompoundTag save(CompoundTag compoundTag, HolderLookup.Provider provider) {
+//        DataResult<Tag> tagDataResult = LevelFacadeMap.CODEC.encodeStart(NbtOps.INSTANCE, this.levelFacadeMap);
+//        tagDataResult
+//                .resultOrPartial(err -> CFMain.LOGGER.error("Encoding error: {}", err))
+//                .ifPresent(tag -> compoundTag.put(ID, tag));
+//        return compoundTag;
+//    }
+//
+//    private static CableFacadeSavedData load(CompoundTag compoundTag, ServerLevel serverLevel) {
+//        DataResult<Pair<LevelFacadeMap, Tag>> dataResult = LevelFacadeMap.CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
+//        Optional<Pair<LevelFacadeMap, Tag>> mapTagPair = dataResult
+//                .resultOrPartial(err -> CFMain.LOGGER.error("Decoding error: {}", err));
+//
+//        if (dataResult.error().isPresent()) {
+//            CFMain.LOGGER.error("Data may be outdated - attempting V2 migration (BlockState format)!");
+//            dataResult = LevelFacadeMap.V2_MIGRATION_CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
+//            mapTagPair = dataResult
+//                    .resultOrPartial(err -> CFMain.LOGGER.error("V2 migration error: {}", err));
+//        }
+//
+//        if (dataResult.error().isPresent()) {
+//            CFMain.LOGGER.error("V2 migration failed - attempting V1 migration (Block format)!");
+//            dataResult = LevelFacadeMap.MIGRATION_CODEC.decode(NbtOps.INSTANCE, compoundTag.get(ID));
+//            mapTagPair = dataResult
+//                    .resultOrPartial(err -> CFMain.LOGGER.error("V1 migration failed: {}", err));
+//        }
+//
+//        if (mapTagPair.isPresent()) {
+//            LevelFacadeMap facadeMap = mapTagPair.get().getFirst();
+//            return new CableFacadeSavedData(facadeMap);
+//        }
+//        return new CableFacadeSavedData();
+//    }
 
     public static CableFacadeSavedData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(factory(level), ID);
-    }
-
-    private static SavedData.Factory<CableFacadeSavedData> factory(ServerLevel pLevel) {
-        return new SavedData.Factory<>(CableFacadeSavedData::new, (tag, provider) -> load(tag, pLevel));
-    }
-
-    @Override
-    public String toString() {
-        return "CableFacadeSavedData{" +
-                "levelFacadeMap=" + levelFacadeMap +
-                '}';
+        return level.getDataStorage().computeIfAbsent(TYPE);
     }
 }

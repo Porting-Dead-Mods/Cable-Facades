@@ -1,7 +1,8 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '1.0.21'
+    id 'net.neoforged.moddev' version '2.0.141'
+    id 'idea'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -35,20 +36,15 @@ repositories {
 }
 
 base {
-    archivesName = mod_id+"-1.21.1-NeoForge"
+    archivesName = mod_id+"-26.1.1-NeoForge"
 }
 
 // Mojang ships Java 21 to end users starting in 1.20.5, so mods should target Java 21.
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
-
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
 
     // This line is optional. Access Transformers are automatically detected
     // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
@@ -78,7 +74,7 @@ neoForge {
         }
 
         data {
-            data()
+            clientData()
 
             // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
             // gameDirectory = project.file('run-data')
@@ -135,16 +131,16 @@ dependencies {
     // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it
     localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 
-    runtimeOnly "curse.maven:sodium-394468:6382651"
-    implementation "curse.maven:irisshaders-455508:6661598"
+    //runtimeOnly "curse.maven:sodium-394468:6382651"
+    //implementation "curse.maven:irisshaders-455508:6661598"
 
-    runtimeOnly "curse.maven:pipez-443900:5757713"
-    runtimeOnly "curse.maven:applied-energistics-2-223794:6006016"
+    //runtimeOnly "curse.maven:pipez-443900:5757713"
+    //runtimeOnly "curse.maven:applied-energistics-2-223794:6006016"
 
-    runtimeOnly "curse.maven:create-328085:6271847"
-    runtimeOnly "curse.maven:athena-841890:5431579"
-    runtimeOnly "curse.maven:chipped-456956:5813117"
-    runtimeOnly "curse.maven:resourceful-lib-570073:5681267"
+    //runtimeOnly "curse.maven:create-328085:6271847"
+    //runtimeOnly "curse.maven:athena-841890:5431579"
+    //runtimeOnly "curse.maven:chipped-456956:5813117"
+    //runtimeOnly "curse.maven:resourceful-lib-570073:5681267"
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar

@@ -1,0 +1,14 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "cable_facades:item/facade_outline"
+      },
+      {
+        "type": "cable_facades:facade_block"
+      }
+    ]
+  }
+}

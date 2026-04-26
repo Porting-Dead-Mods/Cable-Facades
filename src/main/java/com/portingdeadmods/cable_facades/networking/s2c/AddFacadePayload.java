@@ -8,11 +8,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record AddFacadePayload(BlockPos facadePos, FacadeData facadeData) implements CustomPacketPayload {
-    public static final Type<AddFacadePayload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(CFMain.MODID, "add_facade"));
+    public static final Type<AddFacadePayload> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(CFMain.MODID, "add_facade"));
     public static final StreamCodec<RegistryFriendlyByteBuf, AddFacadePayload> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC,
             AddFacadePayload::facadePos,

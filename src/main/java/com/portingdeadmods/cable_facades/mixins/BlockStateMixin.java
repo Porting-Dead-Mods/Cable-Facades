@@ -7,7 +7,7 @@ import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.BlockAndLightGetter;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.SupportType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -33,7 +33,7 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
     private static final ThreadLocal<Boolean> cable_facades$recursionGuard = ThreadLocal.withInitial(() -> false);
 
     @Override
-    public BlockState getAppearance(BlockAndTintGetter blockGetter, BlockPos pos, Direction side, @Nullable BlockState queryState, @Nullable BlockPos queryPos) {
+    public BlockState getAppearance(BlockAndLightGetter blockGetter, BlockPos pos, Direction side, @Nullable BlockState queryState, @Nullable BlockPos queryPos) {
         if (cable_facades$recursionGuard.get())
             return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
         cable_facades$recursionGuard.set(true);
@@ -115,23 +115,23 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         }
     }
 
-    @Override
-    public int getLightBlock(BlockGetter level, BlockPos pos) {
-        if (cable_facades$recursionGuard.get()) return super.getLightBlock(level, pos);
-        cable_facades$recursionGuard.set(true);
-        try {
-            FacadeData data = FacadeUtils.getFacadeData(level, pos);
-            if (data != null) {
-                if (data.isFullBlock() && CFConfig.isScaleUpBlock(this.getBlock())) {
-                    return 0;
-                }
-                if (data.isDirectional()) {
-                    return 0;
-                }
-            }
-            return super.getLightBlock(level, pos);
-        } finally {
-            cable_facades$recursionGuard.set(false);
-        }
-    }
+//    @Override
+//    public int getLightBlock(BlockGetter level, BlockPos pos) {
+//        if (cable_facades$recursionGuard.get()) return super.getLightBlock(level, pos);
+//        cable_facades$recursionGuard.set(true);
+//        try {
+//            FacadeData data = FacadeUtils.getFacadeData(level, pos);
+//            if (data != null) {
+//                if (data.isFullBlock() && CFConfig.isScaleUpBlock(this.getBlock())) {
+//                    return 0;
+//                }
+//                if (data.isDirectional()) {
+//                    return 0;
+//                }
+//            }
+//            return super.getLightBlock(level, pos);
+//        } finally {
+//            cable_facades$recursionGuard.set(false);
+//        }
+//    }
 }

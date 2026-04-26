@@ -15,6 +15,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -63,7 +64,8 @@ public final class ServerInGameEvents {
             return;
         }
 
-        ServerLevel overworld = serverPlayer.getServer() != null ? serverPlayer.getServer().getLevel(Level.OVERWORLD) : null;
+        MinecraftServer server = serverPlayer.level().getServer();
+        ServerLevel overworld = server.getLevel(Level.OVERWORLD);
         if (overworld == null) {
             return;
         }
@@ -208,7 +210,7 @@ public final class ServerInGameEvents {
     private static void playPickupSound(Level level, Player player) {
         level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
                 SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F,
-                ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                ((level.getRandom().nextFloat() - level.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
     }
 
     private static Direction getPlayerLookingFace(Player player, BlockPos pos) {
