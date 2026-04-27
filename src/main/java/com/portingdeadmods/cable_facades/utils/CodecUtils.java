@@ -5,29 +5,36 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class CodecUtils {
+public final class CodecUtils {
     public static final Codec<Block> BLOCK_CODEC = registryCodec(BuiltInRegistries.BLOCK);
-
     public static final Codec<BlockState> BLOCKSTATE_CODEC = blockStateCodec();
 
-    /**
-     * Returns a codec using the resource location of the registry
-     */
+    private CodecUtils() {}
+
     public static <T> Codec<T> registryCodec(Registry<T> registry) {
         return ResourceLocation.CODEC.xmap(registry::get, registry::getKey);
     }
 
-    /**
-     * Returns a codec using NBT as a helper
-     */
     public static Codec<BlockState> blockStateCodec() {
         return CompoundTag.CODEC.xmap(
-                (state) -> NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), state),
+                state -> NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), state),
                 NbtUtils::writeBlockState
         );
+    }
+
+    public static void writeBlockState(FriendlyByteBuf buf, BlockState state) {
+        buf.writeNbt(NbtUtils.writeBlockState(state));
+    }
+
+    public static BlockState readBlockState(FriendlyByteBuf buf) {
+        CompoundTag tag = buf.readNbt();
+        if (tag == null) return Blocks.AIR.defaultBlockState();
+        return NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag);
     }
 }

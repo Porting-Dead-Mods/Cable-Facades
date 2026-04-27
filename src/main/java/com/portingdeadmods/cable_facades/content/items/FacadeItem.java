@@ -1,22 +1,17 @@
 package com.portingdeadmods.cable_facades.content.items;
 
 import com.portingdeadmods.cable_facades.CFConfig;
-import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.events.ClientStuff;
-import com.portingdeadmods.cable_facades.registries.CFItemTags;
-import com.portingdeadmods.cable_facades.registries.CFItems;
-import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeType;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
+import com.portingdeadmods.cable_facades.events.client.ClientRegisterEvents;
+import com.portingdeadmods.cable_facades.utils.FacadeItemNbt;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -25,14 +20,27 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class FacadeItem extends Item {
-    public static final String FACADE_BLOCK = "facade_block";
+
+    private final Supplier<FacadeType> facadeType;
 
     public FacadeItem(Properties properties) {
+        this(properties, FacadeTypes::defaultType);
+    }
+
+    public FacadeItem(Properties properties, Supplier<FacadeType> facadeType) {
         super(properties);
+        this.facadeType = facadeType;
+    }
+
+    public FacadeType getFacadeType() {
+        FacadeType type = facadeType.get();
+        return type != null ? type : FacadeTypes.defaultType();
     }
 
     @Override
@@ -42,83 +50,96 @@ public class FacadeItem extends Item {
         ItemStack itemStack = context.getItemInHand();
 
         if (!level.isClientSide()) {
-            if (itemStack.hasTag() && !FacadeUtils.hasFacade(level, pos)) {
-                CompoundTag tag = itemStack.getTag();
-                Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
-                Block targetBlock = context.getLevel().getBlockState(pos).getBlock();
+            if (!FacadeUtils.hasFacade(level, pos)) {
+                Block facadeBlock = FacadeItemNbt.getFacadeBlock(itemStack);
 
-                boolean noFacadeTag = context.getLevel().getBlockState(pos).getTags().noneMatch(blockTagKey -> blockTagKey.equals(CFItemTags.SUPPORTS_FACADE));
+                ItemStack offhandItemStack = null;
+                if (facadeBlock == null) {
+                    if (context.getHand() == InteractionHand.MAIN_HAND) {
+                        ItemStack offhand = context.getPlayer().getItemInHand(InteractionHand.OFF_HAND);
+                        if (offhand.getItem() instanceof BlockItem blockItem) {
+                            offhandItemStack = offhand;
+                            facadeBlock = blockItem.getBlock();
+                        } else {
+                            return InteractionResult.FAIL;
+                        }
+                    } else {
+                        return InteractionResult.FAIL;
+                    }
+                }
 
-                // Check that the block is part of the config or has the tag
-                if (!CFConfig.isBlockAllowed(targetBlock) && noFacadeTag) {
+                if (!(facadeBlock.asItem() instanceof BlockItem)) {
                     return InteractionResult.FAIL;
                 }
 
-                // Prevent block from being facaded with itself or if it's disallowed
-                if (targetBlock == block || CFConfig.isBlockDisallowed(block)) {
-                   if(targetBlock == block){
-                       context.getPlayer().displayClientMessage(Component.literal("Cannot facade block with itself").withStyle(ChatFormatting.RED),true);
-                   } else {
-                       context.getPlayer().displayClientMessage(Component.literal("This block cannot be used as a cover (disabled by config)").withStyle(ChatFormatting.RED),true);
-                   }
+                FacadeType type = getFacadeType();
+                if (!type.canApplyOn().test(level.getBlockState(pos))) {
                     return InteractionResult.FAIL;
                 }
 
-                FacadeUtils.addFacade(level, pos, block.getStateForPlacement(new BlockPlaceContext(context)));
+                Block targetBlock = level.getBlockState(pos).getBlock();
+
+                if (targetBlock == facadeBlock || CFConfig.isBlockDisallowed(facadeBlock)) {
+                    if (targetBlock == facadeBlock) {
+                        context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED), true);
+                    } else {
+                        context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.block_disabled").withStyle(ChatFormatting.RED), true);
+                    }
+                    return InteractionResult.FAIL;
+                }
+
+                FacadeUtils.addFacade(level, pos, facadeBlock.getStateForPlacement(new BlockPlaceContext(context)), type.id());
 
                 if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
                     itemStack.shrink(1);
+                    if (offhandItemStack != null) {
+                        offhandItemStack.shrink(1);
+                    }
                 }
             }
         }
 
         FacadeUtils.updateBlocks(level, pos);
-
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     @Override
-    public Component getName(ItemStack itemStack) {
-        if (itemStack.hasTag()) {
-            CompoundTag tag = itemStack.getTag();
-            Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(tag.getString(FACADE_BLOCK)));
-            if (block.asItem() instanceof BlockItem blockItem) {
-                return Component.literal("Facade - " + blockItem.getDescription().getString());
-            }
+    public @NotNull Component getName(ItemStack itemStack) {
+        Block block = FacadeItemNbt.getFacadeBlock(itemStack);
+        if (block != null && block.asItem() instanceof BlockItem blockItem) {
+            return Component.translatable("cable_facades.facade.name_prefix").append(blockItem.getDescription());
         }
-        return Component.literal("Facade - Empty");
+        return Component.translatable("cable_facades.facade.empty");
     }
 
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-            @Override
-            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return ClientStuff.FACADE_ITEM_RENDERER;
-            }
-        });
+    public ItemStack createFacade(Block block) {
+        ItemStack facadeStack = new ItemStack(this);
+        if (block != null && block.asItem() instanceof BlockItem) {
+            FacadeItemNbt.setFacadeBlock(facadeStack, block);
+        }
+        return facadeStack;
     }
 
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return true;
     }
+
     @Override
     public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        if (tag != null && Boolean.TRUE.equals(tag.getBoolean("has_facade_remainder"))) {
+        if (FacadeItemNbt.hasRemainder(itemStack)) {
             return this.getDefaultInstance();
         }
         return ItemStack.EMPTY;
     }
 
-    public ItemStack createFacade(Block block) {
-        ItemStack facadeStack = new ItemStack(CFItems.FACADE.get());
-        CompoundTag nbtData = new CompoundTag();
-        nbtData.putString(FacadeItem.FACADE_BLOCK, BuiltInRegistries.BLOCK.getKey(block).toString());
-        facadeStack.setTag(nbtData);
-        return facadeStack;
+    @Override
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return ClientRegisterEvents.FACADE_ITEM_RENDERER;
+            }
+        });
     }
-
-
 }

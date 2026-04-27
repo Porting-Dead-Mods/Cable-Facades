@@ -143,6 +143,13 @@ repositories {
         name = "ModMaven"
         url = "https://modmaven.dev"
     }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+        content {
+            includeGroup "maven.modrinth"
+        }
+    }
 }
 
 dependencies {
@@ -176,6 +183,14 @@ dependencies {
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"))
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}"))
     runtimeOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}"))
+
+    compileOnly fg.deobf("maven.modrinth:oculus:1.20.1-1.7.0")
+
+    compileOnly "io.github.llamalad7:mixinextras-common:0.5.4"
+    annotationProcessor "io.github.llamalad7:mixinextras-common:0.5.4"
+    implementation(jarJar(group: "io.github.llamalad7", name: "mixinextras-forge", version: "[0.5.4,)")) {
+        jarJar.ranged(it, "[0.5.4,)")
+    }
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 

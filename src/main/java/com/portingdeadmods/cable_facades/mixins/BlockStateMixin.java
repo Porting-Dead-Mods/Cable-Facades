@@ -1,5 +1,8 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.portingdeadmods.cable_facades.CFConfig;
+import com.portingdeadmods.cable_facades.data.FacadeData;
+import com.portingdeadmods.cable_facades.multipart.MultipartShapeBuilder;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
@@ -19,9 +22,10 @@ import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(BlockState.class)
 public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase implements IForgeBlockState {
-    @Shadow protected abstract BlockState asState();
 
-    // NEVER CONSTRUCT THIS
+    @Shadow
+    protected abstract BlockState asState();
+
     private BlockStateMixin() {
         super(null, null, null);
     }
@@ -31,11 +35,14 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
 
     @Override
     public BlockState getAppearance(BlockAndTintGetter blockGetter, BlockPos pos, Direction side, @Nullable BlockState queryState, @Nullable BlockPos queryPos) {
-        if (cable_facades$recursionGuard.get()) return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
+        if (cable_facades$recursionGuard.get()) {
+            return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
+        }
         cable_facades$recursionGuard.set(true);
         try {
-            if (ClientFacadeManager.FACADED_BLOCKS.containsKey(pos)) {
-                BlockState facadeState = ClientFacadeManager.FACADED_BLOCKS.get(pos);
+            FacadeData data = ClientFacadeManager.get(pos);
+            if (data != null) {
+                BlockState facadeState = data.isFullBlock() ? data.getFullBlock() : data.getFace(side);
                 if (facadeState != null) {
                     return facadeState.getBlock().getAppearance(facadeState, blockGetter, pos, side, queryState, queryPos);
                 }
@@ -51,10 +58,14 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         if (cable_facades$recursionGuard.get()) return getBlock().getLightEmission(this.asState(), blockGetter, pos);
         cable_facades$recursionGuard.set(true);
         try {
-            if (FacadeUtils.hasFacade(blockGetter, pos)) {
-                BlockState facadeState = FacadeUtils.getFacade(blockGetter, pos);
-                if (facadeState != null) {
-                    return facadeState.getLightEmission();
+            FacadeData data = FacadeUtils.getFacadeData(blockGetter, pos);
+            if (data != null) {
+                if (data.isFullBlock()) {
+                    return data.getFullBlock().getLightEmission();
+                } else if (data.isDirectional()) {
+                    return data.directional().values().stream()
+                            .mapToInt(BlockState::getLightEmission)
+                            .max().orElse(0);
                 }
             }
             return getBlock().getLightEmission(this.asState(), blockGetter, pos);
@@ -68,10 +79,12 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         if (cable_facades$recursionGuard.get()) return super.isFaceSturdy(level, pos, direction, supportType);
         cable_facades$recursionGuard.set(true);
         try {
-            if (FacadeUtils.hasFacade(level, pos)) {
-                BlockState facadeState = FacadeUtils.getFacade(level, pos);
-                if (facadeState != null) {
-                    return facadeState.isFaceSturdy(level, BlockPos.ZERO, direction, supportType);
+            FacadeData data = FacadeUtils.getFacadeData(level, pos);
+            if (data != null) {
+                if (data.isFullBlock()) {
+                    return data.getFullBlock().isFaceSturdy(level, BlockPos.ZERO, direction, supportType);
+                } else if (data.hasFace(direction)) {
+                    return data.getFace(direction).isFaceSturdy(level, BlockPos.ZERO, direction, supportType);
                 }
             }
             return super.isFaceSturdy(level, pos, direction, supportType);
@@ -85,10 +98,12 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         if (cable_facades$recursionGuard.get()) return super.getVisualShape(level, pos, context);
         cable_facades$recursionGuard.set(true);
         try {
-            if (FacadeUtils.hasFacade(level, pos)) {
-                BlockState facadeState = FacadeUtils.getFacade(level, pos);
-                if (facadeState != null) {
-                    return facadeState.getVisualShape(level, BlockPos.ZERO, context);
+            FacadeData data = FacadeUtils.getFacadeData(level, pos);
+            if (data != null) {
+                if (data.isFullBlock()) {
+                    return data.getFullBlock().getVisualShape(level, BlockPos.ZERO, context);
+                } else if (data.isDirectional()) {
+                    return MultipartShapeBuilder.getCoverOnlyShape(data);
                 }
             }
             return super.getVisualShape(level, pos, context);
@@ -102,8 +117,14 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
         if (cable_facades$recursionGuard.get()) return super.getLightBlock(level, pos);
         cable_facades$recursionGuard.set(true);
         try {
-            if (FacadeUtils.hasFacade(level, pos) && level.getBlockState(pos).getBlock().asItem().getDescriptionId().contains("create")) {
-                return 0;
+            FacadeData data = FacadeUtils.getFacadeData(level, pos);
+            if (data != null) {
+                if (data.isFullBlock() && CFConfig.isScaleUpBlock(this.getBlock())) {
+                    return 0;
+                }
+                if (data.isDirectional()) {
+                    return 0;
+                }
             }
             return super.getLightBlock(level, pos);
         } finally {

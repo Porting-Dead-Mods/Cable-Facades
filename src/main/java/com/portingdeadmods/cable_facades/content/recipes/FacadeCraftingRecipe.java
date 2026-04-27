@@ -2,9 +2,8 @@ package com.portingdeadmods.cable_facades.content.recipes;
 
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
+import com.portingdeadmods.cable_facades.utils.FacadeItemNbt;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.BlockItem;
@@ -18,27 +17,26 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
-
 public class FacadeCraftingRecipe extends CustomRecipe {
-    public FacadeCraftingRecipe(ResourceLocation p_252125_, CraftingBookCategory p_249010_) {
-        super(p_252125_, p_249010_);
+
+    public FacadeCraftingRecipe(ResourceLocation id, CraftingBookCategory category) {
+        super(id, category);
     }
 
     @Override
-    public boolean matches(CraftingContainer craftingContainer, Level level) {
+    public boolean matches(CraftingContainer container, Level level) {
         boolean hasBlock = false;
         boolean hasFacade = false;
         ItemStack facadeStack = null;
 
-        for (int i = 0; i < craftingContainer.getContainerSize(); i++) {
-            ItemStack stack = craftingContainer.getItem(i);
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            ItemStack stack = container.getItem(i);
             Item item = stack.getItem();
             if (item instanceof FacadeItem) {
                 if (!hasFacade) {
                     facadeStack = stack.copy();
                     hasFacade = true;
-                } else{
+                } else {
                     return false;
                 }
             } else if (item instanceof BlockItem) {
@@ -53,26 +51,22 @@ public class FacadeCraftingRecipe extends CustomRecipe {
         }
 
         if (hasFacade && !hasBlock) {
-            CompoundTag tag = facadeStack.getTag();
-            if (tag != null && tag.contains(FacadeItem.FACADE_BLOCK)) {
-                return true;
-            }
+            return facadeStack != null && FacadeItemNbt.getFacadeBlock(facadeStack) != null;
         }
-
         return hasFacade && hasBlock;
     }
 
     @Override
-    public ItemStack assemble(CraftingContainer craftingContainer, RegistryAccess registryAccess) {
+    public @NotNull ItemStack assemble(CraftingContainer container, RegistryAccess registryAccess) {
         Block facadeBlock = null;
-        ItemStack itemStack = ItemStack.EMPTY;
         ItemStack originalFacadeStack = ItemStack.EMPTY;
         ItemStack facadeStack = ItemStack.EMPTY;
-        for (int i = 0; i < craftingContainer.getContainerSize(); i++) {
-            ItemStack item = craftingContainer.getItem(i);
+
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            ItemStack item = container.getItem(i);
             if (item.getItem() instanceof BlockItem blockItem) {
                 facadeBlock = blockItem.getBlock();
-                if(facadeBlock.defaultBlockState().getRenderShape() == RenderShape.ENTITYBLOCK_ANIMATED){
+                if (facadeBlock.defaultBlockState().getRenderShape() == RenderShape.ENTITYBLOCK_ANIMATED) {
                     return ItemStack.EMPTY;
                 }
             } else if (item.getItem() instanceof FacadeItem) {
@@ -80,22 +74,24 @@ public class FacadeCraftingRecipe extends CustomRecipe {
                 originalFacadeStack = item;
             }
         }
+
         if (!facadeStack.isEmpty() && facadeBlock != null) {
             ItemStack stack = facadeStack.getItem().getDefaultInstance();
-            stack.getOrCreateTag().putString(FacadeItem.FACADE_BLOCK, BuiltInRegistries.BLOCK.getKey(facadeBlock).toString());
+            FacadeItemNbt.setFacadeBlock(stack, facadeBlock);
             return stack;
         } else if (!facadeStack.isEmpty()) {
-            Optional<Block> optionalBlock = facadeStack.getTag().contains(FacadeItem.FACADE_BLOCK) ? Optional.ofNullable(BuiltInRegistries.BLOCK.get(new ResourceLocation(facadeStack.getTag().getString(FacadeItem.FACADE_BLOCK)))) : Optional.empty();
-            if (optionalBlock.isPresent()) {
-                originalFacadeStack.getTag().putBoolean("has_facade_remainder", true);
-                return optionalBlock.get().asItem().getDefaultInstance();
+            Block existingBlock = FacadeItemNbt.getFacadeBlock(facadeStack);
+            if (existingBlock != null && existingBlock.asItem() instanceof BlockItem blockItem) {
+                FacadeItemNbt.setHasRemainder(originalFacadeStack, true);
+                return blockItem.getDefaultInstance();
             }
         }
+
         return ItemStack.EMPTY;
     }
 
     @Override
-    public boolean canCraftInDimensions(int i, int i1) {
+    public boolean canCraftInDimensions(int w, int h) {
         return true;
     }
 

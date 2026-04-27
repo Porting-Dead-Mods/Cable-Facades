@@ -1,5 +1,7 @@
 package com.portingdeadmods.cable_facades.mixins;
 
+import com.llamalad7.mixinextras.sugar.Local;
+import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import net.minecraft.core.BlockPos;
@@ -29,17 +31,17 @@ public abstract class BlockMixin {
         if (pos == null || side == null || sidePos == null) {
             return value;
         }
-
         if (sidePos.equals(FACADE_CHECK_MARKER)) {
             BlockPos relativePos = pos.relative(side);
-            if (ClientFacadeManager.FACADED_BLOCKS != null && ClientFacadeManager.FACADED_BLOCKS.containsKey(relativePos)) {
-                BlockState facade = ClientFacadeManager.FACADED_BLOCKS.get(relativePos);
-                if (facade != null) {
-                    return facade;
+            FacadeData data = ClientFacadeManager.get(relativePos);
+            if (data != null) {
+                if (data.isFullBlock()) {
+                    return data.getFullBlock();
+                } else if (data.hasFace(side.getOpposite())) {
+                    return data.getFace(side.getOpposite());
                 }
             }
         }
-
         return value;
     }
 
@@ -48,28 +50,30 @@ public abstract class BlockMixin {
             at = @At("RETURN"),
             cancellable = true
     )
-    private static void checkFacadeOcclusion(BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos, CallbackInfoReturnable<Boolean> ci) {
+    private static void checkFacadeOcclusion(BlockState state, BlockGetter level, BlockPos pos, Direction side, BlockPos sidePos, CallbackInfoReturnable<Boolean> ci, @Local(index = 5) BlockState bState) {
         if (state == null || level == null || pos == null || side == null || sidePos == null || ci == null) {
             return;
         }
-
         if (GameClientEvents.RENDERING_FACADE.get()) {
-            BlockState sideState = ClientFacadeManager.FACADED_BLOCKS.getOrDefault(sidePos, null);
+            FacadeData sideData = ClientFacadeManager.get(sidePos);
+            BlockState sideState = null;
+            if (sideData != null) {
+                if (sideData.isFullBlock()) {
+                    sideState = sideData.getFullBlock();
+                } else if (sideData.hasFace(side.getOpposite())) {
+                    sideState = sideData.getFace(side.getOpposite());
+                }
+            }
             ci.setReturnValue(sideState != state);
-            return;
         }
-
         if (pos.equals(FACADE_CHECK_MARKER) || !ci.getReturnValue()) {
             return;
         }
-
         try {
-            if (ClientFacadeManager.FACADED_BLOCKS != null && ClientFacadeManager.FACADED_BLOCKS.containsKey(sidePos)) {
-                BlockState facade = ClientFacadeManager.FACADED_BLOCKS.get(sidePos);
-                if (facade != null) {
-                    boolean shouldRender = safeCheckFaceRendering(state, level, pos, side);
-                    ci.setReturnValue(shouldRender);
-                }
+            FacadeData data = ClientFacadeManager.get(sidePos);
+            if (data != null) {
+                boolean shouldRender = safeCheckFaceRendering(state, level, pos, side);
+                ci.setReturnValue(shouldRender);
             }
         } catch (Exception e) {
             ci.setReturnValue(ci.getReturnValue());

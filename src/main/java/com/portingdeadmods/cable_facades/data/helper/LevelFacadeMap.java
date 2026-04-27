@@ -2,6 +2,7 @@ package com.portingdeadmods.cable_facades.data.helper;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.portingdeadmods.cable_facades.data.FacadeData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -16,7 +17,10 @@ public class LevelFacadeMap {
             Codec.unboundedMap(Codec.STRING, ChunkFacadeMap.CODEC).fieldOf("chunks_map").forGetter(LevelFacadeMap::levelFacadeMapToString)
     ).apply(builder, LevelFacadeMap::levelFacadeMapFromString));
 
-    //This codec will be used to attempt migration
+    public static final Codec<LevelFacadeMap> V2_MIGRATION_CODEC = RecordCodecBuilder.create(builder -> builder.group(
+            Codec.unboundedMap(Codec.STRING, ChunkFacadeMap.V2_MIGRATION_CODEC).fieldOf("chunks_map").forGetter(LevelFacadeMap::levelFacadeMapToString)
+    ).apply(builder, LevelFacadeMap::levelFacadeMapFromString));
+
     public static final Codec<LevelFacadeMap> MIGRATION_CODEC = RecordCodecBuilder.create(builder -> builder.group(
             Codec.unboundedMap(Codec.STRING, ChunkFacadeMap.MIGRATION_CODEC).fieldOf("chunks_map").forGetter(LevelFacadeMap::levelFacadeMapToString)
     ).apply(builder, LevelFacadeMap::levelFacadeMapFromString));
@@ -35,23 +39,47 @@ public class LevelFacadeMap {
         return chunkFacadeMaps;
     }
 
-    public static LevelFacadeMap levelFacadeMapFromString(Map<String, ChunkFacadeMap> chunkFacade) {
-        return new LevelFacadeMap(chunkFacade.entrySet().stream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(new ChunkPos(Long.parseLong(entry.getKey())), entry.getValue()))
+    public static LevelFacadeMap levelFacadeMapFromString(Map<String, ChunkFacadeMap> in) {
+        return new LevelFacadeMap(in.entrySet().stream()
+                .filter(e -> {
+                    try {
+                        Long.parseLong(e.getKey());
+                        return true;
+                    } catch (NumberFormatException ex) {
+                        return false;
+                    }
+                })
+                .map(e -> new AbstractMap.SimpleEntry<>(new ChunkPos(Long.parseLong(e.getKey())), e.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue)));
     }
 
     public Map<String, ChunkFacadeMap> levelFacadeMapToString() {
-        return getChunkFacadeMaps().entrySet().stream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(String.valueOf(entry.getKey().toLong()), entry.getValue()))
+        return chunkFacadeMaps.entrySet().stream()
+                .map(e -> new AbstractMap.SimpleEntry<>(String.valueOf(e.getKey().toLong()), e.getValue()))
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
     }
 
-    public Map<BlockPos, BlockState> getAllFacades() {
-        Map<BlockPos, BlockState> allFacades = new HashMap<>();
-        for (ChunkFacadeMap chunkMap : chunkFacadeMaps.values()) {
-            allFacades.putAll(chunkMap.getChunkMap());
+    public Map<BlockPos, FacadeData> getAllFacades() {
+        Map<BlockPos, FacadeData> all = new HashMap<>();
+        for (ChunkFacadeMap m : chunkFacadeMaps.values()) {
+            all.putAll(m.getChunkMap());
         }
-        return allFacades;
+        return all;
+    }
+
+    public Map<BlockPos, BlockState> getAllFullFacadeStates() {
+        Map<BlockPos, BlockState> all = new HashMap<>();
+        for (ChunkFacadeMap m : chunkFacadeMaps.values()) {
+            m.getChunkMap().forEach((pos, fd) -> {
+                BlockState s = fd.getFullBlock();
+                if (s != null) all.put(pos, s);
+            });
+        }
+        return all;
+    }
+
+    @Override
+    public String toString() {
+        return "LevelFacadeMap{" + chunkFacadeMaps + '}';
     }
 }

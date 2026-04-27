@@ -1,15 +1,14 @@
 package com.portingdeadmods.cable_facades.compat;
 
 import com.portingdeadmods.cable_facades.CFMain;
-import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.registries.CFItems;
+import com.portingdeadmods.cable_facades.utils.FacadeItemNbt;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -31,19 +30,30 @@ public class CFJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        ItemStack itemStack = new ItemStack(CFItems.FACADE.get());
-        itemStack.getOrCreateTag().putString(FacadeItem.FACADE_BLOCK, BuiltInRegistries.BLOCK.getKey(Blocks.COBBLESTONE).toString());
-        itemStack.setHoverName(Component.literal("Facade - Any Block").withStyle(ChatFormatting.RESET));
-
         ItemStack ingredientStack = new ItemStack(Blocks.COBBLESTONE);
-        ingredientStack.setHoverName(Component.literal("Any Block").withStyle(ChatFormatting.RESET));
+        ingredientStack.setHoverName(Component.translatable("cable_facades.jei.any_block").withStyle(ChatFormatting.RESET));
+
+        ItemStack facadeResult = new ItemStack(CFItems.FACADE.get());
+        FacadeItemNbt.setFacadeBlock(facadeResult, Blocks.COBBLESTONE);
+        facadeResult.setHoverName(Component.translatable("cable_facades.jei.facade_any_block").withStyle(ChatFormatting.RESET));
 
         registration.addRecipes(RecipeTypes.CRAFTING, Collections.singletonList(new ShapelessRecipe(
                 new ResourceLocation(CFMain.MODID, "facade_crafting"),
                 "facades",
                 CraftingBookCategory.BUILDING,
-                itemStack,
+                facadeResult,
                 NonNullList.of(Ingredient.EMPTY, Ingredient.of(CFItems.FACADE.get()), Ingredient.of(ingredientStack))
+        )));
+
+        ItemStack directionalResult = new ItemStack(CFItems.DIRECTIONAL_FACADE.get());
+        FacadeItemNbt.setFacadeBlock(directionalResult, Blocks.COBBLESTONE);
+
+        registration.addRecipes(RecipeTypes.CRAFTING, Collections.singletonList(new ShapelessRecipe(
+                new ResourceLocation(CFMain.MODID, "directional_facade_crafting"),
+                "facades",
+                CraftingBookCategory.BUILDING,
+                directionalResult,
+                NonNullList.of(Ingredient.EMPTY, Ingredient.of(CFItems.DIRECTIONAL_FACADE.get()), Ingredient.of(ingredientStack))
         )));
     }
 }

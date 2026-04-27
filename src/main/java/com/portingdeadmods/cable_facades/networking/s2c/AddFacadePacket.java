@@ -1,33 +1,29 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
+import com.portingdeadmods.cable_facades.client.FacadeClientUtils;
+import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
-import com.portingdeadmods.cable_facades.utils.ClientFacadeUtils;
-import com.portingdeadmods.cable_facades.utils.NetworkingUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public record AddFacadePacket(BlockPos facadePos, BlockState block) {
-    public AddFacadePacket(FriendlyByteBuf buf) {
-        this(buf.readBlockPos(), NetworkingUtils.readBlockState(buf));
+public record AddFacadePacket(BlockPos facadePos, FacadeData facadeData) {
+    public static void encode(AddFacadePacket pkt, FriendlyByteBuf buf) {
+        buf.writeBlockPos(pkt.facadePos);
+        FacadeData.encode(buf, pkt.facadeData);
     }
 
-    public void toBytes(FriendlyByteBuf buf) {
-        buf.writeBlockPos(facadePos);
-        NetworkingUtils.writeBlockState(buf, block);
+    public static AddFacadePacket decode(FriendlyByteBuf buf) {
+        return new AddFacadePacket(buf.readBlockPos(), FacadeData.decode(buf));
     }
 
-    public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            ClientFacadeManager.FACADED_BLOCKS.put(facadePos, block);
-            ClientFacadeUtils.updateBlocks(this.facadePos);
+    public static void handle(AddFacadePacket pkt, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> {
+            ClientFacadeManager.put(pkt.facadePos, pkt.facadeData);
+            FacadeClientUtils.updateClientBlock(pkt.facadePos);
         });
-        return true;
+        ctx.get().setPacketHandled(true);
     }
 }

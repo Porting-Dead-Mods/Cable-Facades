@@ -1,6 +1,7 @@
 package com.portingdeadmods.cable_facades.registries;
 
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.content.recipes.DirectionalFacadeCraftingRecipe;
 import com.portingdeadmods.cable_facades.content.recipes.FacadeCraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
@@ -14,4 +15,7 @@ public class CFRecipes {
 
     public static final RegistryObject<RecipeSerializer<?>> FACADE = RECIPES.register("facade",
             () -> new SimpleCraftingRecipeSerializer<>(FacadeCraftingRecipe::new));
+
+    public static final RegistryObject<RecipeSerializer<?>> DIRECTIONAL_FACADE = RECIPES.register("directional_facade",
+            () -> new SimpleCraftingRecipeSerializer<>(DirectionalFacadeCraftingRecipe::new));
 }

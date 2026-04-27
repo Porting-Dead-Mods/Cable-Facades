@@ -1,7 +1,7 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
+import com.portingdeadmods.cable_facades.client.FacadeClientUtils;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
-import com.portingdeadmods.cable_facades.utils.ClientFacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -9,19 +9,19 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public record RemoveFacadePacket(BlockPos facadePos) {
-    public RemoveFacadePacket(FriendlyByteBuf buf) {
-        this(buf.readBlockPos());
+    public static void encode(RemoveFacadePacket pkt, FriendlyByteBuf buf) {
+        buf.writeBlockPos(pkt.facadePos);
     }
 
-    public void toBytes(FriendlyByteBuf buf) {
-        buf.writeBlockPos(this.facadePos);
+    public static RemoveFacadePacket decode(FriendlyByteBuf buf) {
+        return new RemoveFacadePacket(buf.readBlockPos());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            ClientFacadeManager.FACADED_BLOCKS.remove(this.facadePos);
-            ClientFacadeUtils.updateBlocks(this.facadePos);
+    public static void handle(RemoveFacadePacket pkt, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> {
+            ClientFacadeManager.remove(pkt.facadePos);
+            FacadeClientUtils.updateClientBlock(pkt.facadePos);
         });
+        ctx.get().setPacketHandled(true);
     }
 }

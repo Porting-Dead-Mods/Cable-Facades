@@ -1,37 +1,49 @@
 package com.portingdeadmods.cable_facades.networking.s2c;
 
+import com.portingdeadmods.cable_facades.client.FacadeClientUtils;
+import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
-import com.portingdeadmods.cable_facades.utils.NetworkingUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public record AddFacadedBlocksPacket(ChunkPos chunkPos, Map<BlockPos, BlockState> facadedBlocks) {
-    public AddFacadedBlocksPacket(FriendlyByteBuf buf) {
-        this(buf.readChunkPos(), NetworkingUtils.getFacades(buf));
-    }
-
-    public void toBytes(FriendlyByteBuf buf) {
-        buf.writeChunkPos(this.chunkPos);
-        buf.writeInt(this.facadedBlocks.size());
-        for (Map.Entry<BlockPos, BlockState> entry : this.facadedBlocks.entrySet()) {
-            buf.writeBlockPos(entry.getKey());
-            NetworkingUtils.writeBlockState(buf, entry.getValue());
+public record AddFacadedBlocksPacket(ChunkPos chunkPos, Map<BlockPos, FacadeData> facadedBlocks) {
+    public static void encode(AddFacadedBlocksPacket pkt, FriendlyByteBuf buf) {
+        buf.writeLong(pkt.chunkPos.toLong());
+        buf.writeVarInt(pkt.facadedBlocks.size());
+        for (Map.Entry<BlockPos, FacadeData> e : pkt.facadedBlocks.entrySet()) {
+            buf.writeBlockPos(e.getKey());
+            FacadeData.encode(buf, e.getValue());
         }
     }
 
-    public void handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            if (!ClientFacadeManager.LOADED_BLOCKS.containsKey(this.chunkPos)) {
-                ClientFacadeManager.FACADED_BLOCKS.putAll(this.facadedBlocks);
-                ClientFacadeManager.LOADED_BLOCKS.put(this.chunkPos, this.facadedBlocks.keySet().stream().toList());
+    public static AddFacadedBlocksPacket decode(FriendlyByteBuf buf) {
+        ChunkPos cp = new ChunkPos(buf.readLong());
+        int n = buf.readVarInt();
+        Map<BlockPos, FacadeData> map = new HashMap<>(n);
+        for (int i = 0; i < n; i++) {
+            BlockPos pos = buf.readBlockPos();
+            FacadeData data = FacadeData.decode(buf);
+            map.put(pos, data);
+        }
+        return new AddFacadedBlocksPacket(cp, map);
+    }
+
+    public static void handle(AddFacadedBlocksPacket pkt, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> {
+            if (!ClientFacadeManager.containsChunk(pkt.chunkPos)) {
+                ClientFacadeManager.putAll(pkt.facadedBlocks);
+                ClientFacadeManager.trackChunk(pkt.chunkPos, pkt.facadedBlocks.keySet().stream().toList());
+                for (BlockPos pos : pkt.facadedBlocks.keySet()) {
+                    FacadeClientUtils.updateClientBlock(pos);
+                }
             }
         });
+        ctx.get().setPacketHandled(true);
     }
 }

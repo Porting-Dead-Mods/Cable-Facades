@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface LevelRendererAccess {
     @Invoker
     void callRenderHitOutline(
-            PoseStack matrixStackIn, VertexConsumer bufferIn, Entity entityIn, double xIn, double yIn, double zIn,
-            BlockPos blockPosIn, BlockState blockStateIn
+            PoseStack matrixStack, VertexConsumer buffer, Entity entity, double x, double y, double z,
+            BlockPos blockPos, BlockState blockState
     );
 }

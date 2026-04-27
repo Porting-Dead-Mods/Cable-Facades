@@ -1,0 +1,24 @@
+{
+  "item.cable_facades.facade_wrench": "Chave Inglesa de Fachada",
+  
+  "cable_facades.tooltip.toggle_transparency": "Agachar + Clique Direito - Remover fachada\nClique Direito - Alternar transparência de fachadas",
+  "cable_facades.tooltip.current_state": "Transparência: ",
+  "cable_facades.tooltip.enabled": "ativada",
+  "cable_facades.tooltip.disabled": "desativada",
+  
+  "cable_facades.message.transparency_enabled": "Transparência de fachadas: ",
+  "cable_facades.message.shaders_warning": "⚠ ",
+  "cable_facades.message.shaders_detected": "Shaders Detectados: ",
+  "cable_facades.message.transparency_may_not_work": "A transparência de fachadas pode não funcionar corretamente",
+  
+  "cable_facades.facade.name_prefix": "Fachada - ",
+  "cable_facades.facade.empty": "Fachada Vazia",
+  "cable_facades.creative_tab": "Fachadas de Cabos",
+  
+  "cable_facades.error.cannot_facade_itself": "Não é possível usar fachada no mesmo bloco",
+  "cable_facades.error.block_disabled": "Este bloco não pode ser usado como cobertura",
+  
+  "cable_facades.jei.facade_empty": "Fachada Vazia",
+  "cable_facades.jei.empty": "Vazio"
+  ,"cable_facades.message.directional_facade_update": "Cable Facades 2.0 adds directional facades. This message only shows once, check them out."
+}
