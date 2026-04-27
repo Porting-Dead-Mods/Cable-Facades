@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "D #",
+    " W ",
+    "# D"
+  ],
+  "key": {
+    "#": {
+      "tag": "forge:dyes/red"
+    },
+    "D": {
+      "tag": "forge:dyes/green"
+    },
+    "W": {
+      "tag": "minecraft:wool"
+    }
+  },
+  "result": {
+    "item": "cable_facades:directional_facade",
+    "count": 16
+  }
+}
