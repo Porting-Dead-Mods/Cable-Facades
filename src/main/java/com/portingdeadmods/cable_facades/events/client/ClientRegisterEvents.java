@@ -8,7 +8,7 @@ import com.portingdeadmods.cable_facades.compat.embeddium.EmbeddiumIntegration;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.client.model.ForgeModelBakery;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
@@ -27,24 +27,23 @@ public final class ClientRegisterEvents {
     private ClientRegisterEvents() {}
 
     @SubscribeEvent
-    public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
-        Set<ResourceLocation> registered = new HashSet<>();
-        event.register(FACADE_OUTLINE);
-        registered.add(FACADE_OUTLINE);
-        for (FacadeType type : FacadeTypes.all()) {
-            ResourceLocation outline = type.outlineModel();
-            if (outline == null) continue;
-            ModelResourceLocation key = new ModelResourceLocation(outline, "inventory");
-            if (registered.add(key)) {
-                event.register(key);
-            }
-        }
-    }
-
-    @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        if (ModList.get().isLoaded("embeddium") || ModList.get().isLoaded("rubidium")) {
-            event.enqueueWork(EmbeddiumIntegration::register);
-        }
+        event.enqueueWork(() -> {
+            Set<ResourceLocation> registered = new HashSet<>();
+            ForgeModelBakery.addSpecialModel(FACADE_OUTLINE);
+            registered.add(FACADE_OUTLINE);
+            for (FacadeType type : FacadeTypes.all()) {
+                ResourceLocation outline = type.outlineModel();
+                if (outline == null) continue;
+                ModelResourceLocation key = new ModelResourceLocation(outline, "inventory");
+                if (registered.add(key)) {
+                    ForgeModelBakery.addSpecialModel(key);
+                }
+            }
+
+            if (ModList.get().isLoaded("embeddium")) {
+                EmbeddiumIntegration.register();
+            }
+        });
     }
 }

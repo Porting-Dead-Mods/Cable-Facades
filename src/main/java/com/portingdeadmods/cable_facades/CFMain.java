@@ -4,7 +4,6 @@ import com.mojang.logging.LogUtils;
 import com.portingdeadmods.cable_facades.api.CableFacadesAPI;
 import com.portingdeadmods.cable_facades.api.facade_type.FacadeType;
 import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
-import com.portingdeadmods.cable_facades.registries.CFCreativeTabs;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
@@ -30,7 +29,6 @@ public class CFMain {
         registerDefaultFacadeType();
 
         CFItems.ITEMS.register(modEventBus);
-        CFCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
         CFRecipes.RECIPES.register(modEventBus);
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFConfig.SPEC);

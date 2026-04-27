@@ -1,8 +1,8 @@
 package com.portingdeadmods.cable_facades.compat.iris;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.irisshaders.iris.vertices.BlockSensitiveBufferBuilder;
-import net.minecraftforge.client.model.pipeline.VertexConsumerWrapper;
+import com.portingdeadmods.cable_facades.client.VertexConsumerWrapper;
+import net.coderbot.iris.vertices.BlockSensitiveBufferBuilder;
 
 public class AlphaWrapperIris extends VertexConsumerWrapper implements BlockSensitiveBufferBuilder {
 

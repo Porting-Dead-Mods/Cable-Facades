@@ -15,10 +15,11 @@ import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -40,8 +41,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.event.level.ChunkWatchEvent;
+import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.event.world.ChunkWatchEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -63,7 +64,7 @@ public final class ServerInGameEvents {
 
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) {
+        if (!(event.getPlayer() instanceof ServerPlayer serverPlayer)) {
             return;
         }
         CompoundTag root = serverPlayer.getPersistentData().getCompound(PLAYER_TAG_ROOT);
@@ -78,7 +79,7 @@ public final class ServerInGameEvents {
             markSeen(serverPlayer);
             return;
         }
-        serverPlayer.sendSystemMessage(Component.translatable("cable_facades.message.directional_facade_update").withStyle(ChatFormatting.YELLOW));
+        serverPlayer.sendMessage(new TranslatableComponent("cable_facades.message.directional_facade_update").withStyle(ChatFormatting.YELLOW), Util.NIL_UUID);
         markSeen(serverPlayer);
     }
 
@@ -91,7 +92,7 @@ public final class ServerInGameEvents {
 
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
-        Level level = event.getLevel() instanceof Level lv ? lv : event.getPlayer().level();
+        Level level = event.getWorld() instanceof Level lv ? lv : event.getPlayer().getCommandSenderWorld();
         BlockPos pos = event.getPos();
         Player player = event.getPlayer();
 
@@ -128,8 +129,8 @@ public final class ServerInGameEvents {
 
     @SubscribeEvent
     public static void onRightClick(PlayerInteractEvent.RightClickBlock event) {
-        Player player = event.getEntity();
-        Level level = event.getLevel();
+        Player player = event.getPlayer();
+        Level level = event.getWorld();
         BlockPos pos = event.getPos();
         InteractionHand hand = event.getHand();
 
@@ -242,7 +243,7 @@ public final class ServerInGameEvents {
     @SubscribeEvent
     public static void loadChunk(ChunkWatchEvent.Watch event) {
         ChunkPos chunkPos = event.getPos();
-        ServerLevel serverLevel = event.getLevel();
+        ServerLevel serverLevel = event.getWorld();
         ServerPlayer player = event.getPlayer();
 
         CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);

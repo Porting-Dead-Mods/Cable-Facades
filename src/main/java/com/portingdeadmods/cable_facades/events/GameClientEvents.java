@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.CFMain;
+import com.portingdeadmods.cable_facades.client.VertexConsumerWrapper;
 import com.portingdeadmods.cable_facades.client.render.CoverQuadRenderer;
 import com.portingdeadmods.cable_facades.client.render.FacadeQuadLighter;
 import com.portingdeadmods.cable_facades.content.items.DirectionalFacadeItem;
@@ -16,6 +17,7 @@ import com.portingdeadmods.cable_facades.utils.FacadeItemNbt;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -24,7 +26,6 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -38,15 +39,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderHighlightEvent;
+import net.minecraftforge.client.event.DrawSelectionEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.pipeline.VertexConsumerWrapper;
+import net.minecraftforge.client.model.data.EmptyModelData;
+import net.minecraftforge.client.model.data.IModelData;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -103,9 +105,9 @@ public final class GameClientEvents {
     }
 
     @SubscribeEvent
-    public static void renderOutline(RenderHighlightEvent.Block event) {
+    public static void renderOutline(DrawSelectionEvent.HighlightBlock event) {
         if (event.getCamera().getEntity() instanceof LivingEntity living) {
-            Level world = living.level();
+            Level world = living.level;
             BlockHitResult rtr = event.getTarget();
             renderPlacementPreview(event, world, rtr, living);
             BlockPos pos = rtr.getBlockPos();
@@ -123,7 +125,7 @@ public final class GameClientEvents {
         }
     }
 
-    private static void renderPlacementPreview(RenderHighlightEvent.Block event, Level world, BlockHitResult hit, LivingEntity living) {
+    private static void renderPlacementPreview(DrawSelectionEvent.HighlightBlock event, Level world, BlockHitResult hit, LivingEntity living) {
         if (!(living instanceof Player player)) return;
         PlacementPreview preview = getPlacementPreview(player, hit);
         if (preview == null) return;
@@ -158,31 +160,31 @@ public final class GameClientEvents {
         poseStack.popPose();
     }
 
-    private static void renderFullBlockPreview(RenderHighlightEvent.Block event, Level world, BlockPos pos,
+    private static void renderFullBlockPreview(DrawSelectionEvent.HighlightBlock event, Level world, BlockPos pos,
                                                BlockState facadeState, PoseStack poseStack) {
-        RandomSource random = RandomSource.create(FACADE_RENDER_SEED);
+        Random random = new Random(FACADE_RENDER_SEED);
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
         BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
-        ModelData modelData = facadeModel.getModelData(world, pos, facadeState, ModelData.EMPTY);
+        IModelData modelData = facadeModel.getModelData(world, pos, facadeState, EmptyModelData.INSTANCE);
 
-        for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+        for (RenderType renderType : List.of(ItemBlockRenderTypes.getChunkRenderType(facadeState))) {
             VertexConsumer buffer = new PreviewAlphaWrapper(event.getMultiBufferSource().getBuffer(RenderType.translucent()));
-            blockRenderer.renderBatched(facadeState, pos, world, poseStack, buffer, true, random, modelData, renderType);
+            blockRenderer.renderBatched(facadeState, pos, world, poseStack, buffer, true, random, modelData);
         }
     }
 
-    private static void renderDirectionalPreview(RenderHighlightEvent.Block event, Level world, BlockPos pos,
+    private static void renderDirectionalPreview(DrawSelectionEvent.HighlightBlock event, Level world, BlockPos pos,
                                                  Direction face, BlockState facadeState, PoseStack poseStack) {
-        RandomSource random = RandomSource.create(FACADE_RENDER_SEED);
+        Random random = new Random(FACADE_RENDER_SEED);
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
         BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
-        ModelData modelData = facadeModel.getModelData(world, pos, facadeState, ModelData.EMPTY);
+        IModelData modelData = facadeModel.getModelData(world, pos, facadeState, EmptyModelData.INSTANCE);
         boolean useAo = Minecraft.useAmbientOcclusion()
                 && facadeState.getLightEmission() == 0
                 && facadeModel.useAmbientOcclusion();
         List<BakedQuad> slicedQuads = CoverQuadRenderer.sliceQuads(facadeState, pos, facadeModel, face, modelData);
 
-        for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+        for (RenderType renderType : List.of(ItemBlockRenderTypes.getChunkRenderType(facadeState))) {
             VertexConsumer buffer = new PreviewAlphaWrapper(event.getMultiBufferSource().getBuffer(RenderType.translucent()));
             for (BakedQuad quad : slicedQuads) {
                 float r = 1f, g = 1f, b = 1f;
@@ -209,7 +211,7 @@ public final class GameClientEvents {
         if (!(stack.getItem() instanceof FacadeItem) && !directional) {
             return null;
         }
-        Level level = player.level();
+        Level level = player.level;
         BlockPos pos = hit.getBlockPos();
         Direction face = hit.getDirection();
         BlockState existingFullFacade = FacadeUtils.getFacade(level, pos);

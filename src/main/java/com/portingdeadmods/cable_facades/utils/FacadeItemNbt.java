@@ -1,6 +1,6 @@
 package com.portingdeadmods.cable_facades.utils;
 
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -20,7 +20,7 @@ public final class FacadeItemNbt {
         if (tag == null || !tag.contains(KEY_FACADE_BLOCK)) return null;
         ResourceLocation rl = ResourceLocation.tryParse(tag.getString(KEY_FACADE_BLOCK));
         if (rl == null) return null;
-        Block block = BuiltInRegistries.BLOCK.get(rl);
+        Block block = Registry.BLOCK.get(rl);
         return block == Blocks.AIR ? null : block;
     }
 
@@ -29,7 +29,7 @@ public final class FacadeItemNbt {
         if (block == null) {
             tag.remove(KEY_FACADE_BLOCK);
         } else {
-            ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(block);
+            ResourceLocation rl = Registry.BLOCK.getKey(block);
             tag.putString(KEY_FACADE_BLOCK, rl.toString());
         }
     }

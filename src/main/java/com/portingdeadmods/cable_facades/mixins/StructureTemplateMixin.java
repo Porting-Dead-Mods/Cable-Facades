@@ -6,14 +6,12 @@ import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
@@ -30,6 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 @Mixin(StructureTemplate.class)
 public class StructureTemplateMixin implements StructureTemplateFacadeAccess {
@@ -82,7 +81,7 @@ public class StructureTemplateMixin implements StructureTemplateFacadeAccess {
     }
 
     @Inject(method = "load", at = @At("RETURN"))
-    private void onLoad(HolderGetter<Block> blockGetter, CompoundTag tag, CallbackInfo ci) {
+    private void onLoad(CompoundTag tag, CallbackInfo ci) {
         facadeMap.clear();
         if (tag.contains(FACADES_TAG, Tag.TAG_LIST)) {
             ListTag facadesTag = tag.getList(FACADES_TAG, Tag.TAG_COMPOUND);
@@ -100,7 +99,7 @@ public class StructureTemplateMixin implements StructureTemplateFacadeAccess {
                     for (Direction dir : Direction.values()) {
                         String key = dir.getSerializedName();
                         if (facesTag.contains(key)) {
-                            BlockState state = NbtUtils.readBlockState(blockGetter, facesTag.getCompound(key));
+                            BlockState state = NbtUtils.readBlockState(facesTag.getCompound(key));
                             faces.put(dir, state);
                         }
                     }
@@ -108,7 +107,7 @@ public class StructureTemplateMixin implements StructureTemplateFacadeAccess {
                         facadeMap.put(pos, FacadeData.directional(typeId, faces));
                     }
                 } else {
-                    BlockState state = NbtUtils.readBlockState(blockGetter, facadeTag.getCompound("state"));
+                    BlockState state = NbtUtils.readBlockState(facadeTag.getCompound("state"));
                     facadeMap.put(pos, FacadeData.fullBlock(typeId, state));
                 }
             }
@@ -116,7 +115,7 @@ public class StructureTemplateMixin implements StructureTemplateFacadeAccess {
     }
 
     @Inject(method = "placeInWorld", at = @At("RETURN"))
-    private void onPlaceInWorld(ServerLevelAccessor level, BlockPos offset, BlockPos pivot, StructurePlaceSettings settings, RandomSource random, int flags, CallbackInfoReturnable<Boolean> cir) {
+    private void onPlaceInWorld(ServerLevelAccessor level, BlockPos offset, BlockPos pivot, StructurePlaceSettings settings, Random random, int flags, CallbackInfoReturnable<Boolean> cir) {
         if (!facadeMap.isEmpty() && Boolean.TRUE.equals(cir.getReturnValue())) {
             facadeMap.forEach((relativePos, facadeData) -> {
                 BlockPos transformedPos = StructureTemplate.calculateRelativePosition(settings, relativePos);

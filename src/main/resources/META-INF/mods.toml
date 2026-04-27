@@ -39,3 +39,17 @@ mandatory = false
 versionRange = "*"
 ordering = "AFTER"
 side = "BOTH"
+
+[[dependencies."${mod_id}"]]
+modId = "fusion"
+mandatory = false
+versionRange = "*"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies."${mod_id}"]]
+modId = "rubidium"
+mandatory = false
+versionRange = "*"
+ordering = "AFTER"
+side = "CLIENT"

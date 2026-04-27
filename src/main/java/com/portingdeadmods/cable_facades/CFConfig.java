@@ -39,7 +39,7 @@ public final class CFConfig {
             .define("auto_update_config", true);
 
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> BLOCK_STRINGS = BUILDER.comment("List of blocks that are allowed to be covered. Supports '*' as a wildcard.")
-            .defineListAllowEmpty("blocks", List.of(
+            .defineListAllowEmpty(List.of("blocks"), () -> List.of(
                     "pipez:*_pipe", "mekanism:*_cable", "mekanism:*_conductor", "mekanism:*_pipe",
                     "mekanism:*_tube", "mekanism:*_transporter",
                     "mekanism_extras:*_cable", "mekanism_extras:*_conductor", "mekanism_extras:*_pipe",
@@ -62,7 +62,7 @@ public final class CFConfig {
             ), CFConfig::validateBlockName);
 
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> ADDED_BLOCK_STRINGS = BUILDER.comment("List of additional blocks added in this version.")
-            .defineListAllowEmpty("added_blocks", List.of(
+            .defineListAllowEmpty(List.of("added_blocks"), () -> List.of(
                     "refinedstorage:cable",
                     "refinedstorage:importer",
                     "refinedstorage:exporter",
@@ -73,19 +73,19 @@ public final class CFConfig {
             ), CFConfig::validateBlockName);
 
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> LAST_VERSION_BLOCKS = BUILDER.comment("List of blocks from the previous version. Do not modify manually.")
-            .defineListAllowEmpty("last_version_blocks", new ArrayList<>(), CFConfig::validateBlockName);
+            .defineListAllowEmpty(List.of("last_version_blocks"), () -> new ArrayList<>(), CFConfig::validateBlockName);
 
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> NOT_ALLOWED_BLOCK_STRINGS = BUILDER.comment("List of blocks that are explicitly not allowed to be used as a cover. Supports '*' as a wildcard.")
-            .defineListAllowEmpty("not_allowed_blocks", List.of(), CFConfig::validateBlockName);
+            .defineListAllowEmpty(List.of("not_allowed_blocks"), () -> List.of(), CFConfig::validateBlockName);
 
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> Z_FIGHTING = BUILDER.comment("List of blocks that need z-fighting fixes. Supports '*' as a wildcard.")
-            .defineListAllowEmpty("z_fighting", List.of("ae2:cable_bus"), CFConfig::validateBlockName);
+            .defineListAllowEmpty(List.of("z_fighting"), () -> List.of("ae2:cable_bus"), CFConfig::validateBlockName);
 
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> HIDDEN_WHEN_FACADED = BUILDER.comment("List of blocks that should not render when covered by a facade. Supports '*' as a wildcard.")
-            .defineListAllowEmpty("hidden_when_facaded", List.of(), CFConfig::validateBlockName);
+            .defineListAllowEmpty(List.of("hidden_when_facaded"), () -> List.of(), CFConfig::validateBlockName);
 
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> SCALE_UP_BLOCKS = BUILDER.comment("List of blocks that need a slight scale-up when facaded (e.g. Create mod blocks). Supports '*' as a wildcard.")
-            .defineListAllowEmpty("scale_up_blocks", List.of("*create*"), CFConfig::validateBlockName);
+            .defineListAllowEmpty(List.of("scale_up_blocks"), () -> List.of("*create*"), CFConfig::validateBlockName);
 
     private static final ForgeConfigSpec.BooleanValue CONSUME_FACADE = BUILDER.comment("Whether the facade should be consumed when placed.")
             .define("consumeFacade", true);

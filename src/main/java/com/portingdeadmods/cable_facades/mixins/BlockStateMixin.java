@@ -3,11 +3,9 @@ package com.portingdeadmods.cable_facades.mixins;
 import com.portingdeadmods.cable_facades.CFConfig;
 import com.portingdeadmods.cable_facades.data.FacadeData;
 import com.portingdeadmods.cable_facades.multipart.MultipartShapeBuilder;
-import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import com.portingdeadmods.cable_facades.utils.FacadeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.SupportType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -15,7 +13,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.extensions.IForgeBlockState;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -32,26 +29,6 @@ public abstract class BlockStateMixin extends BlockBehaviour.BlockStateBase impl
 
     @Unique
     private static final ThreadLocal<Boolean> cable_facades$recursionGuard = ThreadLocal.withInitial(() -> false);
-
-    @Override
-    public BlockState getAppearance(BlockAndTintGetter blockGetter, BlockPos pos, Direction side, @Nullable BlockState queryState, @Nullable BlockPos queryPos) {
-        if (cable_facades$recursionGuard.get()) {
-            return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
-        }
-        cable_facades$recursionGuard.set(true);
-        try {
-            FacadeData data = ClientFacadeManager.get(pos);
-            if (data != null) {
-                BlockState facadeState = data.isFullBlock() ? data.getFullBlock() : data.getFace(side);
-                if (facadeState != null) {
-                    return facadeState.getBlock().getAppearance(facadeState, blockGetter, pos, side, queryState, queryPos);
-                }
-            }
-            return getBlock().getAppearance(this.asState(), blockGetter, pos, side, queryState, queryPos);
-        } finally {
-            cable_facades$recursionGuard.set(false);
-        }
-    }
 
     @Override
     public int getLightEmission(BlockGetter blockGetter, BlockPos pos) {

@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
@@ -20,7 +21,7 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.client.IItemRenderProperties;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
@@ -89,9 +90,9 @@ public class DirectionalFacadeItem extends Item {
 
             if (targetBlock == facadeBlock || CFConfig.isBlockDisallowed(facadeBlock)) {
                 if (targetBlock == facadeBlock) {
-                    context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED), true);
+                    context.getPlayer().displayClientMessage(new TranslatableComponent("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED), true);
                 } else {
-                    context.getPlayer().displayClientMessage(Component.translatable("cable_facades.error.block_disabled").withStyle(ChatFormatting.RED), true);
+                    context.getPlayer().displayClientMessage(new TranslatableComponent("cable_facades.error.block_disabled").withStyle(ChatFormatting.RED), true);
                 }
                 return InteractionResult.FAIL;
             }
@@ -114,9 +115,9 @@ public class DirectionalFacadeItem extends Item {
     public @NotNull Component getName(ItemStack itemStack) {
         Block block = FacadeItemNbt.getFacadeBlock(itemStack);
         if (block != null && block.asItem() instanceof BlockItem blockItem) {
-            return Component.translatable("cable_facades.directional_facade.name_prefix").append(blockItem.getDescription());
+            return new TranslatableComponent("cable_facades.directional_facade.name_prefix").append(blockItem.getDescription());
         }
-        return Component.translatable("cable_facades.directional_facade.empty");
+        return new TranslatableComponent("cable_facades.directional_facade.empty");
     }
 
     public ItemStack createFacade(Block block) {
@@ -128,12 +129,12 @@ public class DirectionalFacadeItem extends Item {
     }
 
     @Override
-    public boolean hasCraftingRemainingItem(ItemStack stack) {
+    public boolean hasContainerItem(ItemStack stack) {
         return true;
     }
 
     @Override
-    public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
+    public ItemStack getContainerItem(ItemStack itemStack) {
         if (FacadeItemNbt.hasRemainder(itemStack)) {
             return this.getDefaultInstance();
         }
@@ -141,10 +142,10 @@ public class DirectionalFacadeItem extends Item {
     }
 
     @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
+    public void initializeClient(Consumer<IItemRenderProperties> consumer) {
+        consumer.accept(new IItemRenderProperties() {
             @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            public BlockEntityWithoutLevelRenderer getItemStackRenderer() {
                 return ClientRegisterEvents.FACADE_ITEM_RENDERER;
             }
         });

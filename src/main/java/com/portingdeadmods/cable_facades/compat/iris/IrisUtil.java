@@ -2,9 +2,9 @@ package com.portingdeadmods.cable_facades.compat.iris;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import net.coderbot.iris.block_rendering.BlockRenderingSettings;
+import net.coderbot.iris.vertices.BlockSensitiveBufferBuilder;
 import net.irisshaders.iris.api.v0.IrisApi;
-import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
-import net.irisshaders.iris.vertices.BlockSensitiveBufferBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -24,7 +24,7 @@ public final class IrisUtil {
         if (!(buffer instanceof BlockSensitiveBufferBuilder irisBuffer)) {
             return;
         }
-        Object2IntMap<BlockState> ids = WorldRenderingSettings.INSTANCE.getBlockStateIds();
+        Object2IntMap<BlockState> ids = BlockRenderingSettings.INSTANCE.getBlockStateIds();
         if (ids == null) {
             return;
         }

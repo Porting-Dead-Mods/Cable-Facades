@@ -10,6 +10,7 @@ import com.portingdeadmods.cable_facades.events.GameClientEvents;
 import com.portingdeadmods.cable_facades.utils.ClientFacadeManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ChunkBufferBuilderPack;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -18,13 +19,14 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.EmptyModelData;
+import net.minecraftforge.client.model.data.IModelData;
 
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -33,7 +35,7 @@ public final class ChunkFacadeBaker {
     private static final long FACADE_RENDER_SEED = 42L;
     private static final float ZFIGHTING_SCALE = 0.99995F;
     private static final float SCALE_UP_FACTOR = 1.0005F;
-    private static final ThreadLocal<RandomSource> RANDOM = ThreadLocal.withInitial(RandomSource::create);
+    private static final ThreadLocal<Random> RANDOM = ThreadLocal.withInitial(Random::new);
 
     private ChunkFacadeBaker() {}
 
@@ -61,7 +63,7 @@ public final class ChunkFacadeBaker {
 
         GameClientEvents.RENDERING_FACADE.set(true);
         try {
-            RandomSource random = RANDOM.get();
+            Random random = RANDOM.get();
 
             ClientFacadeManager.entryStream()
                     .filter(e -> SectionPos.of(e.getKey()).equals(section))
@@ -83,11 +85,11 @@ public final class ChunkFacadeBaker {
 
     private static void renderFullBlockFacade(BlockAndTintGetter region,
                                               Function<RenderType, VertexConsumer> bufferProvider,
-                                              RandomSource random, BlockPos pos, BlockState facadeState) {
+                                              Random random, BlockPos pos, BlockState facadeState) {
         random.setSeed(FACADE_RENDER_SEED);
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
         BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
-        ModelData modelData = facadeModel.getModelData(region, pos, facadeState, ModelData.EMPTY);
+        IModelData modelData = facadeModel.getModelData(region, pos, facadeState, EmptyModelData.INSTANCE);
 
         PoseStack poseStack = new PoseStack();
         poseStack.translate(SectionPos.sectionRelative(pos.getX()), SectionPos.sectionRelative(pos.getY()), SectionPos.sectionRelative(pos.getZ()));
@@ -105,7 +107,7 @@ public final class ChunkFacadeBaker {
             poseStack.translate(-0.5, -0.5, -0.5);
         }
 
-        for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+        for (RenderType renderType : List.of(ItemBlockRenderTypes.getChunkRenderType(facadeState))) {
             RenderType targetType = GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType;
             VertexConsumer buffer = bufferProvider.apply(targetType);
             if (GameClientEvents.facadeTransparency) {
@@ -114,7 +116,7 @@ public final class ChunkFacadeBaker {
             if (CFMain.isOculusLoaded()) {
                 IrisUtil.beginBlock(buffer, facadeState, pos);
             }
-            blockRenderer.renderBatched(facadeState, pos, region, poseStack, buffer, true, random, modelData, renderType);
+            blockRenderer.renderBatched(facadeState, pos, region, poseStack, buffer, true, random, modelData);
             if (CFMain.isOculusLoaded()) {
                 IrisUtil.endBlock(buffer);
             }
@@ -123,11 +125,11 @@ public final class ChunkFacadeBaker {
 
     private static void renderDirectionalFacade(BlockAndTintGetter region,
                                                 Function<RenderType, VertexConsumer> bufferProvider,
-                                                RandomSource random, BlockPos pos, Direction face, BlockState facadeState) {
+                                                Random random, BlockPos pos, Direction face, BlockState facadeState) {
         random.setSeed(FACADE_RENDER_SEED);
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
         BakedModel facadeModel = blockRenderer.getBlockModel(facadeState);
-        ModelData modelData = facadeModel.getModelData(region, pos, facadeState, ModelData.EMPTY);
+        IModelData modelData = facadeModel.getModelData(region, pos, facadeState, EmptyModelData.INSTANCE);
         boolean useAo = Minecraft.useAmbientOcclusion()
                 && facadeState.getLightEmission() == 0
                 && facadeModel.useAmbientOcclusion();
@@ -137,7 +139,7 @@ public final class ChunkFacadeBaker {
         PoseStack poseStack = new PoseStack();
         poseStack.translate(SectionPos.sectionRelative(pos.getX()), SectionPos.sectionRelative(pos.getY()), SectionPos.sectionRelative(pos.getZ()));
 
-        for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
+        for (RenderType renderType : List.of(ItemBlockRenderTypes.getChunkRenderType(facadeState))) {
             RenderType targetType = GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType;
             VertexConsumer buffer = bufferProvider.apply(targetType);
             if (GameClientEvents.facadeTransparency) {

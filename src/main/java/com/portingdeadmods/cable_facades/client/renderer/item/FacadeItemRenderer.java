@@ -11,24 +11,24 @@ import com.portingdeadmods.cable_facades.events.client.ClientRegisterEvents;
 import com.portingdeadmods.cable_facades.utils.FacadeItemNbt;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.EmptyModelData;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     @Override
-    public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
+    public void renderByItem(ItemStack stack, ItemTransforms.TransformType displayContext, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
         poseStack.pushPose();
         Item itemType = stack.getItem();
         boolean isDirectional = itemType instanceof DirectionalFacadeItem;
@@ -55,7 +55,7 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
                 poseStack.pushPose();
                 poseStack.translate(0.5, 0.5, 0.5);
                 poseStack.scale(2, 2, 2);
-                Minecraft.getInstance().getItemRenderer().renderStatic(Minecraft.getInstance().player, defaultInstance, ItemDisplayContext.FIXED, false, poseStack, buffer, Minecraft.getInstance().level, combinedLight, combinedOverlay, 0);
+                Minecraft.getInstance().getItemRenderer().renderStatic(Minecraft.getInstance().player, defaultInstance, ItemTransforms.TransformType.FIXED, false, poseStack, buffer, Minecraft.getInstance().level, combinedLight, combinedOverlay, 0);
                 poseStack.popPose();
             }
         }
@@ -68,11 +68,11 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
                                              int combinedLight, int combinedOverlay) {
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
         BakedModel model = blockRenderer.getBlockModel(state);
-        List<BakedQuad> quads = CoverQuadRenderer.sliceQuads(state, BlockPos.ZERO, model, Direction.SOUTH, ModelData.EMPTY);
+        List<BakedQuad> quads = CoverQuadRenderer.sliceQuads(state, BlockPos.ZERO, model, Direction.SOUTH, EmptyModelData.INSTANCE);
 
         poseStack.pushPose();
         poseStack.translate(0.0F, 0.0F, FLAT_DEPTH_OFFSET);
-        for (RenderType renderType : model.getRenderTypes(state, RandomSource.create(state.getSeed(BlockPos.ZERO)), ModelData.EMPTY)) {
+        for (RenderType renderType : List.of(ItemBlockRenderTypes.getChunkRenderType(state))) {
             VertexConsumer consumer = buffer.getBuffer(renderType);
             for (BakedQuad quad : quads) {
                 float red = 1.0F, green = 1.0F, blue = 1.0F;
@@ -102,8 +102,7 @@ public class FacadeItemRenderer extends BlockEntityWithoutLevelRenderer {
             poseStack.scale(1.0F + OUTLINE_SCALE_EPSILON, 1.0F + OUTLINE_SCALE_EPSILON, 1.0F + OUTLINE_SCALE_EPSILON);
         }
 
-        List<RenderType> renderTypes = model.getRenderTypes(stack, true);
-        RenderType renderType = renderTypes.isEmpty() ? RenderType.solid() : renderTypes.get(0);
+        RenderType renderType = ItemBlockRenderTypes.getRenderType(stack, true);
         Minecraft.getInstance().getItemRenderer().renderModelLists(
                 model, stack, combinedLight, OverlayTexture.NO_OVERLAY, poseStack,
                 buffer.getBuffer(renderType)

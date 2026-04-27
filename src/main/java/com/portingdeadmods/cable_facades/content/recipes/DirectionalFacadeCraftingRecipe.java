@@ -3,12 +3,10 @@ package com.portingdeadmods.cable_facades.content.recipes;
 import com.portingdeadmods.cable_facades.content.items.DirectionalFacadeItem;
 import com.portingdeadmods.cable_facades.registries.CFRecipes;
 import com.portingdeadmods.cable_facades.utils.FacadeItemNbt;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
@@ -18,8 +16,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class DirectionalFacadeCraftingRecipe extends CustomRecipe {
 
-    public DirectionalFacadeCraftingRecipe(ResourceLocation id, CraftingBookCategory category) {
-        super(id, category);
+    public DirectionalFacadeCraftingRecipe(ResourceLocation id) {
+        super(id);
     }
 
     @Override
@@ -55,7 +53,7 @@ public class DirectionalFacadeCraftingRecipe extends CustomRecipe {
     }
 
     @Override
-    public @NotNull ItemStack assemble(CraftingContainer container, RegistryAccess registryAccess) {
+    public @NotNull ItemStack assemble(CraftingContainer container) {
         Block facadeBlock = null;
         ItemStack originalFacadeStack = ItemStack.EMPTY;
         ItemStack facadeStack = ItemStack.EMPTY;

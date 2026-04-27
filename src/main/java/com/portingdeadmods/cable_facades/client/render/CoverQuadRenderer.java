@@ -5,13 +5,13 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.IModelData;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public final class CoverQuadRenderer {
 
@@ -37,14 +37,14 @@ public final class CoverQuadRenderer {
     private CoverQuadRenderer() {}
 
     public static List<BakedQuad> sliceQuads(BlockState state, BlockPos pos, BakedModel model,
-                                             Direction side, ModelData modelData) {
+                                             Direction side, IModelData modelData) {
         long seed = state.getSeed(pos);
         AABB bounds = COVER_BOXES[side.ordinal()];
         List<BakedQuad> sourceQuads = new ArrayList<>();
 
-        sourceQuads.addAll(model.getQuads(state, null, RandomSource.create(seed), modelData, null));
+        sourceQuads.addAll(model.getQuads(state, null, new Random(seed), modelData));
         for (Direction face : Direction.values()) {
-            sourceQuads.addAll(model.getQuads(state, face, RandomSource.create(seed), modelData, null));
+            sourceQuads.addAll(model.getQuads(state, face, new Random(seed), modelData));
         }
 
         List<BakedQuad> result = new ArrayList<>(sourceQuads.size());

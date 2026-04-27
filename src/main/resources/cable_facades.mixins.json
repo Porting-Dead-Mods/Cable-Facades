@@ -13,7 +13,10 @@
     "BlockHidingMixin",
     "BlockMixin",
     "ChunkRebuildTaskMixin",
-    "LevelRendererAccess"
+    "CompiledChunkAccessor",
+    "LevelRendererAccess",
+    "RebuildTaskAccessor",
+    "RenderChunkAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

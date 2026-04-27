@@ -34,37 +34,37 @@ public final class CFMessages {
         channel.messageBuilder(AddFacadePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(AddFacadePacket::encode)
                 .decoder(AddFacadePacket::decode)
-                .consumerMainThread(AddFacadePacket::handle)
+                .consumer(AddFacadePacket::handle)
                 .add();
 
         channel.messageBuilder(AddDirectionalFacadePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(AddDirectionalFacadePacket::encode)
                 .decoder(AddDirectionalFacadePacket::decode)
-                .consumerMainThread(AddDirectionalFacadePacket::handle)
+                .consumer(AddDirectionalFacadePacket::handle)
                 .add();
 
         channel.messageBuilder(RemoveFacadePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(RemoveFacadePacket::encode)
                 .decoder(RemoveFacadePacket::decode)
-                .consumerMainThread(RemoveFacadePacket::handle)
+                .consumer(RemoveFacadePacket::handle)
                 .add();
 
         channel.messageBuilder(RemoveDirectionalFacadePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(RemoveDirectionalFacadePacket::encode)
                 .decoder(RemoveDirectionalFacadePacket::decode)
-                .consumerMainThread(RemoveDirectionalFacadePacket::handle)
+                .consumer(RemoveDirectionalFacadePacket::handle)
                 .add();
 
         channel.messageBuilder(AddFacadedBlocksPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(AddFacadedBlocksPacket::encode)
                 .decoder(AddFacadedBlocksPacket::decode)
-                .consumerMainThread(AddFacadedBlocksPacket::handle)
+                .consumer(AddFacadedBlocksPacket::handle)
                 .add();
 
         channel.messageBuilder(RemoveFacadedBlocksPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(RemoveFacadedBlocksPacket::encode)
                 .decoder(RemoveFacadedBlocksPacket::decode)
-                .consumerMainThread(RemoveFacadedBlocksPacket::handle)
+                .consumer(RemoveFacadedBlocksPacket::handle)
                 .add();
     }
 
