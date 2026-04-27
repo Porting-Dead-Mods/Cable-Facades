@@ -13,19 +13,20 @@ import net.minecraft.client.renderer.ChunkBufferBuilderPack;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.chunk.RenderChunkRegion;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.model.data.ModelData;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 public final class ChunkFacadeBaker {
 
@@ -36,12 +37,24 @@ public final class ChunkFacadeBaker {
 
     private ChunkFacadeBaker() {}
 
-    private static void beginLayer(BufferBuilder bufferBuilder) {
-        bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+    public static void bakeSection(BlockPos sectionOrigin, BlockAndTintGetter region,
+                                   ChunkBufferBuilderPack pack, Set<RenderType> usedTypes) {
+        bake(sectionOrigin, region, type -> {
+            BufferBuilder bufferBuilder = pack.builder(type);
+            if (usedTypes.add(type)) {
+                bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+            }
+            return bufferBuilder;
+        });
     }
 
-    public static void bakeSection(BlockPos sectionOrigin, RenderChunkRegion region,
-                                   ChunkBufferBuilderPack pack, Set<RenderType> usedTypes) {
+    public static void bakeSection(BlockPos sectionOrigin, BlockAndTintGetter region,
+                                   Function<RenderType, VertexConsumer> bufferProvider) {
+        bake(sectionOrigin, region, bufferProvider);
+    }
+
+    private static void bake(BlockPos sectionOrigin, BlockAndTintGetter region,
+                             Function<RenderType, VertexConsumer> bufferProvider) {
         if (ClientFacadeManager.isEmpty()) return;
 
         SectionPos section = SectionPos.of(sectionOrigin);
@@ -57,10 +70,10 @@ public final class ChunkFacadeBaker {
                         FacadeData data = entry.getValue();
                         if (data == null) return;
                         if (data.isFullBlock()) {
-                            renderFullBlockFacade(region, pack, usedTypes, random, pos, data.getFullBlock());
+                            renderFullBlockFacade(region, bufferProvider, random, pos, data.getFullBlock());
                         } else if (data.isDirectional()) {
                             data.directional().forEach((dir, state) ->
-                                    renderDirectionalFacade(region, pack, usedTypes, random, pos, dir, state));
+                                    renderDirectionalFacade(region, bufferProvider, random, pos, dir, state));
                         }
                     });
         } finally {
@@ -68,8 +81,8 @@ public final class ChunkFacadeBaker {
         }
     }
 
-    private static void renderFullBlockFacade(RenderChunkRegion region, ChunkBufferBuilderPack pack,
-                                              Set<RenderType> usedTypes,
+    private static void renderFullBlockFacade(BlockAndTintGetter region,
+                                              Function<RenderType, VertexConsumer> bufferProvider,
                                               RandomSource random, BlockPos pos, BlockState facadeState) {
         random.setSeed(FACADE_RENDER_SEED);
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
@@ -94,11 +107,7 @@ public final class ChunkFacadeBaker {
 
         for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
             RenderType targetType = GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType;
-            BufferBuilder bufferBuilder = pack.builder(targetType);
-            if (usedTypes.add(targetType)) {
-                beginLayer(bufferBuilder);
-            }
-            VertexConsumer buffer = bufferBuilder;
+            VertexConsumer buffer = bufferProvider.apply(targetType);
             if (GameClientEvents.facadeTransparency) {
                 buffer = CFMain.isOculusLoaded() ? new AlphaWrapperIris(buffer) : new GameClientEvents.AlphaWrapper(buffer);
             }
@@ -112,8 +121,8 @@ public final class ChunkFacadeBaker {
         }
     }
 
-    private static void renderDirectionalFacade(RenderChunkRegion region, ChunkBufferBuilderPack pack,
-                                                Set<RenderType> usedTypes,
+    private static void renderDirectionalFacade(BlockAndTintGetter region,
+                                                Function<RenderType, VertexConsumer> bufferProvider,
                                                 RandomSource random, BlockPos pos, Direction face, BlockState facadeState) {
         random.setSeed(FACADE_RENDER_SEED);
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
@@ -130,11 +139,7 @@ public final class ChunkFacadeBaker {
 
         for (RenderType renderType : facadeModel.getRenderTypes(facadeState, random, ModelData.EMPTY)) {
             RenderType targetType = GameClientEvents.facadeTransparency ? RenderType.translucent() : renderType;
-            BufferBuilder bufferBuilder = pack.builder(targetType);
-            if (usedTypes.add(targetType)) {
-                beginLayer(bufferBuilder);
-            }
-            VertexConsumer buffer = bufferBuilder;
+            VertexConsumer buffer = bufferProvider.apply(targetType);
             if (GameClientEvents.facadeTransparency) {
                 buffer = CFMain.isOculusLoaded() ? new AlphaWrapperIris(buffer) : new GameClientEvents.AlphaWrapper(buffer);
             }

@@ -4,12 +4,15 @@ import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.api.facade_type.FacadeType;
 import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
 import com.portingdeadmods.cable_facades.client.renderer.item.FacadeItemRenderer;
+import com.portingdeadmods.cable_facades.compat.embeddium.EmbeddiumIntegration;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -35,6 +38,13 @@ public final class ClientRegisterEvents {
             if (registered.add(key)) {
                 event.register(key);
             }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        if (ModList.get().isLoaded("embeddium") || ModList.get().isLoaded("rubidium")) {
+            event.enqueueWork(EmbeddiumIntegration::register);
         }
     }
 }

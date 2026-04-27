@@ -184,7 +184,9 @@ dependencies {
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}"))
     runtimeOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}"))
 
-    compileOnly fg.deobf("maven.modrinth:oculus:1.20.1-1.7.0")
+    compileOnly fg.deobf("curse.maven:oculus-581495:6020952")
+    compileOnly fg.deobf("curse.maven:embeddium-908741:5681725")
+    runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
 
     compileOnly "io.github.llamalad7:mixinextras-common:0.5.4"
     annotationProcessor "io.github.llamalad7:mixinextras-common:0.5.4"
