@@ -1,0 +1,136 @@
+package com.portingdeadmods.cable_facades.content.items;
+
+import com.portingdeadmods.cable_facades.CFConfig;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeType;
+import com.portingdeadmods.cable_facades.api.facade_type.FacadeTypes;
+import com.portingdeadmods.cable_facades.registries.CFDataComponents;
+import com.portingdeadmods.cable_facades.utils.FacadeUtils;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Optional;
+import java.util.function.Supplier;
+
+public class DirectionalFacadeItem extends Item {
+
+    private final Supplier<FacadeType> facadeType;
+
+    public DirectionalFacadeItem(Properties properties) {
+        this(properties, FacadeTypes::defaultType);
+    }
+
+    public DirectionalFacadeItem(Properties properties, Supplier<FacadeType> facadeType) {
+        super(properties);
+        this.facadeType = facadeType;
+    }
+
+    public FacadeType getFacadeType() {
+        FacadeType type = facadeType.get();
+        return type != null ? type : FacadeTypes.defaultType();
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        Direction clickedFace = context.getClickedFace();
+        ItemStack itemStack = context.getItemInHand();
+
+        if (!level.isClientSide()) {
+            if (FacadeUtils.getFacade(level, pos) != null) {
+                return InteractionResult.FAIL;
+            }
+
+            if (FacadeUtils.getDirectionalFacade(level, pos, clickedFace) != null) {
+                return InteractionResult.FAIL;
+            }
+
+            Optional<Block> block = itemStack.get(CFDataComponents.FACADE_BLOCK);
+
+            ItemStack offhandItemStack = null;
+            Block facadeBlock;
+            if (block == null || block.isEmpty()) {
+                if (context.getHand() == InteractionHand.MAIN_HAND) {
+                    ItemStack offhand = context.getPlayer().getItemInHand(InteractionHand.OFF_HAND);
+                    if (offhand.getItem() instanceof BlockItem blockItem) {
+                        offhandItemStack = offhand;
+                        facadeBlock = blockItem.getBlock();
+                    } else {
+                        return InteractionResult.FAIL;
+                    }
+                } else {
+                    return InteractionResult.FAIL;
+                }
+            } else {
+                facadeBlock = block.get();
+            }
+
+            if (!(facadeBlock.asItem() instanceof BlockItem)) {
+                return InteractionResult.FAIL;
+            }
+
+            FacadeType type = getFacadeType();
+            if (!type.canApplyOn().test(level.getBlockState(pos))) {
+                return InteractionResult.FAIL;
+            }
+
+            Block targetBlock = level.getBlockState(pos).getBlock();
+
+            if (targetBlock == facadeBlock || CFConfig.isBlockDisallowed(facadeBlock)) {
+                if (targetBlock == facadeBlock) {
+                    context.getPlayer().sendOverlayMessage(Component.translatable("cable_facades.error.cannot_facade_itself").withStyle(ChatFormatting.RED));
+                } else {
+                    context.getPlayer().sendOverlayMessage(Component.translatable("cable_facades.error.block_disabled").withStyle(ChatFormatting.RED));
+                }
+                return InteractionResult.FAIL;
+            }
+
+            FacadeUtils.addDirectionalFacade(level, pos, clickedFace, facadeBlock.getStateForPlacement(new BlockPlaceContext(context)), type.id());
+
+            if (!context.getPlayer().isCreative() && CFConfig.consumeFacade) {
+                itemStack.shrink(1);
+                if (offhandItemStack != null) {
+                    offhandItemStack.shrink(1);
+                }
+            }
+        }
+
+        FacadeUtils.updateBlocks(level, pos);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER;
+    }
+
+    @Override
+    public @NotNull Component getName(ItemStack itemStack) {
+        Optional<Block> block = itemStack.get(CFDataComponents.FACADE_BLOCK);
+        if (block != null && block.isPresent() && block.get().asItem() instanceof BlockItem blockItem) {
+            return Component.translatable("cable_facades.directional_facade.name_prefix").append(Component.translatable(blockItem.getDescriptionId()));
+        }
+        return Component.translatable("cable_facades.directional_facade.empty");
+    }
+
+    public ItemStack createFacade(Block block) {
+        ItemStack stack = new ItemStack(this);
+        if (block != null && block.asItem() instanceof BlockItem) {
+            stack.set(CFDataComponents.FACADE_BLOCK, Optional.of(block));
+        }
+        return stack;
+    }
+
+    @Override
+    public ItemStackTemplate getCraftingRemainder(ItemInstance instance) {
+        if (Boolean.TRUE.equals(instance.get(CFDataComponents.HAS_FACADE_REMAINDER))) {
+            return new ItemStackTemplate(this);
+        }
+        return null;
+    }
+}

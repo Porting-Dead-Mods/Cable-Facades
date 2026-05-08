@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.portingdeadmods.cable_facades.mixins",
+  "compatibilityLevel": "JAVA_25",
+  "refmap": "cable_facades.refmap.json",
+  "mixins": [
+    "BlockBehaviourAccess",
+    "BlockStateBaseMixin",
+    "BlockStateMixin",
+    "ChunkSkyLightSourcesMixin",
+    "LightEngineMixin",
+    "StructureTemplateMixin"
+  ],
+  "client": [
+    "BlockHidingMixin",
+    "BlockModelLighterMixin",
+    "ItemStackRenderStateAccess",
+    "ModelBlockRendererFaceCullingMixin",
+    "SectionCompilerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

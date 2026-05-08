@@ -116,6 +116,21 @@ bin
 # Common working directory
 run/
 runs/
+**/runs/
+**/run/
+
+# Prism / NeoForge / Loom / MDG generated artifacts
+.prism/
+**/.prism/
+.fabric/
+**/.fabric/
+.kotlin/
+**/.kotlin/
+versions/**/src/generated/resources/.cache/
+**/build/generated/sources/modMetadata/
+
+# Generated mod metadata templates output
+**/build/generated/
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
