@@ -60,8 +60,6 @@ import java.util.concurrent.TimeUnit;
 @EventBusSubscriber(modid = CFMain.MODID, value = Dist.CLIENT)
 public final class GameClientEvents {
 
-    public static final ThreadLocal<Boolean> RENDERING_FACADE = ThreadLocal.withInitial(() -> false);
-
     private static final long TRANSPARENCY_TIMEOUT_MS = 120_000L;
     private static final int ALPHA_MASK = 0x88FFFFFF;
     private static final int PREVIEW_ALPHA = 0x99000000;
@@ -83,7 +81,19 @@ public final class GameClientEvents {
             setFacadeTransparency = facadeTransparency;
             Set<SectionPos> sections = new ObjectOpenHashSet<>();
 
-            ClientFacadeManager.forEach((pos, data) -> sections.add(SectionPos.of(pos)));
+            ClientFacadeManager.forEach((pos, data) -> {
+                SectionPos center = SectionPos.of(pos);
+                sections.add(center);
+                int localX = pos.getX() & 15;
+                int localY = pos.getY() & 15;
+                int localZ = pos.getZ() & 15;
+                if (localX == 0)  sections.add(SectionPos.of(center.x() - 1, center.y(), center.z()));
+                if (localX == 15) sections.add(SectionPos.of(center.x() + 1, center.y(), center.z()));
+                if (localY == 0)  sections.add(SectionPos.of(center.x(), center.y() - 1, center.z()));
+                if (localY == 15) sections.add(SectionPos.of(center.x(), center.y() + 1, center.z()));
+                if (localZ == 0)  sections.add(SectionPos.of(center.x(), center.y(), center.z() - 1));
+                if (localZ == 15) sections.add(SectionPos.of(center.x(), center.y(), center.z() + 1));
+            });
 
             for (SectionPos section : sections) {
                 Minecraft.getInstance().levelRenderer.setSectionDirty(section.x(), section.y(), section.z());
@@ -119,22 +129,17 @@ public final class GameClientEvents {
         if (sectionFacades.isEmpty()) return;
 
         e.addRenderer(ctx -> {
-            RENDERING_FACADE.set(true);
             BlockAndTintGetter level = ctx.getRegion();
-            try {
-                for (Map.Entry<BlockPos, FacadeData> entry : sectionFacades.entrySet()) {
-                    BlockPos pos = entry.getKey();
-                    FacadeData facadeData = entry.getValue();
+            for (Map.Entry<BlockPos, FacadeData> entry : sectionFacades.entrySet()) {
+                BlockPos pos = entry.getKey();
+                FacadeData facadeData = entry.getValue();
 
-                    if (facadeData.isFullBlock()) {
-                        FacadeChunkRenderer.renderFullBlock(ctx, level, pos, facadeData.getFullBlock());
-                    } else if (facadeData.isDirectional()) {
-                        facadeData.directional().forEach((dir, state) ->
-                                FacadeChunkRenderer.renderDirectional(ctx, level, pos, dir, state));
-                    }
+                if (facadeData.isFullBlock()) {
+                    FacadeChunkRenderer.renderFullBlock(ctx, level, pos, facadeData.getFullBlock(), facadeTransparency);
+                } else if (facadeData.isDirectional()) {
+                    facadeData.directional().forEach((dir, state) ->
+                            FacadeChunkRenderer.renderDirectional(ctx, level, pos, dir, state, facadeTransparency));
                 }
-            } finally {
-                RENDERING_FACADE.set(false);
             }
         });
     }
@@ -149,8 +154,10 @@ public final class GameClientEvents {
         boolean facaded = FacadeUtils.hasFacade(event.getLevel(), hitPos);
 
         if (preview != null) {
-            event.addCustomRenderer((renderState, buffer, poseStack, translucentPass, levelRenderState) ->
-                    renderPlacementPreview(buffer, poseStack, event.getCamera().position(), preview));
+            event.addCustomRenderer((renderState, buffer, poseStack, translucentPass, levelRenderState) -> {
+                renderPlacementPreview(buffer, poseStack, event.getCamera().position(), preview);
+                return false;
+            });
         }
 
         if (facaded) {

@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.portingdeadmods"
-version = "2.0.0"
+version = "2.0.2"
 
 prism {
     metadata {
@@ -33,7 +33,7 @@ prism {
                 compileOnly("mezz.jei:jei-26.1.2-common-api:$jeiVersion")
                 compileOnly("mezz.jei:jei-26.1.2-neoforge-api:$jeiVersion")
                 runtimeOnly("mezz.jei:jei-26.1.2-neoforge:$jeiVersion")
-
+                implementation("curse.maven:pipez-443900:8053422")
                 compileOnly("com.github.bawnorton.mixinsquared:mixinsquared-common:0.3.7-beta.1")
                 annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:0.3.7-beta.1")
                 jarJar("com.github.bawnorton.mixinsquared:mixinsquared-neoforge:0.3.7-beta.1")

@@ -20,11 +20,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.client.event.AddSectionGeometryEvent;
-import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -33,22 +33,12 @@ public final class FacadeChunkRenderer {
     private static final long FACADE_RENDER_SEED = 42L;
     private static final float ZFIGHTING_SCALE = 0.99995F;
     private static final float SCALE_UP_FACTOR = 1.0005F;
-    private static final float COVER_THICKNESS = 1.0F / 16.0F;
-    private static final float[] COVER_SOFT_BOUNDS = {0.0F, 1.0F, 0.0F, 1.0F, 0.0F, 1.0F};
-    private static final int[] COVER_AXIS_BY_SIDE = {1, 1, 2, 2, 0, 0};
-    private static final AABB[] COVER_BOXES = {
-            new AABB(0.0, 0.0, 0.0, 1.0, COVER_THICKNESS, 1.0),
-            new AABB(0.0, 1.0 - COVER_THICKNESS, 0.0, 1.0, 1.0, 1.0),
-            new AABB(0.0, 0.0, 0.0, 1.0, 1.0, COVER_THICKNESS),
-            new AABB(0.0, 0.0, 1.0 - COVER_THICKNESS, 1.0, 1.0, 1.0),
-            new AABB(0.0, 0.0, 0.0, COVER_THICKNESS, 1.0, 1.0),
-            new AABB(1.0 - COVER_THICKNESS, 0.0, 0.0, 1.0, 1.0, 1.0)
-    };
 
     private FacadeChunkRenderer() {}
 
     public static void renderFullBlock(AddSectionGeometryEvent.SectionRenderingContext ctx,
-                                       BlockAndTintGetter level, BlockPos pos, BlockState facadeState) {
+                                       BlockAndTintGetter level, BlockPos pos, BlockState facadeState,
+                                       boolean transparent) {
         Minecraft mc = Minecraft.getInstance();
         BlockStateModelSet modelSet = mc.getModelManager().getBlockStateModelSet();
         BlockStateModel model = modelSet.get(facadeState);
@@ -61,7 +51,7 @@ public final class FacadeChunkRenderer {
         float baseY = SectionPos.sectionRelative(pos.getY());
         float baseZ = SectionPos.sectionRelative(pos.getZ());
 
-        IrisAwareBufferLookup bufferLookup = new IrisAwareBufferLookup(ctx, facadeState, pos);
+        IrisAwareBufferLookup bufferLookup = new IrisAwareBufferLookup(ctx, facadeState, pos, transparent);
         try {
             BlockQuadOutput output = scale == 1.0F
                     ? plainOutput(bufferLookup)
@@ -74,14 +64,13 @@ public final class FacadeChunkRenderer {
     }
 
     public static void renderDirectional(AddSectionGeometryEvent.SectionRenderingContext ctx,
-                                         BlockAndTintGetter level, BlockPos pos, Direction face, BlockState facadeState) {
+                                         BlockAndTintGetter level, BlockPos pos, Direction face, BlockState facadeState,
+                                         boolean transparent) {
         Minecraft mc = Minecraft.getInstance();
         BlockStateModelSet modelSet = mc.getModelManager().getBlockStateModelSet();
         BlockStateModel model = modelSet.get(facadeState);
-        ModelBlockRenderer blockRenderer = ctx.getBlockRenderer();
+        ModelBlockRenderer blockRenderer = new ModelBlockRenderer(mc.options.ambientOcclusion().get(), false, mc.getBlockColors());
 
-        AABB bounds = COVER_BOXES[face.ordinal()];
-        int coverAxis = COVER_AXIS_BY_SIDE[face.ordinal()];
         Block facadedBlock = level.getBlockState(pos).getBlock();
         float scale = computeScale(facadedBlock);
 
@@ -89,9 +78,9 @@ public final class FacadeChunkRenderer {
         float baseY = SectionPos.sectionRelative(pos.getY());
         float baseZ = SectionPos.sectionRelative(pos.getZ());
 
-        IrisAwareBufferLookup bufferLookup = new IrisAwareBufferLookup(ctx, facadeState, pos);
+        IrisAwareBufferLookup bufferLookup = new IrisAwareBufferLookup(ctx, facadeState, pos, transparent);
         try {
-            BlockQuadOutput output = slicingOutput(bufferLookup, face, bounds, coverAxis, scale);
+            BlockQuadOutput output = slicingOutput(bufferLookup, face, scale);
             blockRenderer.tesselateBlock(output, baseX, baseY, baseZ, level, pos, facadeState, model, facadeState.getSeed(pos));
         } finally {
             bufferLookup.endBlocks();
@@ -124,13 +113,15 @@ public final class FacadeChunkRenderer {
     }
 
     private static BlockQuadOutput slicingOutput(Function<ChunkSectionLayer, VertexConsumer> bufferLookup,
-                                                 Direction face, AABB bounds, int coverAxis, float scale) {
+                                                 Direction face, float scale) {
         return (x, y, z, quad, instance) -> {
-            if (quad.direction() != face) {
-                return;
+            BakedQuad slicedQuad = CoverQuadRenderer.sliceQuad(quad, face);
+            VertexConsumer buffer = bufferLookup.apply(slicedQuad.materialInfo().layer());
+            if (scale == 1.0F) {
+                buffer.putBlockBakedQuad(x, y, z, slicedQuad, instance);
+            } else {
+                emitScaledQuad(buffer, x, y, z, slicedQuad, instance, scale);
             }
-            VertexConsumer buffer = bufferLookup.apply(quad.materialInfo().layer());
-            emitSlicedQuad(buffer, x, y, z, quad, instance, bounds, coverAxis, scale);
         };
     }
 
@@ -156,71 +147,41 @@ public final class FacadeChunkRenderer {
         }
     }
 
-    private static void emitSlicedQuad(VertexConsumer buffer, float x, float y, float z,
-                                       BakedQuad quad, QuadInstance instance,
-                                       AABB bounds, int coverAxis, float scale) {
-        Vector3fc normal = quad.direction().getUnitVec3f();
-        int lightEmission = quad.materialInfo().lightEmission();
-        Vector3f tmp = new Vector3f();
-        for (int vertex = 0; vertex < 4; vertex++) {
-            Vector3fc pos = quad.position(vertex);
-            tmp.set(pos);
-            clampAxisToCover(tmp, coverAxis, bounds);
-            if (scale != 1.0F) {
-                tmp.set(
-                        (tmp.x() - 0.5F) * scale + 0.5F,
-                        (tmp.y() - 0.5F) * scale + 0.5F,
-                        (tmp.z() - 0.5F) * scale + 0.5F
-                );
-            }
-            long packedUv = quad.packedUV(vertex);
-            buffer.addVertex(
-                    tmp.x() + x, tmp.y() + y, tmp.z() + z,
-                    instance.getColor(vertex),
-                    UVPair.unpackU(packedUv),
-                    UVPair.unpackV(packedUv),
-                    instance.overlayCoords(),
-                    instance.getLightCoordsWithEmission(vertex, lightEmission),
-                    normal.x(), normal.y(), normal.z()
-            );
-        }
-    }
-
-    private static void clampAxisToCover(Vector3f v, int axis, AABB bounds) {
-        switch (axis) {
-            case 0 -> v.x = (float) clamp(v.x(), bounds.minX, bounds.maxX);
-            case 1 -> v.y = (float) clamp(v.y(), bounds.minY, bounds.maxY);
-            case 2 -> v.z = (float) clamp(v.z(), bounds.minZ, bounds.maxZ);
-        }
-    }
-
-    private static double clamp(float value, double min, double max) {
-        if (value < min) return min;
-        if (value > max) return max;
-        return value;
-    }
-
     private static final class IrisAwareBufferLookup implements Function<ChunkSectionLayer, VertexConsumer> {
         private final AddSectionGeometryEvent.SectionRenderingContext ctx;
         private final BlockState facadeState;
         private final BlockPos pos;
         private final Set<VertexConsumer> touched;
+        private final Map<ChunkSectionLayer, VertexConsumer> buffers;
         private final boolean irisActive;
+        private final boolean transparent;
 
-        IrisAwareBufferLookup(AddSectionGeometryEvent.SectionRenderingContext ctx, BlockState facadeState, BlockPos pos) {
+        IrisAwareBufferLookup(AddSectionGeometryEvent.SectionRenderingContext ctx, BlockState facadeState, BlockPos pos, boolean transparent) {
             this.ctx = ctx;
             this.facadeState = facadeState;
             this.pos = pos;
             this.irisActive = CFMain.isIrisLoaded();
+            this.transparent = transparent;
             this.touched = this.irisActive ? new ReferenceOpenHashSet<>() : null;
+            this.buffers = new EnumMap<>(ChunkSectionLayer.class);
         }
 
         @Override
         public VertexConsumer apply(ChunkSectionLayer layer) {
-            VertexConsumer buffer = ctx.getOrCreateChunkBuffer(layer);
+            ChunkSectionLayer effectiveLayer = transparent ? ChunkSectionLayer.TRANSLUCENT : layer;
+            VertexConsumer cached = buffers.get(effectiveLayer);
+            if (cached != null) {
+                return cached;
+            }
+
+            VertexConsumer buffer = ctx.getOrCreateChunkBuffer(effectiveLayer);
+            if (transparent) {
+                buffer = IrisUtil.wrapAlpha(buffer);
+            }
             if (irisActive && touched.add(buffer)) {
                 IrisUtil.beginBlock(buffer, facadeState, pos);
             }
+            buffers.put(effectiveLayer, buffer);
             return buffer;
         }
 

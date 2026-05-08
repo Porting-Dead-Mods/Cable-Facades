@@ -34,7 +34,7 @@ public class CFJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        ItemStackTemplate facadeResult = templateOf(CFItems.FACADE.get(), 1, Component.translatable("cable_facades.jei.facade_empty").withStyle(ChatFormatting.RESET));
+        ItemStackTemplate facadeResult = templateOf(CFItems.FACADE.get(), 1, Component.translatable("cable_facades.jei.facade_any_block").withStyle(ChatFormatting.RESET));
 
         registration.addRecipes(RecipeTypes.CRAFTING, Collections.singletonList(new RecipeHolder<>(
                 ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(CFMain.MODID, "facade_crafting")),

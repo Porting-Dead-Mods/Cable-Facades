@@ -28,15 +28,15 @@ public class CFItems {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(CFMain.MODID);
 
-    public static final DeferredItem<FacadeItem> FACADE = ITEMS.register("facade", () -> new FacadeItem(new Item.Properties()
+    public static final DeferredItem<FacadeItem> FACADE = ITEMS.registerItem("facade", FacadeItem::new, properties -> properties
             .component(CFDataComponents.FACADE_BLOCK, Optional.empty())
-            .component(CFDataComponents.HAS_FACADE_REMAINDER, false)));
+            .component(CFDataComponents.HAS_FACADE_REMAINDER, false));
 
-    public static final DeferredItem<DirectionalFacadeItem> DIRECTIONAL_FACADE = ITEMS.register("directional_facade", () -> new DirectionalFacadeItem(new Item.Properties()
+    public static final DeferredItem<DirectionalFacadeItem> DIRECTIONAL_FACADE = ITEMS.registerItem("directional_facade", DirectionalFacadeItem::new, properties -> properties
             .component(CFDataComponents.FACADE_BLOCK, Optional.empty())
-            .component(CFDataComponents.HAS_FACADE_REMAINDER, false)));
+            .component(CFDataComponents.HAS_FACADE_REMAINDER, false));
 
-    public static final DeferredItem<Item> WRENCH = ITEMS.register("facade_wrench", () -> new Item(new Item.Properties().stacksTo(1)) {
+    public static final DeferredItem<Item> WRENCH = ITEMS.registerItem("facade_wrench", properties -> new Item(properties.stacksTo(1)) {
         @Override
         public InteractionResult use(Level level, Player player, InteractionHand usedHand) {
             HitResult hitResult = player.pick(3D, 0.0F, false);

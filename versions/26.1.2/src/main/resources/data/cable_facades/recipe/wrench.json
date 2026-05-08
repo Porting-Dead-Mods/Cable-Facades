@@ -6,12 +6,8 @@
     " N "
   ],
   "key": {
-    "N": {
-      "item": "minecraft:iron_ingot"
-    },
-    "I": {
-      "item": "minecraft:iron_nugget"
-    }
+    "N": "minecraft:iron_ingot",
+    "I": "minecraft:iron_nugget"
   },
   "result": {
     "id": "cable_facades:facade_wrench",

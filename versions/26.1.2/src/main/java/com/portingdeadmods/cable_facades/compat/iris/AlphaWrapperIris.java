@@ -4,14 +4,16 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.irisshaders.iris.vertices.BlockSensitiveBufferBuilder;
 import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
 
-public class AlphaWrapperIris extends VertexConsumerWrapper implements BlockSensitiveBufferBuilder {
-    public AlphaWrapperIris(VertexConsumer consumer) {
+final class AlphaWrapperIris extends VertexConsumerWrapper implements BlockSensitiveBufferBuilder {
+    private static final int ALPHA_MASK = 0x88FFFFFF;
+
+    AlphaWrapperIris(VertexConsumer consumer) {
         super(consumer);
     }
 
     @Override
     public VertexConsumer setColor(int color) {
-        super.setColor(color & 0x88FFFFFF);
+        super.setColor(color & ALPHA_MASK);
         return this;
     }
 

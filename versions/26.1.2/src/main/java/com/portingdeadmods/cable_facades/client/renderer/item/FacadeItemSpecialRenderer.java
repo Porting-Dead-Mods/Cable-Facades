@@ -33,15 +33,16 @@ import java.util.function.Consumer;
 
 public class FacadeItemSpecialRenderer implements SpecialModelRenderer<Block> {
 
-    private static final float OUTLINE_SCALE_EPSILON = 0.001F;
-    private static final float FLAT_THICKNESS_SCALE = 1.0F / 16.0F;
     private static final float FLAT_DEPTH_OFFSET = -7.5F / 16.0F;
-    private static final float FULL_BLOCK_SCALE = 2.0F;
+    private static final float FLAT_THICKNESS_SCALE = 1.0F / 16.0F;
+    private static final Direction OUTLINE_UNIFORM_NORMAL = Direction.SOUTH;
 
     private final Mode mode;
+    private final List<BakedQuad> outlineQuads;
 
-    public FacadeItemSpecialRenderer(Mode mode) {
+    public FacadeItemSpecialRenderer(Mode mode, List<BakedQuad> outlineQuads) {
         this.mode = mode;
+        this.outlineQuads = outlineQuads;
     }
 
     @Override
@@ -55,6 +56,7 @@ public class FacadeItemSpecialRenderer implements SpecialModelRenderer<Block> {
     public void submit(@Nullable Block block, PoseStack poseStack, SubmitNodeCollector collector,
                        int lightCoords, int overlayCoords, boolean hasFoil, int outlineColor) {
         if (block == null) {
+            renderOutlineOnly(poseStack, collector, lightCoords, overlayCoords, outlineColor);
             return;
         }
 
@@ -82,16 +84,11 @@ public class FacadeItemSpecialRenderer implements SpecialModelRenderer<Block> {
                 quads.addAll(part.getQuads(dir));
             }
         }
+        quads.addAll(outlineQuads);
 
         int[] tints = computeTintLayers(state, quads);
         ItemDisplayContext context = ItemDisplayContext.FIXED;
-
-        poseStack.pushPose();
-        poseStack.translate(0.5F, 0.5F, 0.5F);
-        poseStack.scale(FULL_BLOCK_SCALE, FULL_BLOCK_SCALE, FULL_BLOCK_SCALE);
-        poseStack.translate(-0.5F, -0.5F, -0.5F);
         collector.submitItem(poseStack, context, light, overlay, outlineColor, tints, quads, ItemStackRenderState.FoilType.NONE);
-        poseStack.popPose();
     }
 
     private void renderDirectional(BlockState state, BlockStateModel model, PoseStack poseStack,
@@ -104,6 +101,28 @@ public class FacadeItemSpecialRenderer implements SpecialModelRenderer<Block> {
         poseStack.translate(0.0F, 0.0F, FLAT_DEPTH_OFFSET);
         collector.submitItem(poseStack, context, light, overlay, outlineColor, tints, sliced, ItemStackRenderState.FoilType.NONE);
         poseStack.popPose();
+
+        poseStack.pushPose();
+        poseStack.translate(0.5F, 0.5F, 0.5F);
+        poseStack.scale(1.0F, 1.0F, FLAT_THICKNESS_SCALE);
+        poseStack.translate(-0.5F, -0.5F, -0.5F);
+        collector.submitItem(poseStack, context, light, overlay, outlineColor, new int[0], outlineQuads, ItemStackRenderState.FoilType.NONE);
+        poseStack.popPose();
+    }
+
+    private void renderOutlineOnly(PoseStack poseStack, SubmitNodeCollector collector,
+                                   int light, int overlay, int outlineColor) {
+        ItemDisplayContext context = ItemDisplayContext.FIXED;
+        if (mode == Mode.DIRECTIONAL) {
+            poseStack.pushPose();
+            poseStack.translate(0.5F, 0.5F, 0.5F);
+            poseStack.scale(1.0F, 1.0F, FLAT_THICKNESS_SCALE);
+            poseStack.translate(-0.5F, -0.5F, -0.5F);
+            collector.submitItem(poseStack, context, light, overlay, outlineColor, new int[0], outlineQuads, ItemStackRenderState.FoilType.NONE);
+            poseStack.popPose();
+        } else {
+            collector.submitItem(poseStack, context, light, overlay, outlineColor, new int[0], outlineQuads, ItemStackRenderState.FoilType.NONE);
+        }
     }
 
     private static int[] computeTintLayers(BlockState state, List<BakedQuad> quads) {
@@ -136,6 +155,15 @@ public class FacadeItemSpecialRenderer implements SpecialModelRenderer<Block> {
         DIRECTIONAL
     }
 
+    public static BakedQuad retargetNormal(BakedQuad source) {
+        return new BakedQuad(
+                source.position0(), source.position1(), source.position2(), source.position3(),
+                source.packedUV0(), source.packedUV1(), source.packedUV2(), source.packedUV3(),
+                OUTLINE_UNIFORM_NORMAL,
+                source.materialInfo()
+        );
+    }
+
     public record Unbaked(Mode mode) implements SpecialModelRenderer.Unbaked<Block> {
         public static final MapCodec<Unbaked> MAP_CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
                 Codec.STRING.fieldOf("mode")
@@ -150,7 +178,7 @@ public class FacadeItemSpecialRenderer implements SpecialModelRenderer<Block> {
 
         @Override
         public @Nullable SpecialModelRenderer<Block> bake(SpecialModelRenderer.BakingContext context) {
-            return new FacadeItemSpecialRenderer(mode);
+            return new FacadeItemSpecialRenderer(mode, List.of());
         }
     }
 }

@@ -2,6 +2,7 @@
   "parent": "minecraft:block/block",
   "gui_light": "front",
   "textures": {
+    "particle": "cable_facades:item/facade_outline",
     "overlay": "cable_facades:item/facade_outline"
   },
   "elements": [

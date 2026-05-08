@@ -37,8 +37,6 @@ public final class CoverQuadRenderer {
 
     public static List<BakedQuad> sliceQuads(BlockState state, BlockPos pos, BlockStateModel model, Direction side) {
         long seed = state.getSeed(pos);
-        AABB bounds = COVER_BOXES[side.ordinal()];
-
         List<BakedQuad> sourceQuads = new ArrayList<>();
         List<BlockStateModelPart> parts = new ArrayList<>();
         model.collectParts(RandomSource.create(seed), parts);
@@ -51,9 +49,13 @@ public final class CoverQuadRenderer {
 
         List<BakedQuad> result = new ArrayList<>(sourceQuads.size());
         for (BakedQuad sourceQuad : sourceQuads) {
-            result.add(sliceQuad(sourceQuad, side, bounds));
+            result.add(sliceQuad(sourceQuad, side));
         }
         return result;
+    }
+
+    public static BakedQuad sliceQuad(BakedQuad sourceQuad, Direction side) {
+        return sliceQuad(sourceQuad, side, COVER_BOXES[side.ordinal()]);
     }
 
     private static BakedQuad sliceQuad(BakedQuad sourceQuad, Direction side, AABB bounds) {
