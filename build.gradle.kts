@@ -10,7 +10,7 @@ prism {
         modId = "cable_facades"
         name = "Cable Facades"
         description = "Adds facades for most cables in the game."
-        license = "MIT"
+        license = "ARR"
         author("Leclowndu93150")
         author("Thepigcat76")
         author("SuperMartijn642")
@@ -23,7 +23,27 @@ prism {
     maven("Bawnorton", "https://maven.bawnorton.com/releases")
     maven("Enjarai", "https://maven.enjarai.dev/mirrors")
 
+    publishing {
+
+        curseforge {
+            accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+            projectId = "1140577"
+        }
+
+        modrinth {
+            accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+            projectId = "twipgzWx"
+        }
+
+        dependencies {
+            optional("jei")
+            optional("iris")
+        }
+    }
+
     version("26.1.2") {
+
+        changelog = "26.1.2 port"
         neoforge {
             loaderVersion = "26.1.2.43-beta"
             loaderVersionRange = "[4,)"
