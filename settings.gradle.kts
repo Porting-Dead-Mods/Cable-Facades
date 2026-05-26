@@ -17,6 +17,15 @@ plugins {
 rootProject.name = "cable_facades"
 
 prism {
+    version("1.18.2") {
+        forge()
+    }
+    version("1.20.1") {
+        forge()
+    }
+    version("1.21.1") {
+        neoforge()
+    }
     version("26.1.2") {
         neoforge()
     }

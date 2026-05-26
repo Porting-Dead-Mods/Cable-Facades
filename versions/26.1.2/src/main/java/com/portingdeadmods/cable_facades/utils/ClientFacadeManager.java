@@ -22,6 +22,7 @@ public final class ClientFacadeManager {
 
     public static void put(BlockPos pos, FacadeData data) {
         FACADED_BLOCKS.put(pos, data);
+        trackPos(pos);
     }
 
     @Nullable
@@ -93,6 +94,7 @@ public final class ClientFacadeManager {
             }
             return FacadeData.directional(facadeType, face, state);
         });
+        trackPos(pos);
     }
 
     public static void removeDirectionalFacade(BlockPos pos, Direction face) {
@@ -100,7 +102,12 @@ public final class ClientFacadeManager {
             if (existing != null && existing.isDirectional()) {
                 return existing.withoutFace(face);
             }
-            return null;
+            return existing;
         });
+    }
+
+    private static void trackPos(BlockPos pos) {
+        ChunkPos chunkPos = new ChunkPos(pos.getX(),pos.getZ());
+        LOADED_BLOCKS.computeIfAbsent(chunkPos, k -> new ArrayList<>()).add(pos.immutable());
     }
 }
