@@ -3,9 +3,7 @@ package com.portingdeadmods.cable_facades.client.render;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.portingdeadmods.cable_facades.CFConfig;
-import com.portingdeadmods.cable_facades.CFMain;
 import com.portingdeadmods.cable_facades.compat.iris.IrisUtil;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.builders.UVPair;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
@@ -25,7 +23,6 @@ import org.joml.Vector3fc;
 
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 public final class FacadeChunkRenderer {
@@ -52,15 +49,11 @@ public final class FacadeChunkRenderer {
         float baseZ = SectionPos.sectionRelative(pos.getZ());
 
         IrisAwareBufferLookup bufferLookup = new IrisAwareBufferLookup(ctx, facadeState, pos, transparent);
-        try {
-            BlockQuadOutput output = scale == 1.0F
-                    ? plainOutput(bufferLookup)
-                    : scalingOutput(bufferLookup, scale);
+        BlockQuadOutput output = scale == 1.0F
+                ? plainOutput(bufferLookup)
+                : scalingOutput(bufferLookup, scale);
 
-            blockRenderer.tesselateBlock(output, baseX, baseY, baseZ, level, pos, facadeState, model, facadeState.getSeed(pos));
-        } finally {
-            bufferLookup.endBlocks();
-        }
+        blockRenderer.tesselateBlock(output, baseX, baseY, baseZ, level, pos, facadeState, model, facadeState.getSeed(pos));
     }
 
     public static void renderDirectional(AddSectionGeometryEvent.SectionRenderingContext ctx,
@@ -79,12 +72,8 @@ public final class FacadeChunkRenderer {
         float baseZ = SectionPos.sectionRelative(pos.getZ());
 
         IrisAwareBufferLookup bufferLookup = new IrisAwareBufferLookup(ctx, facadeState, pos, transparent);
-        try {
-            BlockQuadOutput output = slicingOutput(bufferLookup, face, scale);
-            blockRenderer.tesselateBlock(output, baseX, baseY, baseZ, level, pos, facadeState, model, facadeState.getSeed(pos));
-        } finally {
-            bufferLookup.endBlocks();
-        }
+        BlockQuadOutput output = slicingOutput(bufferLookup, face, scale);
+        blockRenderer.tesselateBlock(output, baseX, baseY, baseZ, level, pos, facadeState, model, facadeState.getSeed(pos));
     }
 
     private static float computeScale(Block facadedBlock) {
@@ -151,18 +140,14 @@ public final class FacadeChunkRenderer {
         private final AddSectionGeometryEvent.SectionRenderingContext ctx;
         private final BlockState facadeState;
         private final BlockPos pos;
-        private final Set<VertexConsumer> touched;
         private final Map<ChunkSectionLayer, VertexConsumer> buffers;
-        private final boolean irisActive;
         private final boolean transparent;
 
         IrisAwareBufferLookup(AddSectionGeometryEvent.SectionRenderingContext ctx, BlockState facadeState, BlockPos pos, boolean transparent) {
             this.ctx = ctx;
             this.facadeState = facadeState;
             this.pos = pos;
-            this.irisActive = CFMain.isIrisLoaded();
             this.transparent = transparent;
-            this.touched = this.irisActive ? new ReferenceOpenHashSet<>() : null;
             this.buffers = new EnumMap<>(ChunkSectionLayer.class);
         }
 
@@ -178,19 +163,9 @@ public final class FacadeChunkRenderer {
             if (transparent) {
                 buffer = IrisUtil.wrapAlpha(buffer);
             }
-            if (irisActive && touched.add(buffer)) {
-                IrisUtil.beginBlock(buffer, facadeState, pos);
-            }
+            buffer = IrisUtil.wrapBlockTagging(buffer, facadeState, pos);
             buffers.put(effectiveLayer, buffer);
             return buffer;
-        }
-
-        void endBlocks() {
-            if (!irisActive) return;
-            for (VertexConsumer buffer : touched) {
-                IrisUtil.endBlock(buffer);
-            }
-            touched.clear();
         }
     }
 }

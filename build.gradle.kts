@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.portingdeadmods"
-version = "2.1.0"
+version = "2.1.2"
 
 prism {
     metadata {
@@ -22,6 +22,7 @@ prism {
     maven("BlameJared", "https://maven.blamejared.com/")
     maven("Bawnorton", "https://maven.bawnorton.com/releases")
     maven("Enjarai", "https://maven.enjarai.dev/mirrors")
+    maven("CaffeineMC", "https://maven.caffeinemc.net/releases")
 
     publishing {
 
@@ -174,8 +175,9 @@ prism {
                 annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:0.3.7-beta.1")
                 jarJar("com.github.bawnorton.mixinsquared:mixinsquared-neoforge:0.3.7-beta.1")
 
-                compileOnly("curse.maven:irisshaders-455508:7867946")
-                compileOnly("curse.maven:sodium-394468:8038693")
+                implementation("curse.maven:irisshaders-455508:7867946")
+                implementation("curse.maven:sodium-394468:8038693")
+                compileOnly("net.caffeinemc:sodium-neoforge-mod:0.8.10+mc26.1.2")
 
                 runtimeOnly("curse.maven:athena-841890:7970442")
                 runtimeOnly("curse.maven:resourceful-lib-570073:7927296")

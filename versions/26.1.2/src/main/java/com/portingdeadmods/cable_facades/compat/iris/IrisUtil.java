@@ -20,16 +20,11 @@ public final class IrisUtil {
         return CFMain.isIrisLoaded() ? IrisLoadedCompat.wrapAlpha(consumer) : new AlphaWrapper(consumer);
     }
 
-    public static void beginBlock(VertexConsumer buffer, BlockState state, BlockPos pos) {
-        if (CFMain.isIrisLoaded()) {
-            IrisLoadedCompat.beginBlock(buffer, state, pos);
-        }
-    }
-
-    public static void endBlock(VertexConsumer buffer) {
-        if (CFMain.isIrisLoaded()) {
-            IrisLoadedCompat.endBlock(buffer);
-        }
+    public static VertexConsumer wrapBlockTagging(VertexConsumer consumer, BlockState state, BlockPos pos) {
+        if (!areShadersEnabled()) return consumer;
+        int blockId = IrisLoadedCompat.blockIdFor(state);
+        if (blockId == -1) return consumer;
+        return new TaggingVertexConsumer(consumer, blockId, (byte) state.getLightEmission(), pos);
     }
 
     private static final class AlphaWrapper extends VertexConsumerWrapper {

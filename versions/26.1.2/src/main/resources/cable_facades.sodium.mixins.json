@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.portingdeadmods.cable_facades.mixins.sodium",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "com.portingdeadmods.cable_facades.plugins.SodiumMixinPlugin",
+  "client": [
+    "ChunkVertexConsumerAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.portingdeadmods.cable_facades.mixins.iris",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "com.portingdeadmods.cable_facades.plugins.IrisMixinPlugin",
+  "client": [
+    "GlRenderPassAccessor",
+    "GlRenderPassSamplerFixMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
