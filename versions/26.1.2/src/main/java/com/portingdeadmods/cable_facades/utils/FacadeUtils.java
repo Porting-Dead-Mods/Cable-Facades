@@ -60,6 +60,11 @@ public class FacadeUtils {
         }
     }
 
+    public static void addFacadeWorldGen(ServerLevel serverLevel, BlockPos pos, BlockState blockState, Identifier facadeType) {
+        FacadeData data = FacadeData.fullBlock(facadeType, blockState);
+        serverLevel.getServer().execute(() -> CableFacadeSavedData.get(serverLevel).addFacade(pos.immutable(), data));
+    }
+
     public static void addDirectionalFacade(Level level, BlockPos pos, Direction face, BlockState blockState) {
         addDirectionalFacade(level, pos, face, blockState, FacadeTypes.DEFAULT_ID);
     }
@@ -69,6 +74,12 @@ public class FacadeUtils {
             CableFacadeSavedData.get(serverLevel).addDirectionalFacade(pos, face, blockState, facadeType);
             PacketDistributor.sendToPlayersTrackingChunk(serverLevel, ChunkPos.containing(pos), new AddDirectionalFacadePayload(pos, face, blockState, facadeType));
         }
+    }
+
+    public static void addDirectionalFacadeWorldGen(ServerLevel serverLevel, BlockPos pos, Direction face, BlockState blockState, Identifier facadeType) {
+        BlockPos immutable = pos.immutable();
+        serverLevel.getServer().execute(() ->
+                CableFacadeSavedData.get(serverLevel).addDirectionalFacade(immutable, face, blockState, facadeType));
     }
 
     public static void removeFacade(Level level, BlockPos pos) {

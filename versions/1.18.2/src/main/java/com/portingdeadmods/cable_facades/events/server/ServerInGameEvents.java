@@ -7,9 +7,7 @@ import com.portingdeadmods.cable_facades.content.items.DirectionalFacadeItem;
 import com.portingdeadmods.cable_facades.content.items.FacadeItem;
 import com.portingdeadmods.cable_facades.data.CableFacadeSavedData;
 import com.portingdeadmods.cable_facades.data.FacadeData;
-import com.portingdeadmods.cable_facades.data.helper.ChunkFacadeMap;
 import com.portingdeadmods.cable_facades.networking.CFMessages;
-import com.portingdeadmods.cable_facades.networking.s2c.AddFacadedBlocksPacket;
 import com.portingdeadmods.cable_facades.networking.s2c.RemoveFacadedBlocksPacket;
 import com.portingdeadmods.cable_facades.registries.CFItemTags;
 import com.portingdeadmods.cable_facades.registries.CFItems;
@@ -238,20 +236,6 @@ public final class ServerInGameEvents {
             return blockHit.getDirection();
         }
         return Direction.UP;
-    }
-
-    @SubscribeEvent
-    public static void loadChunk(ChunkWatchEvent.Watch event) {
-        ChunkPos chunkPos = event.getPos();
-        ServerLevel serverLevel = event.getWorld();
-        ServerPlayer player = event.getPlayer();
-
-        CableFacadeSavedData data = CableFacadeSavedData.get(serverLevel);
-        ChunkFacadeMap facadeMapForChunk = data.getFacadeMapForChunk(chunkPos);
-        if (facadeMapForChunk != null && !facadeMapForChunk.isEmpty()) {
-            CFMain.LOGGER.debug("Server Facaded Blocks: {}", facadeMapForChunk.getChunkMap());
-            CFMessages.sendToPlayer(new AddFacadedBlocksPacket(chunkPos, facadeMapForChunk.getChunkMap()), player);
-        }
     }
 
     @SubscribeEvent

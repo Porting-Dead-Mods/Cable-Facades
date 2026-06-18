@@ -12,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -139,6 +140,8 @@ public class StructureTemplateMixin implements StructureTemplateFacadeAccess {
     )
     private void onPlaceInWorld(ServerLevelAccessor level, BlockPos offset, BlockPos pos, StructurePlaceSettings settings, RandomSource random, int flags, CallbackInfoReturnable<Boolean> cir) {
         if (!facadeMap.isEmpty() && cir.getReturnValue()) {
+            ServerLevel serverLevel = level.getLevel();
+            boolean worldGen = !(level instanceof ServerLevel);
             facadeMap.forEach((relativePos, facadeData) -> {
                 BlockPos transformedPos = StructureTemplate.calculateRelativePosition(settings, relativePos);
                 BlockPos actualPos = transformedPos.offset(offset);
@@ -147,13 +150,21 @@ public class StructureTemplateMixin implements StructureTemplateFacadeAccess {
                     BlockState transformedState = facadeData.getFullBlock()
                             .mirror(settings.getMirror())
                             .rotate(settings.getRotation());
-                    FacadeUtils.addFacade(level.getLevel(), actualPos, transformedState, facadeData.facadeType());
+                    if (worldGen) {
+                        FacadeUtils.addFacadeWorldGen(serverLevel, actualPos, transformedState, facadeData.facadeType());
+                    } else {
+                        FacadeUtils.addFacade(serverLevel, actualPos, transformedState, facadeData.facadeType());
+                    }
                 } else if (facadeData.isDirectional()) {
                     facadeData.directional().forEach((dir, state) -> {
                         BlockState transformedState = state
                                 .mirror(settings.getMirror())
                                 .rotate(settings.getRotation());
-                        FacadeUtils.addDirectionalFacade(level.getLevel(), actualPos, dir, transformedState, facadeData.facadeType());
+                        if (worldGen) {
+                            FacadeUtils.addDirectionalFacadeWorldGen(serverLevel, actualPos, dir, transformedState, facadeData.facadeType());
+                        } else {
+                            FacadeUtils.addDirectionalFacade(serverLevel, actualPos, dir, transformedState, facadeData.facadeType());
+                        }
                     });
                 }
             });
