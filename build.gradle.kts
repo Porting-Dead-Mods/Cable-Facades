@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.portingdeadmods"
-version = "2.1.3"
+version = "2.1.4"
 
 prism {
     metadata {
@@ -143,7 +143,7 @@ prism {
                 runtimeOnly("mezz.jei:jei-1.21.1-neoforge:$jeiVersion")
 
                 compileOnly("curse.maven:irisshaders-455508:6661598")
-                compileOnly("curse.maven:sodium-394468:8038693")
+                compileOnly("net.caffeinemc:sodium-neoforge-mod:0.8.12+mc1.21.1@jar")
 
                 compileOnly("curse.maven:fusion-connected-textures-854949:7471474")
                 runtimeOnly("curse.maven:athena-841890:8061947")
